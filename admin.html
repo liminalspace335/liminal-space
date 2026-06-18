@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>LIMINAL SPACE — Admin</title>
+<style>
+  :root{--bg:#e9e9ea;--paper:#f4f4f5;--ink:#16171a;--ink-soft:#5a5c61;--line:#c7c8cc;--accent:#1a1b1e;--coord:#7a7c82;
+    --new:#1a1b1e;--confirmed:#2f7d5b;--done:#7a7c82;--cancel:#b04545;}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:"Helvetica Neue",Helvetica,Arial,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;background:var(--bg);color:var(--ink);line-height:1.5;-webkit-font-smoothing:antialiased}
+  .mono{font-variant-numeric:tabular-nums;letter-spacing:.02em}
+  button{font:inherit}
+  .layout{display:flex;min-height:100vh}
+  .sidebar{width:230px;background:var(--accent);color:#c9cacd;display:flex;flex-direction:column;position:sticky;top:0;height:100vh;flex-shrink:0}
+  .sb-brand{padding:24px 22px;border-bottom:1px solid #2c2d31}
+  .sb-brand .t{color:#fff;font-weight:700;letter-spacing:.16em;font-size:15px}
+  .sb-brand .s{font-size:10px;letter-spacing:.22em;color:#75777d;margin-top:5px}
+  .sb-nav{padding:14px 0;flex:1}
+  .sb-item{display:flex;align-items:center;gap:12px;width:100%;background:none;border:0;color:#9a9ca1;padding:13px 22px;cursor:pointer;font-size:14px;text-align:left;border-left:3px solid transparent}
+  .sb-item:hover{color:#fff;background:#202125}.sb-item.active{color:#fff;background:#202125;border-left-color:#fff}
+  .sb-item .ic{width:18px;text-align:center;font-size:15px}
+  .sb-foot{padding:18px 22px;border-top:1px solid #2c2d31;font-size:11px;color:#75777d}
+  .sb-foot a{color:#9a9ca1;text-decoration:none;display:block;margin-bottom:8px}.sb-foot a:hover{color:#fff}
+  .main{flex:1;min-width:0;display:flex;flex-direction:column}
+  .topbar{background:var(--paper);border-bottom:1px solid var(--line);padding:20px 30px;display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap}
+  .topbar h1{font-size:24px;font-weight:700}.topbar .coord{color:var(--coord);font-size:12px;letter-spacing:.06em}
+  .content{padding:28px 30px 60px}
+  .panel{display:none}.panel.active{display:block;animation:fade .2s ease}
+  @keyframes fade{from{opacity:0}to{opacity:1}}
+  .btn{background:var(--accent);color:#fff;border:0;padding:10px 16px;font-size:12px;letter-spacing:.1em;text-transform:uppercase;border-radius:2px;cursor:pointer;font-weight:600}
+  .btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--ink)}
+  .btn.danger{background:transparent;color:var(--cancel);border:1px solid var(--cancel)}
+  .btn.sm{padding:7px 11px;font-size:11px;letter-spacing:.04em;text-transform:none}
+  .btn:disabled{opacity:.4;cursor:not-allowed}.btn:hover:not(:disabled){opacity:.88}
+  .icon-btn{background:none;border:1px solid var(--line);border-radius:2px;cursor:pointer;padding:5px 9px;font-size:12px}
+  .icon-btn:hover{border-color:var(--ink)}.icon-btn:disabled{opacity:.4;cursor:not-allowed}
+  .spacer{flex:1}.sec-title{font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--coord);margin:30px 0 14px}
+  .saved{font-size:12px;color:var(--confirmed);opacity:0;transition:opacity .2s}.saved.show{opacity:1}
+  .stats{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:24px}
+  .stat{background:var(--paper);border:1px solid var(--line);padding:18px 20px}
+  .stat .k{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--coord)}.stat .v{font-size:30px;font-weight:700;margin-top:6px}
+  .cal{background:var(--paper);border:1px solid var(--line)}
+  .cal-head{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--line)}.cal-head .m{font-weight:700;font-size:15px}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr)}
+  .cal-dow{text-align:center;font-size:11px;letter-spacing:.08em;color:var(--coord);padding:10px 0;border-bottom:1px solid var(--line)}
+  .cal-cell{min-height:78px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:7px 8px;position:relative;background:#fff}
+  .cal-grid .cal-cell:nth-child(7n){border-right:0}
+  .cal-cell.empty{background:#efeff1}
+  .cal-cell .d{font-size:12px;color:var(--ink-soft)}
+  .cal-cell .pill{display:inline-block;margin-top:8px;font-size:12px;font-weight:700;background:var(--accent);color:#fff;border-radius:999px;padding:2px 9px}
+  .cal-cell .cfg{position:absolute;top:7px;right:8px;font-size:10px;color:var(--confirmed)}
+  .cal-cell .heat{position:absolute;left:0;right:0;bottom:0;height:4px;background:var(--accent);opacity:.15}
+  .cal.sel{user-select:none}.cal.sel .cal-cell:not(.empty){cursor:pointer}.cal.sel .cal-cell:not(.empty):hover{background:#eef0f1}
+  .cal-cell.selected{background:#dfe0e2}.cal-cell.current{outline:2px solid var(--accent);outline-offset:-2px}
+  #bkCal .cal-dow{padding:9px 0}#bkCal .cal-cell{min-height:64px;padding:6px 8px}#bkCal .cal-cell .d{font-size:12px}#bkCal .cal-cell .slots{margin-top:4px;font-size:10.5px;color:var(--coord)}#bkCal .cal-cell .cfg{font-size:9px}
+  .bk-grid{display:grid;grid-template-columns:1.3fr 1fr;gap:22px;align-items:start}
+  .editor{background:var(--paper);border:1px solid var(--line);padding:20px 22px}.editor h3{font-size:15px}.editor .when{font-size:13px;color:var(--ink-soft);margin:4px 0 16px}
+  .slot-head,.slot-row{display:grid;grid-template-columns:minmax(0,1fr) 130px 70px 70px 58px;gap:8px;align-items:center;margin-bottom:8px}
+  .slot-head{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--coord)}
+  .slot-row input,.slot-row select{background:#fff;border:1px solid var(--line);padding:8px 9px;font-size:13px;border-radius:2px;width:100%}
+  .cnt-cell{font-size:13px;font-weight:700;text-align:center}.cnt-cell.has{color:var(--confirmed)}
+  .editor .hint{font-size:12px;color:var(--coord);margin:6px 0 0}
+  .copybar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}.clip{font-size:12px;color:var(--ink-soft)}
+  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  .breakdown{background:var(--paper);border:1px solid var(--line);padding:20px 22px}.breakdown h3{font-size:14px;margin-bottom:14px}
+  .brow{display:grid;grid-template-columns:130px 1fr 40px;align-items:center;gap:12px;margin-bottom:10px;font-size:13px}
+  .brow .lab{color:var(--ink-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .bar{height:8px;background:#e0e0e2;border-radius:4px;overflow:hidden}.bar i{display:block;height:100%;background:var(--accent)}.brow .cnt{text-align:right;font-weight:700}
+  .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+  .toolbar input,.toolbar select{background:#fff;border:1px solid var(--line);padding:9px 12px;font-size:13px;border-radius:2px}.toolbar input[type=search]{min-width:200px}
+  .bulkbar{display:none;gap:10px;align-items:center;flex-wrap:wrap;background:#202125;color:#e9e9ea;padding:10px 14px;border-radius:2px;margin-bottom:12px}.bulkbar.show{display:flex}
+  .bulkbar select{background:#2b2c30;color:#fff;border:1px solid #3a3b40;padding:7px 10px;border-radius:2px;font-size:13px}.bulkbar .n{font-size:13px;color:#c9cacd}
+  .tablewrap{background:var(--paper);border:1px solid var(--line);overflow-x:auto}
+  table.list{width:100%;border-collapse:collapse;font-size:13px;min-width:980px}
+  table.list th,table.list td{text-align:left;padding:12px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+  table.list th{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--coord);background:#eeeef0}
+  table.list tbody tr{cursor:pointer}table.list tr:hover td{background:#efeff1}
+  td .name{font-weight:600}td .sub{color:var(--ink-soft);font-size:12px}
+  .badge{display:inline-block;font-size:11px;letter-spacing:.06em;padding:3px 9px;border-radius:999px;color:#fff;text-transform:uppercase}
+  .b-new{background:var(--new)}.b-confirmed{background:var(--confirmed)}.b-done{background:var(--done)}.b-cancel{background:var(--cancel)}
+  .empty{padding:50px 20px;text-align:center;color:var(--ink-soft)}.msg-cell{max-width:200px;color:var(--ink-soft);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .chk{width:16px;height:16px;cursor:pointer}
+  .am-group{border:1px solid var(--line);margin-bottom:12px}
+  .am-gh{background:#eeeef0;padding:9px 12px;font-weight:700;font-size:13px;display:flex;justify-content:space-between;align-items:center}
+  .am-cnt{color:var(--coord);font-weight:400;font-size:12px}
+  .am-item{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;padding:9px 12px;border-top:1px solid var(--line);cursor:pointer;font-size:13px}
+  .am-item:hover{background:#efeff1}
+  .am-meta{color:var(--ink-soft);font-size:12px}
+  .am-branch{font-weight:700;font-size:13px;margin:14px 0 6px;color:var(--ink)}
+  .am-slot{border-top:1px solid var(--line)}
+  .am-sh{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:#f7f7f8;font-size:12px}
+  .am-sh .am-time{font-weight:700}
+  .am-sh .am-cap{color:var(--coord)}
+  .am-empty{padding:8px 12px;font-size:12px;color:var(--coord)}
+  /* settings */
+  .subtabs{display:flex;gap:6px;border-bottom:1px solid var(--line);margin-bottom:22px;flex-wrap:wrap}
+  .subtab{background:none;border:0;border-bottom:2px solid transparent;padding:11px 16px;cursor:pointer;font-size:14px;color:var(--ink-soft)}
+  .subtab.active{color:var(--ink);border-bottom-color:var(--accent);font-weight:600}
+  .subpanel{display:none}.subpanel.active{display:block}
+  .box{background:var(--paper);border:1px solid var(--line);padding:22px 24px;max-width:1180px;margin-bottom:20px}
+  .box h3{font-size:15px;margin-bottom:4px}.box .desc{font-size:12px;color:var(--ink-soft);margin-bottom:16px}
+  .branch-picker{display:flex;gap:8px;align-items:center;margin-bottom:16px;flex-wrap:wrap}
+  .branch-picker select{background:#fff;border:1px solid var(--line);padding:8px 11px;font-size:14px;border-radius:2px}
+  .pill-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
+  .pill-tab{background:#fff;border:1px solid var(--line);padding:8px 14px;border-radius:999px;cursor:pointer;font-size:13px;color:var(--ink-soft)}
+  .pill-tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .gen-row{display:grid;gap:9px;margin-bottom:10px;align-items:center}
+  .gen-row input,.gen-row select{background:#fff;border:1px solid var(--line);padding:9px 10px;font-size:13px;border-radius:2px;width:100%}
+  .gen-row input[readonly]{background:#eeeef0;color:var(--ink-soft)}
+  .head-row{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--coord)}
+  .br-row{grid-template-columns:1fr .9fr 1fr 1.1fr 1fr 1fr 44px}
+  .bc-row{grid-template-columns:48px 1.2fr 1.8fr 92px 46px}
+  .cd-row{grid-template-columns:1.1fr 1.2fr 70px .9fr .9fr .9fr 1.3fr 46px}
+  .vol{display:flex;align-items:center;gap:6px}.vol input{width:100%}.vol span{font-size:12px;color:var(--ink-soft)}
+  .field-row{display:flex;flex-direction:column;gap:7px;margin-bottom:14px;max-width:520px}
+  .field-row label{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft)}
+  .field-row input{background:#fff;border:1px solid var(--line);padding:11px 13px;font-size:14px;border-radius:2px}
+  .save-row{margin-top:16px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .switch{display:inline-flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;color:var(--ink-soft)}
+  .switch input{display:none}.switch .track{width:38px;height:20px;background:#cfcfd3;border-radius:999px;position:relative;transition:background .2s}
+  .switch .track::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;background:#fff;border-radius:50%;transition:left .2s}
+  .switch input:checked + .track{background:var(--confirmed)}.switch input:checked + .track::after{left:20px}
+  /* detail modal */
+  .dmodal{position:fixed;inset:0;z-index:200;background:rgba(20,21,23,.5);display:none;align-items:center;justify-content:center;padding:20px}.dmodal.open{display:flex}
+  .dbox{background:var(--paper);border:1px solid var(--line);width:580px;max-width:100%;max-height:92vh;overflow:auto}
+  .dhead{display:flex;justify-content:space-between;align-items:flex-start;padding:18px 22px;border-bottom:1px solid var(--line)}.dhead h3{font-size:16px}.dwhen{font-size:12px;color:var(--coord);margin-top:4px}
+  .modal-x{background:none;border:0;font-size:24px;cursor:pointer;color:var(--ink-soft);line-height:1}
+  .dbody{padding:20px 22px}.dgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.df{display:flex;flex-direction:column;gap:6px}.df.full{grid-column:1/-1}
+  .df label{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft)}
+  .df input,.df select,.df textarea{background:#fff;border:1px solid var(--line);padding:10px 11px;font:inherit;font-size:14px;border-radius:2px}
+  .dfoot{display:flex;align-items:center;gap:10px;padding:14px 22px;border-top:1px solid var(--line)}
+  .gate{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:100}
+  .gate-card{background:var(--paper);border:1px solid var(--line);padding:40px;width:340px;max-width:90vw}
+  .gate-card h2{font-size:18px;letter-spacing:.12em;text-transform:uppercase;margin-bottom:6px}.gate-card p{font-size:12px;color:var(--ink-soft);margin-bottom:22px}
+  .gate-card input{width:100%;background:#fff;border:1px solid var(--line);padding:12px;margin-bottom:14px;border-radius:2px;font:inherit}.gate-card .btn{width:100%}.gate-card .hint{font-size:11px;color:var(--coord);margin-top:12px;text-align:center}
+  @media(max-width:900px){.layout{flex-direction:column}.sidebar{width:100%;height:auto;position:static;flex-direction:row;flex-wrap:wrap}.sb-brand{border-bottom:0;padding:16px 18px}.sb-nav{display:flex;padding:0}.sb-foot{display:none}.sb-item{border-left:0;border-bottom:3px solid transparent;padding:14px}.sb-item.active{border-left:0;border-bottom-color:#fff}.stats{grid-template-columns:repeat(2,1fr)}.two-col,.bk-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<div class="gate" id="gate">
+  <div class="gate-card"><h2>Admin</h2><p>LIMINAL SPACE 신청 관리 페이지입니다.</p>
+    <input type="password" id="pw" placeholder="비밀번호 입력" /><button class="btn" id="loginBtn">로그인</button>
+    <div class="hint">초안 비밀번호: <b>liminal</b></div></div>
+</div>
+
+<div class="layout" id="app" style="display:none">
+  <aside class="sidebar">
+    <div class="sb-brand"><div class="t">LIMINAL SPACE</div><div class="s">ADMIN CONSOLE</div></div>
+    <nav class="sb-nav">
+      <button class="sb-item active" data-tab="overview"><span class="ic">◧</span> 소개</button>
+      <button class="sb-item" data-tab="list"><span class="ic">▤</span> 신청관리</button>
+      <button class="sb-item" data-tab="booking"><span class="ic">◷</span> 클래스설정</button>
+      <button class="sb-item" data-tab="settings"><span class="ic">⚙</span> 환경설정</button>
+    </nav>
+    <div class="sb-foot"><a href="index.html">← 신청 페이지로</a><a href="#" id="logout">로그아웃</a></div>
+  </aside>
+
+  <div class="main">
+    <div class="topbar"><div><h1 id="pageTitle">소개</h1><div class="coord mono">10° 47' 27.49" N 106° 41' 36.89" E</div></div><div class="coord mono" id="lastUpdate"></div></div>
+    <div class="content">
+
+      <!-- OVERVIEW -->
+      <div class="panel active" id="panel-overview">
+        <div class="stats" id="ovStats"></div>
+        <div class="sec-title">날짜별 신청 인원</div>
+        <div class="cal" id="ovCal"></div>
+        <div class="two-col" style="margin-top:24px"><div class="breakdown" id="byClass"></div><div class="breakdown" id="byBranch"></div></div>
+      </div>
+
+      <!-- 신청관리 (캘린더 + 선택일자 클래스별 신청목록) -->
+      <div class="panel" id="panel-list">
+        <div class="toolbar">
+          <label class="head-row">지점</label>
+          <select id="amBranch"><option value="">전체 지점</option></select>
+          <select id="amStatus"><option value="">전체 상태</option><option value="new">신규</option><option value="confirmed">확정</option><option value="done">완료</option><option value="cancel">취소</option></select>
+          <div class="spacer"></div>
+          <button class="btn ghost" id="exportBtn">CSV 내보내기</button>
+          <button class="btn ghost" id="seedBtn">샘플 추가</button>
+        </div>
+        <div class="bk-grid">
+          <div class="cal sel" id="amCal"></div>
+          <div class="editor" id="amView"></div>
+        </div>
+      </div>
+
+      <!-- BOOKING -->
+      <div class="panel" id="panel-booking">
+        <div class="branch-picker"><label class="head-row">지점</label><select id="bkBranchSel"></select></div>
+        <div class="bk-grid">
+          <div class="cal sel" id="bkCal"></div>
+          <div class="editor" id="bkEditor"></div>
+        </div>
+      </div>
+
+      <!-- SETTINGS -->
+      <div class="panel" id="panel-settings">
+        <div class="pill-tabs" id="admLangTabs" style="margin-bottom:16px"></div>
+        <div class="subtabs">
+          <button class="subtab active" data-sub="branch">지점설정</button>
+          <button class="subtab" data-sub="cls">클래스 설정</button>
+          <button class="subtab" data-sub="detail">상세설정</button>
+          <button class="subtab" data-sub="default">신청관리 기본값</button>
+        </div>
+
+        <div class="subpanel active" id="sub-branch">
+          <div class="box">
+            <h3>지점 설정</h3><p class="desc">지점명·연락처·링크주소·위치와 지점별 소셜(인스타그램·페이스북) 링크를 등록합니다.</p>
+            <div class="gen-row br-row head-row"><div>지점명</div><div>연락처</div><div>링크주소</div><div>위치</div><div>Instagram</div><div>Facebook</div><div></div></div>
+            <div id="brList"></div>
+            <div class="save-row"><button class="btn ghost sm" id="brAdd">+ 지점 추가</button><button class="btn sm" id="brSave">저장</button><span class="saved" id="brSaved">저장됨 ✓</span></div>
+          </div>
+        </div>
+
+        <div class="subpanel" id="sub-cls">
+          <div class="box">
+            <h3>클래스 설정 (지점별)</h3><p class="desc">지점을 선택하고 그 지점의 클래스 이름·클래스 설명을 등록합니다.</p>
+            <div class="branch-picker"><label class="head-row">지점</label><select id="bcBranchSel"></select></div>
+            <div class="gen-row bc-row head-row"><div>순서</div><div>이름</div><div>클래스 설명</div><div>상태</div><div></div></div>
+            <div id="bcList"></div>
+            <div class="save-row"><button class="btn ghost sm" id="bcAdd">+ 클래스 추가</button><button class="btn sm" id="bcSave">저장</button><span class="saved" id="bcSaved">저장됨 ✓</span></div>
+          </div>
+        </div>
+
+        <div class="subpanel" id="sub-detail">
+          <div class="box">
+            <h3>상세 설정 (용량 · 가격 · 상세설명)</h3><p class="desc">지점과 클래스를 선택하고, 용량별 가격(원화·동·달러)과 상세설명을 등록합니다. 신청 페이지 가격은 동(₫) → 원(₩) → 달러($) 순으로 표기됩니다.</p>
+            <div class="gen-row cd-row head-row"><div>지점</div><div>클래스</div><div>용량</div><div>₩ 원화</div><div>₫ 동</div><div>$ 달러</div><div>상세설명</div><div></div></div>
+            <div id="cdList"></div>
+            <div class="save-row"><button class="btn ghost sm" id="cdAdd">+ 항목 추가</button><button class="btn sm" id="cdSave">저장</button><span class="saved" id="cdSaved">저장됨 ✓</span></div>
+          </div>
+        </div>
+
+        <div class="subpanel" id="sub-default">
+          <div class="box" style="max-width:980px">
+            <h3>신청관리 기본값 (지점별 · 하루치)</h3><p class="desc">지점 탭을 선택하고, 개별 설정이 없는 날짜에 적용될 하루치 기본 시간대·정원을 등록합니다.</p>
+            <div class="pill-tabs" id="defBranchTabs"></div>
+            <div class="slot-head" style="grid-template-columns:minmax(0,1fr) 130px 70px 58px"><div>클래스</div><div>시간</div><div>정원</div><div></div></div>
+            <div id="defWrap"></div>
+            <div class="save-row"><button class="btn ghost sm" id="defAdd">+ 시간대 추가</button><button class="btn sm" id="defSave">저장</button><span class="saved" id="defSaved">저장됨 ✓</span></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- 신청 상세/수정 모달 -->
+<div class="dmodal" id="detail"><div class="dbox">
+  <div class="dhead"><div><h3>신청 상세</h3><div class="dwhen" id="dWhen"></div></div><button class="modal-x" id="dClose">×</button></div>
+  <div class="dbody"><div class="dgrid">
+    <div class="df"><label>이름</label><input id="d_name" /></div>
+    <div class="df"><label>연락처</label><input id="d_phone" /></div>
+    <div class="df"><label>이메일</label><input id="d_email" /></div>
+    <div class="df"><label>국적</label><input id="d_nat" /></div>
+    <div class="df"><label>지점</label><select id="d_branch"></select></div>
+    <div class="df"><label>클래스</label><select id="d_class"></select></div>
+    <div class="df"><label>용량</label><select id="d_size"></select></div>
+    <div class="df"><label>희망일</label><input type="date" id="d_date" /></div>
+    <div class="df"><label>시간</label><select id="d_time"></select></div>
+    <div class="df"><label>인원</label><input type="number" min="1" id="d_people" /></div>
+    <div class="df"><label>상태</label><select id="d_status"></select></div>
+    <div class="df full"><label>메모</label><textarea id="d_msg" rows="3"></textarea></div>
+  </div></div>
+  <div class="dfoot"><button class="btn danger sm" id="dDelete">삭제</button><span class="spacer"></span><button class="btn ghost sm" id="dCancel">닫기</button><button class="btn sm" id="dSave">저장</button></div>
+</div></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script src="store.js"></script>
+<script>
+const STORE_KEY='liminal_applications';
+const SET_KEY='liminal_settings';
+const PW='liminal';
+const STATUS={new:{label:'신규',cls:'b-new'},confirmed:{label:'확정',cls:'b-confirmed'},done:{label:'완료',cls:'b-done'},cancel:{label:'취소',cls:'b-cancel'}};
+const DOW=['일','월','화','수','목','금','토'];
+const DAYKEYS=['sun','mon','tue','wed','thu','fri','sat'];
+function defaultDaySlots(){return [{cls:'',time:'11:00',cap:6},{cls:'',time:'14:00',cap:6},{cls:'',time:'17:00',cap:6}];}
+const SAIGON='사이공 (Saigon)', HANOI='하노이 (Hanoi)';
+const LANGS=[['ko','한글'],['en','영어'],['vi','베트남어']];
+let admLang='ko';   // 어드민 입력 언어
+/* 다국어 값 helper: 문자열이면 {ko}로 간주, 객체면 그대로 */
+function txObj(v){return (v&&typeof v==='object'&&!Array.isArray(v))?v:(v?{ko:String(v)}:{});}
+function Lval(v,lang){const o=txObj(v);return o[lang]||o.ko||o.en||o.vi||'';}
+function keyOf(v){const o=txObj(v);return o.ko||o.en||o.vi||'';}   // 안정 키 = 한글
+function tri(ko,en,vi){return {ko:ko||'',en:en||'',vi:vi||''};}
+const dWorkshopDesc=tri('100여 종 향 · 나만의 시그니처 완성','Over 100 notes · craft your signature','Hơn 100 loại hương · tạo signature của bạn');
+const DEFAULT_SETTINGS={
+  branches:[
+    {id:1,name:SAIGON,contact:'',link:'',location:tri("10° 47' 27.49\" N 106° 41' 36.89\" E · 빈탄","10° 47' 27.49\" N 106° 41' 36.89\" E · Binh Thanh","10° 47' 27.49\" N 106° 41' 36.89\" E · Bình Thạnh"),instagram:'',facebook:''},
+    {id:2,name:HANOI,contact:'',link:'',location:tri('올드 쿼터 · 호안끼엠','Old Quarter · Hoan Kiem','Phố cổ · Hoàn Kiếm'),instagram:'',facebook:''}
+  ],
+  branchClasses:[
+    {id:1,branch:SAIGON,order:1,name:tri('Signature Scent Workshop','Signature Scent Workshop','Signature Scent Workshop'),desc:dWorkshopDesc,active:true},
+    {id:2,branch:SAIGON,order:2,name:tri('Liminal Pick 구독','Liminal Pick Subscription','Liminal Pick Đăng ký'),desc:tri('매월 2회 10ml 배송 · 커스텀','Twice-monthly 10ml delivery · custom','Giao 10ml 2 lần/tháng · tùy chỉnh'),active:true},
+    {id:3,branch:SAIGON,order:3,name:tri('기업·단체 주문제작','Corporate / Group','Doanh nghiệp · Tập thể'),desc:tri('행사 기획 · 향 제작/납품','Event planning · scent production','Lên ý tưởng sự kiện · chế tác hương'),active:true},
+    {id:4,branch:HANOI,order:1,name:tri('Signature Scent Workshop','Signature Scent Workshop','Signature Scent Workshop'),desc:dWorkshopDesc,active:true}
+  ],
+  classDetails:[
+    {id:1,branch:SAIGON,name:'Signature Scent Workshop',volume:10,priceKRW:'',priceVND:'300000',priceUSD:'',detail:tri('보틀 + 파우치 포함','Bottle + pouch included','Bao gồm chai + túi')},
+    {id:2,branch:SAIGON,name:'Signature Scent Workshop',volume:30,priceKRW:'',priceVND:'500000',priceUSD:'',detail:tri('보틀 + 파우치 포함','Bottle + pouch included','Bao gồm chai + túi')},
+    {id:3,branch:SAIGON,name:'Signature Scent Workshop',volume:50,priceKRW:'',priceVND:'700000',priceUSD:'',detail:tri('보틀 + 파우치 포함','Bottle + pouch included','Bao gồm chai + túi')},
+    {id:4,branch:SAIGON,name:'Liminal Pick 구독',volume:10,priceKRW:'',priceVND:'500000',priceUSD:'',detail:tri('','','')},
+    {id:5,branch:HANOI,name:'Signature Scent Workshop',volume:10,priceKRW:'',priceVND:'320000',priceUSD:'',detail:tri('보틀 + 파우치 포함','Bottle + pouch included','Bao gồm chai + túi')}
+  ],
+  defaultSchedule:{},
+  schedule:{}
+};
+
+function load(){return window.LS?LS.getApps():[];}
+function save(l){if(window.LS)LS.setApps(l);}
+function isPlainObj(o){return o&&typeof o==='object'&&!Array.isArray(o);}
+function loadSettings(){let s;try{s=Object.assign({},DEFAULT_SETTINGS,(window.LS?LS.getSettings():{})||{});}catch(e){s=JSON.parse(JSON.stringify(DEFAULT_SETTINGS));}
+  // 구버전 스키마 정규화 (배열/이전 형식 → 지점별 객체)
+  if(!isPlainObj(s.defaultSchedule))s.defaultSchedule={};
+  if(!isPlainObj(s.schedule))s.schedule={};
+  if(!Array.isArray(s.branches))s.branches=[];
+  if(!Array.isArray(s.branchClasses))s.branchClasses=[];
+  if(!Array.isArray(s.classDetails))s.classDetails=[];
+  return s;}
+function saveSettings(s){if(window.LS)LS.setSettings(s);}
+function ymd(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function fmt(iso){const d=new Date(iso);if(isNaN(d))return iso||'-';const p=n=>String(n).padStart(2,'0');return `${d.getFullYear()}.${p(d.getMonth()+1)}.${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;}
+function esc(s){return (s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function toast(id){const e=document.getElementById(id);if(!e)return;e.classList.add('show');setTimeout(()=>e.classList.remove('show'),1600);}
+
+/* ---- 지점/클래스/상세 helpers ---- */
+function branchNames(){return (loadSettings().branches||[]).map(b=>b.name).filter(Boolean);}
+function branchClassesOf(branch){return (loadSettings().branchClasses||[]).filter(c=>c.branch===branch).sort((a,b)=>(a.order??99)-(b.order??99));}
+function classNamesOf(branch){return [...new Set(branchClassesOf(branch).map(c=>keyOf(c.name)))];}   // 안정 키(한글)
+function detailsOf(branch,name){return (loadSettings().classDetails||[]).filter(d=>d.branch===branch&&d.name===name);}
+function volumesOf(branch,name){return detailsOf(branch,name).filter(d=>d.volume!==''&&d.volume!=null);}
+function fmtMoney(v,sym){v=(v==null?'':String(v)).trim();if(!v)return '';if(/^[0-9,]+$/.test(v))return Number(v.replace(/,/g,'')).toLocaleString('en-US')+sym;return v;}
+function priceDisplay(d){if(!d)return '';if(d.priceVND)return fmtMoney(d.priceVND,'₫');if(d.priceKRW)return fmtMoney(d.priceKRW,'₩');if(d.priceUSD)return fmtMoney(d.priceUSD,'$');return '';}
+function priceNum(p){const n=parseInt(String(p||'').replace(/[^0-9]/g,''),10);return isNaN(n)?Infinity:n;}
+function classOrder(branch,name){const c=branchClassesOf(branch).find(c=>keyOf(c.name)===name);return c&&c.order!=null?c.order:9999;}
+function sortSlots(branch,arr){return arr.slice().sort((a,b)=>{const oa=a.cls?classOrder(branch,a.cls):9999,ob=b.cls?classOrder(branch,b.cls):9999;if(oa!==ob)return oa-ob;return (a.time||'').localeCompare(b.time||'');});}
+function defaultSlots(branch){const d=(loadSettings().defaultSchedule||{})[branch];return (Array.isArray(d)?d:defaultDaySlots()).map(s=>Object.assign({},s));}
+/* 개별 설정(저장)된 날짜만 오픈 — 미설정일은 휴무([]) */
+function effectiveSlots(branch,dateStr){const sc=(loadSettings().schedule||{})[branch]||{};return sc[dateStr]||[];}
+
+/* login */
+function tryLogin(){if(document.getElementById('pw').value===PW){sessionStorage.setItem('liminal_admin','1');showApp();}else alert('비밀번호가 올바르지 않습니다.');}
+document.getElementById('loginBtn').addEventListener('click',tryLogin);
+document.getElementById('pw').addEventListener('keydown',e=>{if(e.key==='Enter')tryLogin();});
+document.getElementById('logout').addEventListener('click',e=>{e.preventDefault();sessionStorage.removeItem('liminal_admin');location.reload();});
+function showApp(){document.getElementById('gate').style.display='none';document.getElementById('app').style.display='flex';renderAll();}
+
+/* tabs */
+const TITLES={overview:'소개',list:'신청관리',booking:'클래스설정',settings:'환경설정'};
+document.querySelectorAll('.sb-item').forEach(b=>b.addEventListener('click',()=>{
+  const tab=b.dataset.tab;
+  document.querySelectorAll('.sb-item').forEach(x=>x.classList.toggle('active',x===b));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('active',p.id==='panel-'+tab));
+  document.getElementById('pageTitle').textContent=TITLES[tab];
+  if(tab==='overview')renderOverview();
+  if(tab==='list')renderList();
+  if(tab==='booking')renderBooking();
+  if(tab==='settings')renderSettings();
+}));
+function renderAll(){populateFilters();renderOverview();renderList();renderBooking();renderSettings();
+  document.getElementById('lastUpdate').textContent='최종 조회 '+fmt(new Date().toISOString());}
+
+/* calendar */
+function buildCalendar(monthDate,cellFn){
+  const y=monthDate.getFullYear(),m=monthDate.getMonth();
+  const first=new Date(y,m,1),startDow=first.getDay(),days=new Date(y,m+1,0).getDate();
+  let cells='';DOW.forEach(d=>cells+=`<div class="cal-dow">${d}</div>`);
+  for(let i=0;i<startDow;i++)cells+='<div class="cal-cell empty"></div>';
+  for(let day=1;day<=days;day++){const ds=ymd(new Date(y,m,day));cells+=`<div class="cal-cell" data-date="${ds}">${cellFn(ds,day)}</div>`;}
+  return `<div class="cal-head"><button class="icon-btn" data-nav="-1">‹</button><span class="m">${y}. ${String(m+1).padStart(2,'0')}</span><button class="icon-btn" data-nav="1">›</button></div><div class="cal-grid">${cells}</div>`;
+}
+function applicantsByDate(branch){const map={};load().forEach(a=>{if(a.status==='cancel'||!a.date)return;if(branch&&a.branch!==branch)return;map[a.date]=(map[a.date]||0)+(parseInt(a.people)||1);});return map;}
+function bookedAt(branch,dateStr,time){return load().filter(a=>a.date===dateStr&&a.time===time&&a.status!=='cancel'&&(!branch||a.branch===branch)).reduce((s,a)=>s+(parseInt(a.people)||1),0);}
+
+/* ===== OVERVIEW ===== */
+let ovMonth=new Date();ovMonth.setDate(1);
+function renderOverview(){
+  const list=load();const c={total:list.length,new:0,confirmed:0,done:0,cancel:0};
+  list.forEach(x=>{if(c[x.status]!==undefined)c[x.status]++;});
+  document.getElementById('ovStats').innerHTML=[['전체 신청',c.total],['신규',c.new],['확정',c.confirmed],['완료',c.done],['취소',c.cancel]].map(([k,v])=>`<div class="stat"><div class="k">${k}</div><div class="v mono">${v}</div></div>`).join('');
+  const by=applicantsByDate('');const max=Math.max(1,...Object.values(by));
+  const cal=document.getElementById('ovCal');
+  cal.innerHTML=buildCalendar(ovMonth,(ds)=>{const n=by[ds]||0;const day=+ds.slice(-2);return `<span class="d">${day}</span>`+(n?`<div><span class="pill">${n}명</span></div><span class="heat" style="opacity:${(0.15+0.6*n/max).toFixed(2)}"></span>`:'');});
+  cal.querySelectorAll('[data-nav]').forEach(b=>b.addEventListener('click',()=>{ovMonth.setMonth(ovMonth.getMonth()+ +b.dataset.nav);renderOverview();}));
+  document.getElementById('byClass').innerHTML='<h3>클래스별 신청</h3>'+breakdown(list,'class');
+  document.getElementById('byBranch').innerHTML='<h3>지점별 신청</h3>'+breakdown(list,'branch');
+}
+function breakdown(list,field){const map={};list.forEach(x=>{const k=x[field]||'(미지정)';map[k]=(map[k]||0)+1;});const e=Object.entries(map).sort((a,b)=>b[1]-a[1]);if(!e.length)return '<div style="color:var(--ink-soft);font-size:13px">데이터 없음</div>';const mx=Math.max(...e.map(x=>x[1]));return e.map(([k,v])=>`<div class="brow"><span class="lab">${esc(k)}</span><span class="bar"><i style="width:${Math.round(v/mx*100)}%"></i></span><span class="cnt mono">${v}</span></div>`).join('');}
+
+/* ===== 신청관리 (캘린더 + 선택일자 클래스별 신청목록) ===== */
+let amMonth=new Date();amMonth.setDate(1);let amSelected=null;
+function populateFilters(){document.getElementById('amBranch').innerHTML='<option value="">전체 지점</option>'+branchNames().map(n=>`<option>${esc(n)}</option>`).join('');}
+function amCountByDate(){const fb=document.getElementById('amBranch').value,fs=document.getElementById('amStatus').value;const map={};load().forEach(a=>{if(!a.date)return;if(fb&&a.branch!==fb)return;if(fs?a.status!==fs:a.status==='cancel')return;map[a.date]=(map[a.date]||0)+(parseInt(a.people)||1);});return map;}
+function amApps(dateStr){const fb=document.getElementById('amBranch').value,fs=document.getElementById('amStatus').value;return load().filter(a=>a.date===dateStr&&(!fb||a.branch===fb)&&(!fs||a.status===fs));}
+function renderList(){  // 신청관리 탭
+  const by=amCountByDate();const max=Math.max(1,...Object.values(by));
+  const cal=document.getElementById('amCal');
+  cal.innerHTML=buildCalendar(amMonth,(ds,day)=>{const n=by[ds]||0;return `<span class="d">${day}</span>`+(n?`<div class="slots">${n}명</div><span class="heat" style="opacity:${(0.15+0.6*n/max).toFixed(2)}"></span>`:'');});
+  cal.querySelectorAll('[data-nav]').forEach(b=>b.addEventListener('click',()=>{amMonth.setMonth(amMonth.getMonth()+ +b.dataset.nav);renderList();}));
+  cal.querySelectorAll('.cal-cell[data-date]').forEach(c=>{if(c.dataset.date===amSelected)c.classList.add('current');c.addEventListener('click',()=>{amSelected=c.dataset.date;renderList();});});
+  renderAmView();
+}
+function amItemHtml(a){const st=STATUS[a.status]||STATUS.new;return `<div class="am-item" data-id="${a.id}"><span class="am-name">${esc(a.name)||'-'}${a.size?` · ${esc(a.size)}`:''}</span><span class="am-meta mono">${esc(a.people)||'1'}명 · ${esc(a.phone)||''}</span><span class="badge ${st.cls}">${st.label}</span></div>`;}
+function renderAmView(){
+  const v=document.getElementById('amView');
+  if(!amSelected){v.innerHTML='<h3>날짜를 선택하세요</h3><p class="when">좌측 캘린더에서 날짜를 클릭하면 그 날짜에 설정된 클래스·시간대와 신청 현황이 표시됩니다.</p>';return;}
+  const fbVal=document.getElementById('amBranch').value;
+  const fs=document.getElementById('amStatus').value;
+  const branches=fbVal?[fbVal]:branchNames();
+  const d=new Date(amSelected+'T00:00:00');
+  let html=`<h3>${amSelected} (${DOW[d.getDay()]})</h3>`;
+  branches.forEach(br=>{
+    if(branches.length>1)html+=`<div class="am-branch">📍 ${esc(br)}</div>`;
+    const slots=sortSlots(br,effectiveSlots(br,amSelected));
+    const matched=new Set();
+    if(!slots.length){html+='<p class="when" style="margin:4px 0 14px">설정된 시간대 없음 (휴무)</p>';}
+    else{
+      const byCls={};slots.forEach(s=>{const k=s.cls||'전체';(byCls[k]=byCls[k]||[]).push(s);});
+      html+=Object.entries(byCls).map(([cls,arr])=>{
+        const rows=arr.map(s=>{
+          let apps=load().filter(a=>a.date===amSelected&&a.branch===br&&a.time===s.time&&a.status!=='cancel'&&(!s.cls||a.class===s.cls)&&(!fs||a.status===fs));
+          apps.forEach(a=>matched.add(a.id));
+          const ppl=apps.reduce((t,a)=>t+(parseInt(a.people)||1),0);
+          const body=apps.length?apps.map(amItemHtml).join(''):'<div class="am-empty">신청 0명</div>';
+          return `<div class="am-slot"><div class="am-sh"><span class="am-time mono">${esc(s.time)}</span><span class="am-cap mono">${ppl}/${s.cap}명</span></div>${body}</div>`;
+        }).join('');
+        return `<div class="am-group"><div class="am-gh"><span>${esc(cls)}</span></div>${rows}</div>`;
+      }).join('');
+    }
+    // 편성 외(시간대 미일치) 신청
+    const extra=load().filter(a=>a.date===amSelected&&a.branch===br&&a.status!=='cancel'&&(!fs||a.status===fs)&&!matched.has(a.id));
+    if(extra.length)html+=`<div class="am-group"><div class="am-gh"><span>기타 (편성 외 시간)</span><span class="am-cnt">${extra.length}건</span></div>`+extra.map(a=>`<div class="am-slot"><div class="am-sh"><span class="am-time mono">${esc(a.time)||'-'}</span><span class="am-cap mono">${esc(a.class)||''}</span></div>${amItemHtml(a)}</div>`).join('')+`</div>`;
+  });
+  v.innerHTML=html;
+  v.querySelectorAll('.am-item').forEach(it=>it.addEventListener('click',()=>openDetail(+it.dataset.id)));
+}
+['amBranch','amStatus'].forEach(id=>document.getElementById(id).addEventListener('change',renderList));
+document.getElementById('exportBtn').addEventListener('click',()=>{const list=load();if(!list.length){alert('내보낼 신청이 없습니다.');return;}
+  const head=['신청일시','지점','이름','연락처','이메일','국적','클래스','용량','희망일','희망시간','인원','메모','상태'];
+  const lines=[head.join(',')].concat(list.map(x=>[fmt(x.createdAt),x.branch||'',x.name,x.phone,x.email,x.nationality||'',x.class,x.size||'',x.date,x.time||'',x.people,(x.msg||'').replace(/\n/g,' '),(STATUS[x.status]||{}).label||x.status].map(v=>`"${String(v??'').replace(/"/g,'""')}"`).join(',')));
+  const blob=new Blob(['﻿'+lines.join('\n')],{type:'text/csv;charset=utf-8'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='liminal_applications_'+new Date().toISOString().slice(0,10)+'.csv';a.click();});
+document.getElementById('seedBtn').addEventListener('click',()=>{const l=load();const t=ymd(new Date());l.push({id:Date.now(),createdAt:new Date().toISOString(),branch:SAIGON,name:'김민서',phone:'010-1234-5678',email:'minseo@example.com',class:'Signature Scent Workshop',size:'30ml',date:t,time:'14:00',people:'2',msg:'주말 오후 가능 시간 문의드려요.',status:'new'});save(l);renderList();renderOverview();});
+
+/* ===== BOOKING (지점별) ===== */
+let bkMonth=new Date();bkMonth.setDate(1);
+let bkBranch='';let bkSelected=null;let clipboard=null;
+let bkSel=new Set();let dragging=false,dragStart=null,dragMoved=false,baseSel=null;let copyMode=false;
+function dateRange(a,b){const lo=a<b?a:b,hi=a<b?b:a;const out=[];let d=new Date(lo+'T00:00:00');const end=new Date(hi+'T00:00:00');while(d<=end){out.push(ymd(d));d.setDate(d.getDate()+1);}return out;}
+function updateCalSelection(){document.querySelectorAll('#bkCal .cal-cell[data-date]').forEach(c=>{c.classList.toggle('selected',bkSel.has(c.dataset.date));c.classList.toggle('current',c.dataset.date===bkSelected);});}
+document.addEventListener('mouseup',()=>{if(!dragging)return;dragging=false;if(!dragMoved){if(bkSel.has(dragStart))bkSel.delete(dragStart);else bkSel.add(dragStart);bkSelected=dragStart;}updateCalSelection();renderEditor();});
+function renderBooking(){
+  const names=branchNames();if(!bkBranch||!names.includes(bkBranch))bkBranch=names[0]||'';
+  const sel=document.getElementById('bkBranchSel');sel.innerHTML=names.map(n=>`<option ${n===bkBranch?'selected':''}>${esc(n)}</option>`).join('');
+  sel.onchange=()=>{bkBranch=sel.value;bkSel=new Set();bkSelected=null;copyMode=false;renderBooking();};
+  const by=applicantsByDate(bkBranch);const sc=(loadSettings().schedule||{})[bkBranch]||{};
+  const cal=document.getElementById('bkCal');
+  cal.innerHTML=buildCalendar(bkMonth,(ds,day)=>{const ov=sc[ds];const n=by[ds]||0;return `<span class="d">${day}</span>`+(ov?`<span class="cfg">●설정</span>`:'')+(n?`<div class="slots">${n}명 신청</div>`:'')+(ov?`<div class="slots">${ov.length?ov.length+'개 시간대':'휴무'}</div>`:'');});
+  cal.querySelectorAll('[data-nav]').forEach(b=>b.addEventListener('click',()=>{bkMonth.setMonth(bkMonth.getMonth()+ +b.dataset.nav);renderBooking();}));
+  cal.querySelectorAll('.cal-cell[data-date]').forEach(c=>{const ds=c.dataset.date;
+    c.addEventListener('mousedown',e=>{if(!copyMode)return;e.preventDefault();dragging=true;dragStart=ds;dragMoved=false;baseSel=new Set(bkSel);});  // 복사모드에서만 드래그
+    c.addEventListener('mouseenter',()=>{if(!dragging)return;if(ds!==dragStart)dragMoved=true;bkSel=new Set([...baseSel,...dateRange(dragStart,ds)]);bkSelected=ds;updateCalSelection();});
+    c.addEventListener('click',()=>{if(copyMode)return;bkSelected=ds;bkSel=new Set();updateCalSelection();renderEditor();});});  // 기본: 단일 선택
+  updateCalSelection();renderEditor();
+}
+function clsOptsFor(branch,sel){let names=classNamesOf(branch);if(sel&&!names.includes(sel))names=names.concat([sel]);return '<option value="">전체</option>'+names.map(n=>`<option ${n===sel?'selected':''}>${esc(n)}</option>`).join('');}
+function renderEditor(){
+  const ed=document.getElementById('bkEditor');
+  if(!bkSelected){ed.innerHTML='<h3>날짜를 선택하세요</h3><p class="when">좌측 캘린더에서 날짜를 클릭/드래그하면 그 지점·날짜의 클래스·시간·정원을 설정할 수 있습니다.</p>';return;}
+  const sc=(loadSettings().schedule||{})[bkBranch]||{};const isOverride=!!sc[bkSelected];
+  const slots=sortSlots(bkBranch,isOverride?sc[bkSelected]:effectiveSlots(bkBranch,bkSelected));
+  const d=new Date(bkSelected+'T00:00:00');
+  ed.innerHTML=`<h3>${esc(bkBranch)} · ${bkSelected} (${DOW[d.getDay()]})</h3>
+    <p class="when">${isOverride?'이 날짜에 개별 설정이 적용되어 있습니다.':'미설정 (휴무) — "기본값 적용" 또는 시간대 추가 후 "이 날짜 저장"을 하면 클래스가 열립니다.'}</p>
+    <div class="slot-head bk"><div>클래스</div><div>시간</div><div>정원</div><div>신청</div><div></div></div>
+    <div id="edSlots">${slots.map((sl,i)=>{const cnt=bookedAt(bkBranch,bkSelected,sl.time);return `<div class="slot-row bk" data-i="${i}">
+      <select class="e-cls">${clsOptsFor(bkBranch,sl.cls)}</select><input type="time" class="e-time" value="${sl.time||''}" /><input type="number" min="0" class="e-cap" value="${sl.cap??0}" /><div class="cnt-cell ${cnt>0?'has':''}">${cnt}명</div><button class="icon-btn e-del" ${cnt>0?'disabled title="신청 인원이 있어 삭제 불가"':''}>삭제</button></div>`;}).join('')||'<div class="hint">시간대 없음 (휴무)</div>'}</div>
+    <div class="save-row"><button class="btn ghost sm" id="edAdd">+ 시간대 추가</button><button class="btn ghost sm" id="edDefault">기본값 적용</button><button class="btn sm" id="edSave">이 날짜 저장</button><button class="btn danger sm" id="edClosed">휴무일 지정</button>${isOverride?'<button class="btn ghost sm" id="edReset">개별설정 해제</button>':''}<span class="saved" id="edSaved">저장됨 ✓</span></div>
+    <div class="copybar"><button class="btn ${copyMode?'':'ghost'} sm" id="edCopy">${copyMode?'복사 취소':'이 날짜 복사'}</button><button class="btn ghost sm" id="edPaste" ${(copyMode&&clipboard)?'':'disabled'}>여기에 붙여넣기</button><span class="clip">${copyMode?`복사됨 ${clipboard?clipboard.length:0}개 · 선택 ${bkSel.size}일`:'기본은 1일 선택'}</span></div>
+    <div class="hint">${copyMode?'캘린더에서 드래그·클릭으로 적용할 날짜를 선택한 뒤 "여기에 붙여넣기"를 누르세요.':'"이 날짜 복사"를 누르면 이 날짜의 시간대 설정을 다른 날짜로 복사할 수 있습니다.'}</div>`;
+  ed.querySelectorAll('.e-del').forEach(b=>b.addEventListener('click',e=>e.target.closest('.slot-row').remove()));
+  document.getElementById('edAdd').addEventListener('click',()=>{const wrap=document.getElementById('edSlots');const h=wrap.querySelector('.hint');if(h)h.remove();const t=document.createElement('div');t.innerHTML=`<div class="slot-row bk"><select class="e-cls">${clsOptsFor(bkBranch,'')}</select><input type="time" class="e-time" value="12:00" /><input type="number" min="0" class="e-cap" value="6" /><div class="cnt-cell">0명</div><button class="icon-btn e-del">삭제</button></div>`;const row=t.firstChild;row.querySelector('.e-del').addEventListener('click',ev=>ev.target.closest('.slot-row').remove());wrap.appendChild(row);});
+  document.getElementById('edSave').addEventListener('click',()=>{saveEditor();toast('edSaved');});
+  document.getElementById('edDefault').addEventListener('click',()=>fillEditor(defaultSlots(bkBranch)));
+  document.getElementById('edClosed').addEventListener('click',()=>{
+    const apps=load().filter(a=>a.date===bkSelected&&a.branch===bkBranch&&a.status!=='cancel');
+    if(apps.length){alert('신청자가 있어 휴무일로 지정할 수 없습니다.\n현재 신청 '+apps.length+'건이 있습니다. 먼저 처리해 주세요.');return;}
+    if(!confirm('이 날은 신청을 받을 수 없습니다.\n'+bkSelected+' 을(를) 휴무일로 지정할까요?'))return;
+    const st=loadSettings();if(!st.schedule)st.schedule={};if(!st.schedule[bkBranch])st.schedule[bkBranch]={};
+    st.schedule[bkBranch][bkSelected]=[];saveSettings(st);renderBooking();
+  });
+  document.getElementById('edCopy').addEventListener('click',()=>{
+    if(copyMode){copyMode=false;bkSel=new Set();renderBooking();}                      // 복사 취소 → 단일 선택
+    else{clipboard=readEditor();copyMode=true;bkSel=new Set(bkSelected?[bkSelected]:[]);renderBooking();}  // 복사 시작 → 다중 선택
+  });
+  document.getElementById('edPaste').addEventListener('click',()=>{if(!clipboard||!copyMode)return;const targets=bkSel.size?[...bkSel]:(bkSelected?[bkSelected]:[]);if(!targets.length)return;if(!confirm(targets.length+'개 날짜에 적용할까요?'))return;const st=loadSettings();if(!st.schedule)st.schedule={};if(!st.schedule[bkBranch])st.schedule[bkBranch]={};targets.forEach(dt=>{st.schedule[bkBranch][dt]=sortSlots(bkBranch,clipboard.map(s=>Object.assign({},s)));});saveSettings(st);copyMode=false;bkSel=new Set();renderBooking();});
+  const rst=document.getElementById('edReset');if(rst)rst.addEventListener('click',()=>{const st=loadSettings();if(st.schedule&&st.schedule[bkBranch])delete st.schedule[bkBranch][bkSelected];saveSettings(st);renderBooking();});
+}
+function readEditor(){return [...document.querySelectorAll('#edSlots .slot-row')].map(r=>({cls:r.querySelector('.e-cls').value,time:r.querySelector('.e-time').value,cap:+r.querySelector('.e-cap').value||0})).filter(s=>s.time);}
+function saveEditor(){const st=loadSettings();if(!st.schedule)st.schedule={};if(!st.schedule[bkBranch])st.schedule[bkBranch]={};st.schedule[bkBranch][bkSelected]=sortSlots(bkBranch,readEditor());saveSettings(st);renderBooking();}
+function fillEditor(slots){document.getElementById('edSlots').innerHTML=slots.map(sl=>{const cnt=bookedAt(bkBranch,bkSelected,sl.time);return `<div class="slot-row bk"><select class="e-cls">${clsOptsFor(bkBranch,sl.cls)}</select><input type="time" class="e-time" value="${sl.time||''}" /><input type="number" min="0" class="e-cap" value="${sl.cap??0}" /><div class="cnt-cell ${cnt>0?'has':''}">${cnt}명</div><button class="icon-btn e-del" ${cnt>0?'disabled':''}>삭제</button></div>`;}).join('');document.querySelectorAll('#edSlots .e-del').forEach(b=>b.addEventListener('click',e=>e.target.closest('.slot-row').remove()));}
+
+/* ===== SETTINGS ===== */
+document.querySelectorAll('.subtab').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('.subtab').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('.subpanel').forEach(p=>p.classList.toggle('active',p.id==='sub-'+b.dataset.sub));}));
+let bcBranch='';let defBranch='';
+function renderAdmLang(){
+  document.getElementById('admLangTabs').innerHTML='<span class="head-row" style="align-self:center;margin-right:4px">입력 언어</span>'+LANGS.map(([k,l])=>`<button class="pill-tab ${k===admLang?'active':''}" data-l="${k}">${l}</button>`).join('');
+  document.querySelectorAll('#admLangTabs .pill-tab').forEach(b=>b.addEventListener('click',()=>{admLang=b.dataset.l;renderSettings();}));
+}
+function renderSettings(){renderAdmLang();renderBranches();renderBranchClasses();renderClassDetails();renderDefaults();}
+
+/* 지점설정 (지점별 소셜 포함) */
+function renderBranches(){const s=loadSettings();
+  document.getElementById('brList').innerHTML=s.branches.map((b,i)=>`<div class="gen-row br-row" data-i="${i}" data-old="${esc(b.name)}"><input class="b-name" value="${esc(b.name)}" placeholder="지점명" /><input class="b-contact" value="${esc(b.contact)}" placeholder="연락처" /><input class="b-link" value="${esc(b.link)}" placeholder="링크주소" /><input class="b-loc" value="${esc(Lval(b.location,admLang))}" placeholder="위치 (${admLang})" /><input class="b-insta" value="${esc(b.instagram||'')}" placeholder="Instagram URL" /><input class="b-fb" value="${esc(b.facebook||'')}" placeholder="Facebook URL" /><button class="icon-btn b-del">삭제</button></div>`).join('');
+  document.querySelectorAll('#brList .b-del').forEach(b=>b.addEventListener('click',e=>{const i=+e.target.closest('.gen-row').dataset.i;const st=loadSettings();st.branches.splice(i,1);saveSettings(st);renderSettings();populateFilters();}));
+}
+document.getElementById('brAdd').addEventListener('click',()=>{const s=loadSettings();s.branches.push({id:Date.now(),name:'',contact:'',link:'',location:'',instagram:'',facebook:''});saveSettings(s);renderSettings();});
+document.getElementById('brSave').addEventListener('click',()=>{
+  const s=loadSettings();
+  const rows=[...document.querySelectorAll('#brList .br-row')];
+  const rename={};
+  rows.forEach(r=>{const o=r.dataset.old||'';const n=r.querySelector('.b-name').value.trim();if(o&&n&&o!==n)rename[o]=n;});
+  const prevBr=s.branches||[];
+  s.branches=rows.map(r=>{const old=r.dataset.old||'';const prev=prevBr.find(b=>b.name===old)||{};const loc=Object.assign({},txObj(prev.location));loc[admLang]=r.querySelector('.b-loc').value.trim();return {id:Date.now()+Math.random(),name:r.querySelector('.b-name').value.trim(),contact:r.querySelector('.b-contact').value.trim(),link:r.querySelector('.b-link').value.trim(),location:loc,instagram:r.querySelector('.b-insta').value.trim(),facebook:r.querySelector('.b-fb').value.trim()};}).filter(b=>b.name);
+  if(Object.keys(rename).length){
+    (s.branchClasses||[]).forEach(c=>{if(rename[c.branch])c.branch=rename[c.branch];});
+    (s.classDetails||[]).forEach(d=>{if(rename[d.branch])d.branch=rename[d.branch];});
+    ['defaultSchedule','schedule'].forEach(key=>{const obj=s[key]||{};Object.keys(rename).forEach(o=>{if(obj[o]!==undefined){obj[rename[o]]=obj[o];delete obj[o];}});});
+    const l=load();l.forEach(a=>{if(rename[a.branch])a.branch=rename[a.branch];});save(l);
+  }
+  saveSettings(s);toast('brSaved');renderSettings();populateFilters();
+});
+
+/* 클래스 설정 (지점별) */
+function renderBranchClasses(){
+  const s=loadSettings();const names=branchNames();if(!bcBranch||!names.includes(bcBranch))bcBranch=names[0]||'';
+  const sel=document.getElementById('bcBranchSel');sel.innerHTML=names.map(n=>`<option ${n===bcBranch?'selected':''}>${esc(n)}</option>`).join('');
+  sel.onchange=()=>{bcBranch=sel.value;renderBranchClasses();};
+  const rows=(s.branchClasses||[]).filter(c=>c.branch===bcBranch).sort((a,b)=>(a.order??99)-(b.order??99));
+  document.getElementById('bcList').innerHTML=rows.map((c,i)=>`<div class="gen-row bc-row" data-id="${c.id}"><input type="number" class="bc-order" value="${c.order??(i+1)}" /><input class="bc-name" value="${esc(Lval(c.name,admLang))}" placeholder="이름 (${admLang})" /><input class="bc-desc" value="${esc(Lval(c.desc,admLang))}" placeholder="클래스 설명 (${admLang})" /><label class="switch"><input type="checkbox" class="bc-active" ${c.active!==false?'checked':''} /><span class="track"></span><span class="st">${c.active!==false?'활성':'준비중'}</span></label><button class="icon-btn bc-del">삭제</button></div>`).join('');
+  document.querySelectorAll('#bcList .bc-active').forEach(ch=>ch.addEventListener('change',e=>e.target.parentNode.querySelector('.st').textContent=e.target.checked?'활성':'준비중'));
+  document.querySelectorAll('#bcList .bc-del').forEach(b=>b.addEventListener('click',e=>e.target.closest('.bc-row').remove()));
+}
+document.getElementById('bcAdd').addEventListener('click',()=>{const wrap=document.getElementById('bcList');const t=document.createElement('div');const n=wrap.querySelectorAll('.bc-row').length+1;t.innerHTML=`<div class="gen-row bc-row"><input type="number" class="bc-order" value="${n}" /><input class="bc-name" placeholder="이름 (${admLang})" /><input class="bc-desc" placeholder="클래스 설명 (${admLang})" /><label class="switch"><input type="checkbox" class="bc-active" checked /><span class="track"></span><span class="st">활성</span></label><button class="icon-btn bc-del">삭제</button></div>`;const row=t.firstChild;row.querySelector('.bc-active').addEventListener('change',e=>e.target.parentNode.querySelector('.st').textContent=e.target.checked?'활성':'준비중');row.querySelector('.bc-del').addEventListener('click',e=>e.target.closest('.bc-row').remove());wrap.appendChild(row);});
+document.getElementById('bcSave').addEventListener('click',()=>{
+  const s=loadSettings();const prevAll=s.branchClasses||[];const others=prevAll.filter(c=>c.branch!==bcBranch);
+  const cur=[...document.querySelectorAll('#bcList .bc-row')].map(r=>{
+    const id=r.dataset.id||(Date.now()+Math.random());
+    const prev=prevAll.find(c=>String(c.id)===String(r.dataset.id))||{};
+    const name=Object.assign({},txObj(prev.name));name[admLang]=r.querySelector('.bc-name').value.trim();
+    const desc=Object.assign({},txObj(prev.desc));desc[admLang]=r.querySelector('.bc-desc').value.trim();
+    return {id,branch:bcBranch,order:+r.querySelector('.bc-order').value||0,name,desc,active:r.querySelector('.bc-active').checked};
+  }).filter(c=>keyOf(c.name)).sort((a,b)=>a.order-b.order);
+  s.branchClasses=others.concat(cur);saveSettings(s);toast('bcSaved');populateFilters();renderBranchClasses();
+});
+
+/* 상세 설정 */
+function cdNameOpts(branch,sel){return '<option value="">선택</option>'+classNamesOf(branch).map(n=>`<option ${n===sel?'selected':''}>${esc(n)}</option>`).join('');}
+function renderClassDetails(){
+  const s=loadSettings();const bnames=branchNames();
+  document.getElementById('cdList').innerHTML=(s.classDetails||[]).map((d,i)=>`<div class="gen-row cd-row" data-i="${i}" data-id="${d.id}">
+    <select class="cd-branch">${bnames.map(n=>`<option ${n===d.branch?'selected':''}>${esc(n)}</option>`).join('')}</select>
+    <select class="cd-name">${cdNameOpts(d.branch,d.name)}</select>
+    <div class="vol"><input type="number" min="0" class="cd-vol" value="${d.volume??''}" /><span>ml</span></div>
+    <input class="cd-krw" value="${esc(d.priceKRW||'')}" placeholder="₩" />
+    <input class="cd-vnd" value="${esc(d.priceVND||'')}" placeholder="₫" />
+    <input class="cd-usd" value="${esc(d.priceUSD||'')}" placeholder="$" />
+    <input class="cd-detail" value="${esc(Lval(d.detail,admLang))}" placeholder="상세설명 (${admLang})" />
+    <button class="icon-btn cd-del">삭제</button></div>`).join('');
+  document.querySelectorAll('#cdList .cd-row').forEach(row=>{
+    const br=row.querySelector('.cd-branch'),nm=row.querySelector('.cd-name');
+    br.addEventListener('change',()=>{nm.innerHTML=cdNameOpts(br.value,'');});
+    row.querySelector('.cd-del').addEventListener('click',()=>row.remove());
+  });
+}
+document.getElementById('cdAdd').addEventListener('click',()=>{const s=loadSettings();s.classDetails=s.classDetails||[];const b=branchNames()[0]||'';s.classDetails.push({id:Date.now(),branch:b,name:classNamesOf(b)[0]||'',volume:'',priceKRW:'',priceVND:'',priceUSD:'',detail:''});saveSettings(s);renderClassDetails();});
+document.getElementById('cdSave').addEventListener('click',()=>{const s=loadSettings();const prevAll=s.classDetails||[];s.classDetails=[...document.querySelectorAll('#cdList .cd-row')].map(r=>{const v=r.querySelector('.cd-vol').value.trim();const id=r.dataset.id||(Date.now()+Math.random());const prev=prevAll.find(d=>String(d.id)===String(r.dataset.id))||{};const detail=Object.assign({},txObj(prev.detail));detail[admLang]=r.querySelector('.cd-detail').value.trim();return {id,branch:r.querySelector('.cd-branch').value,name:r.querySelector('.cd-name').value,volume:v===''?'':Number(v),priceKRW:r.querySelector('.cd-krw').value.trim(),priceVND:r.querySelector('.cd-vnd').value.trim(),priceUSD:r.querySelector('.cd-usd').value.trim(),detail};}).filter(d=>d.name);saveSettings(s);toast('cdSaved');renderClassDetails();});
+
+/* 신청관리 기본값 (지점별 탭) */
+function renderDefaults(){
+  const names=branchNames();if(!defBranch||!names.includes(defBranch))defBranch=names[0]||'';
+  document.getElementById('defBranchTabs').innerHTML=names.map(n=>`<button class="pill-tab ${n===defBranch?'active':''}" data-b="${esc(n)}">${esc(n)}</button>`).join('');
+  document.querySelectorAll('#defBranchTabs .pill-tab').forEach(b=>b.addEventListener('click',()=>{defBranch=b.dataset.b;renderDefaults();}));
+  const slots=sortSlots(defBranch,defaultSlots(defBranch));
+  document.getElementById('defWrap').innerHTML=slots.map(sl=>defRow(sl)).join('')||'<div class="hint" style="font-size:12px;color:var(--coord)">시간대 없음</div>';
+  bindDefRows();
+}
+function defRow(sl){return `<div class="slot-row" style="grid-template-columns:minmax(0,1fr) 130px 70px 58px"><select class="d-cls">${clsOptsFor(defBranch,sl.cls)}</select><input type="time" class="d-time" value="${sl.time||''}" /><input type="number" min="0" class="d-cap" value="${sl.cap??0}" /><button class="icon-btn d-del">삭제</button></div>`;}
+function bindDefRows(){document.querySelectorAll('#defWrap .d-del').forEach(b=>b.addEventListener('click',e=>e.target.closest('.slot-row').remove()));}
+document.getElementById('defAdd').addEventListener('click',()=>{const wrap=document.getElementById('defWrap');const h=wrap.querySelector('.hint');if(h)h.remove();const t=document.createElement('div');t.innerHTML=defRow({cls:'',time:'12:00',cap:6});const row=t.firstChild;row.querySelector('.d-del').addEventListener('click',e=>e.target.closest('.slot-row').remove());wrap.appendChild(row);});
+document.getElementById('defSave').addEventListener('click',()=>{const s=loadSettings();if(!s.defaultSchedule)s.defaultSchedule={};s.defaultSchedule[defBranch]=sortSlots(defBranch,[...document.querySelectorAll('#defWrap .slot-row')].map(r=>({cls:r.querySelector('.d-cls').value,time:r.querySelector('.d-time').value,cap:+r.querySelector('.d-cap').value||0})).filter(x=>x.time));saveSettings(s);toast('defSaved');renderDefaults();});
+
+/* ===== 신청 상세 모달 ===== */
+let detailId=null;
+function dval(id){return document.getElementById(id).value.trim();}
+function dVolumeOpts(branch,name,current){const vols=[...new Set(volumesOf(branch,name).map(d=>d.volume+'ml'))];if(current&&!vols.includes(current))vols.push(current);return '<option value="">선택</option>'+vols.map(v=>`<option ${v===current?'selected':''}>${esc(v)}</option>`).join('');}
+function dTimeOpts(branch,date,current){const times=date?[...new Set(effectiveSlots(branch,date).map(s=>s.time))]:[];if(current&&!times.includes(current))times.push(current);return '<option value="">선택</option>'+times.map(t=>`<option ${t===current?'selected':''}>${esc(t)}</option>`).join('');}
+function openDetail(id){
+  const a=load().find(x=>x.id===id);if(!a)return;detailId=id;
+  document.getElementById('dWhen').textContent='신청일시 '+fmt(a.createdAt);
+  document.getElementById('d_name').value=a.name||'';document.getElementById('d_phone').value=a.phone||'';document.getElementById('d_email').value=a.email||'';document.getElementById('d_nat').value=a.nationality||'';
+  document.getElementById('d_date').value=a.date||'';document.getElementById('d_people').value=a.people||'1';document.getElementById('d_msg').value=a.msg||'';
+  const brs=branchNames();if(a.branch&&!brs.includes(a.branch))brs.push(a.branch);
+  document.getElementById('d_branch').innerHTML=brs.map(n=>`<option ${n===a.branch?'selected':''}>${esc(n)}</option>`).join('');
+  const cls=classNamesOf(a.branch);if(a.class&&!cls.includes(a.class))cls.push(a.class);
+  document.getElementById('d_class').innerHTML='<option value="">선택</option>'+cls.map(n=>`<option ${n===a.class?'selected':''}>${esc(n)}</option>`).join('');
+  document.getElementById('d_size').innerHTML=dVolumeOpts(a.branch,a.class,a.size);
+  document.getElementById('d_time').innerHTML=dTimeOpts(a.branch,a.date,a.time);
+  document.getElementById('d_status').innerHTML=Object.entries(STATUS).map(([v,o])=>`<option value="${v}" ${v===a.status?'selected':''}>${o.label}</option>`).join('');
+  document.getElementById('detail').classList.add('open');
+}
+function closeDetail(){document.getElementById('detail').classList.remove('open');detailId=null;}
+document.getElementById('dClose').addEventListener('click',closeDetail);
+document.getElementById('dCancel').addEventListener('click',closeDetail);
+document.getElementById('detail').addEventListener('click',e=>{if(e.target.id==='detail')closeDetail();});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.getElementById('detail').classList.contains('open'))closeDetail();});
+document.getElementById('d_branch').addEventListener('change',()=>{const b=dval('d_branch');const cls=classNamesOf(b);document.getElementById('d_class').innerHTML='<option value="">선택</option>'+cls.map(n=>`<option>${esc(n)}</option>`).join('');document.getElementById('d_size').innerHTML=dVolumeOpts(b,dval('d_class'),'');document.getElementById('d_time').innerHTML=dTimeOpts(b,dval('d_date'),'');});
+document.getElementById('d_class').addEventListener('change',()=>{document.getElementById('d_size').innerHTML=dVolumeOpts(dval('d_branch'),dval('d_class'),'');});
+document.getElementById('d_date').addEventListener('change',()=>{document.getElementById('d_time').innerHTML=dTimeOpts(dval('d_branch'),dval('d_date'),document.getElementById('d_time').value);});
+document.getElementById('dSave').addEventListener('click',()=>{const l=load();const a=l.find(x=>x.id===detailId);if(!a)return;a.name=dval('d_name');a.phone=dval('d_phone');a.email=dval('d_email');a.nationality=dval('d_nat');a.branch=dval('d_branch');a.class=dval('d_class');a.size=dval('d_size');a.date=dval('d_date');a.time=dval('d_time');a.people=dval('d_people')||'1';a.msg=dval('d_msg');a.status=dval('d_status');save(l);closeDetail();renderList();renderOverview();});
+document.getElementById('dDelete').addEventListener('click',()=>{if(!detailId)return;if(confirm('이 신청을 삭제할까요?')){save(load().filter(x=>x.id!==detailId));closeDetail();renderList();renderOverview();}});
+
+/* 데이터 로드(Supabase 또는 localStorage) 후 진입 (로그인 임시 숨김) */
+(window.LS ? LS.init() : Promise.resolve()).then(showApp);
+</script>
+</body>
+</html>
