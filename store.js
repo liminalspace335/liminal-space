@@ -24,12 +24,14 @@
   /* ---------- 조립: 테이블 rows → settings 객체 / apps 배열 ---------- */
   function assemble(t){
     var branchById={}, classById={}; // id→{branch,nameKo}
-    var settings={ branches:[], branchClasses:[], classDetails:[], defaultSchedule:{}, schedule:{} };
+    var settings={ branches:[], branchClasses:[], classDetails:[], defaultSchedule:{}, schedule:{}, site:{} };
     (t.branches||[]).sort(function(a,b){return (a.sort||0)-(b.sort||0);}).forEach(function(b){
       branchById[b.id]=b.name;
       settings.branches.push({ id:b.id, name:b.name, contact:b.contact||'', link:b.link||'',
-        location:tri(b.location_ko,b.location_en,b.location_vi), instagram:b.instagram||'', facebook:b.facebook||'' });
+        location:tri(b.location_ko,b.location_en,b.location_vi), hours:tri(b.hours_ko,b.hours_en,b.hours_vi),
+        instagram:b.instagram||'', facebook:b.facebook||'' });
     });
+    var si=(t.site_info||[])[0]; if(si) settings.site={ brandName:si.brand_name||'', estYear:si.est_year||'', copyrightYear:si.copyright_year||'' };
     (t.classes||[]).sort(function(a,b){return (a.sort||0)-(b.sort||0);}).forEach(function(c){
       var bn=branchById[c.branch_id]||''; classById[c.id]={branch:bn, nameKo:c.name_ko||''};
       settings.branchClasses.push({ id:c.id, branch:bn, order:c.sort||0,
@@ -71,7 +73,9 @@
     var branchRows=(s.branches||[]).map(function(b,i){ var id=branchIdByName[b.name]||rid('br'); brNameToId[b.name]=id;
       return { id:id, name:b.name, contact:b.contact||'', link:b.link||'',
         location_ko:ko(b.location), location_en:en(b.location), location_vi:vi(b.location),
+        hours_ko:ko(b.hours), hours_en:en(b.hours), hours_vi:vi(b.hours),
         instagram:b.instagram||'', facebook:b.facebook||'', sort:i }; });
+    var siteRow={ id:'main', brand_name:(s.site&&s.site.brandName)||'', est_year:(s.site&&s.site.estYear)||'', copyright_year:(s.site&&s.site.copyrightYear)||'' };
     var classRows=(s.branchClasses||[]).map(function(c,i){ var k=classKey(c.branch,ko(c.name)); var id=classIdByKey[k]||rid('cl'); clKeyToId[k]=id;
       return { id:id, branch_id:brNameToId[c.branch]||null, sort:(c.order!=null?c.order:i),
         name_ko:ko(c.name), name_en:en(c.name), name_vi:vi(c.name),
@@ -94,7 +98,7 @@
     var newBr={}; branchRows.forEach(function(r){newBr[r.id]=1;});
     var newCl={}; classRows.forEach(function(r){newCl[r.id]=1;});
     var newDt={}; detailRows.forEach(function(r){newDt[r.id]=1;});
-    return { branchRows:branchRows, classRows:classRows, detailRows:detailRows, defRows:defRows, schRows:schRows, dayRows:dayRows,
+    return { branchRows:branchRows, siteRow:siteRow, classRows:classRows, detailRows:detailRows, defRows:defRows, schRows:schRows, dayRows:dayRows,
       delBranchIds:ob.map(function(b){return b.id;}).filter(function(id){return id&&!newBr[id];}),
       delClassIds:oc.map(function(c){return c.id;}).filter(function(id){return id&&!newCl[id];}),
       delDetailIds:od.map(function(d){return d.id;}).filter(function(id){return id&&!newDt[id];}),
@@ -117,6 +121,7 @@
   /* ---------- 원격 실행 ---------- */
   var NONE='___none___';
   async function pushPlan(p){
+    if(p.siteRow) await client.from('site_info').upsert([p.siteRow]);
     if(p.branchRows.length) await client.from('branches').upsert(p.branchRows);
     if(p.classRows.length)  await client.from('classes').upsert(p.classRows);
     if(p.detailRows.length) await client.from('class_details').upsert(p.detailRows);
@@ -142,7 +147,7 @@
   async function init(){
     if(useRemote){
       try{
-        var tables=['branches','classes','class_details','default_slots','schedule_slots','schedule_days','applications'];
+        var tables=['branches','classes','class_details','default_slots','schedule_slots','schedule_days','applications','site_info'];
         var res={}; for(var i=0;i<tables.length;i++){ var r=await client.from(tables[i]).select('*'); res[tables[i]]=(r.error?[]:r.data)||[]; }
         var a=assemble(res); cache.settings=a.settings; cache.apps=a.apps;
       }catch(e){ console.warn('Supabase init failed → localStorage', e); useRemote=false; }

@@ -14,8 +14,21 @@ create table if not exists public.branches (
   contact text default '',
   link text default '',
   location_ko text default '', location_en text default '', location_vi text default '',
+  hours_ko text default '', hours_en text default '', hours_vi text default '',
   instagram text default '', facebook text default '',
   sort int default 0
+);
+-- (이미 branches가 있는 경우 대비) 운영시간 컬럼 보강
+alter table public.branches add column if not exists hours_ko text default '';
+alter table public.branches add column if not exists hours_en text default '';
+alter table public.branches add column if not exists hours_vi text default '';
+
+-- 사이트 정보 (브랜드명 · EST 연도 · 저작권 연도) 단일 행
+create table if not exists public.site_info (
+  id text primary key,
+  brand_name text default 'LIMINAL SPACE',
+  est_year text default '',
+  copyright_year text default ''
 );
 
 -- 클래스 (지점별)
@@ -89,7 +102,7 @@ create index if not exists applications_branch_idx on public.applications(branch
 do $$
 declare t text;
 begin
-  foreach t in array array['branches','classes','class_details','default_slots','schedule_slots','schedule_days','applications']
+  foreach t in array array['branches','classes','class_details','default_slots','schedule_slots','schedule_days','applications','site_info']
   loop
     execute format('alter table public.%I enable row level security;', t);
     execute format('drop policy if exists %I_all on public.%I;', t, t);

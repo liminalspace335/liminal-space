@@ -312,7 +312,7 @@
     <div class="meta">
       <span data-i18n="hero.tag1">Completely new experience</span>
       <span data-i18n="hero.tag2">Eau de Parfum</span>
-      <span class="mono">EST. 2026</span>
+      <span class="mono" id="estYear">EST. 2026</span>
     </div>
     <div style="margin-top:34px;display:flex;gap:14px;flex-wrap:wrap">
       <a href="#apply" class="btn" data-open-apply data-i18n="hero.cta">클래스 신청하기</a>
@@ -445,10 +445,10 @@
 
 <footer>
   <div class="wrap foot">
-    <span>LIMINAL SPACE — PERFUME WORKSHOP</span>
+    <span id="footBrand">LIMINAL SPACE — PERFUME WORKSHOP</span>
     <span class="mono">10° 47' 27.49" N 106° 41' 36.89" E</span>
     <span class="social" id="socialLinks"></span>
-    <span>© 2026 LIMINAL SPACE</span>
+    <span id="footCopy">© 2026 LIMINAL SPACE</span>
   </div>
 </footer>
 
@@ -707,9 +707,10 @@ const _wd=tri('100여 종 향 · 나만의 시그니처 완성','Over 100 notes 
 const _di=tri('보틀 + 파우치 포함','Bottle + pouch included','Bao gồm chai + túi');
 const INDEX_DEFAULTS={
   branches:[
-    {name:SAIGON,contact:'',link:'',location:tri("10° 47' 27.49\" N 106° 41' 36.89\" E · 빈탄","10° 47' 27.49\" N 106° 41' 36.89\" E · Binh Thanh","10° 47' 27.49\" N 106° 41' 36.89\" E · Bình Thạnh"),instagram:'',facebook:''},
-    {name:HANOI,contact:'',link:'',location:tri('올드 쿼터 · 호안끼엠','Old Quarter · Hoan Kiem','Phố cổ · Hoàn Kiếm'),instagram:'',facebook:''}
+    {name:SAIGON,contact:'',link:'',location:tri("10° 47' 27.49\" N 106° 41' 36.89\" E · 빈탄","10° 47' 27.49\" N 106° 41' 36.89\" E · Binh Thanh","10° 47' 27.49\" N 106° 41' 36.89\" E · Bình Thạnh"),hours:tri('화–일 11:00–20:00 (월 휴무)','Tue–Sun 11:00–20:00 (Mon closed)','Thứ 3–CN 11:00–20:00 (nghỉ T2)'),instagram:'',facebook:''},
+    {name:HANOI,contact:'',link:'',location:tri('올드 쿼터 · 호안끼엠','Old Quarter · Hoan Kiem','Phố cổ · Hoàn Kiếm'),hours:tri('화–일 11:00–20:00 (월 휴무)','Tue–Sun 11:00–20:00 (Mon closed)','Thứ 3–CN 11:00–20:00 (nghỉ T2)'),instagram:'',facebook:''}
   ],
+  site:{brandName:'LIMINAL SPACE',estYear:'2026',copyrightYear:'2026'},
   branchClasses:[
     {branch:SAIGON,order:1,name:tri('Signature Scent Workshop','Signature Scent Workshop','Signature Scent Workshop'),desc:_wd,active:true},
     {branch:SAIGON,order:2,name:tri('Liminal Pick 구독','Liminal Pick Subscription','Liminal Pick Đăng ký'),desc:tri('매월 2회 10ml 배송 · 커스텀','Twice-monthly 10ml delivery · custom','Giao 10ml 2 lần/tháng · tùy chỉnh'),active:true},
@@ -837,6 +838,15 @@ function renderClasses(){
   }).join('');
   wrap.querySelectorAll('[data-open-apply]').forEach(b=>b.addEventListener('click',e=>{e.preventDefault();if(b.dataset.branch)data.branch=b.dataset.branch;openModal(b.dataset.class||'');}));
 }
+/* 사이트 정보(브랜드명·연도)를 히어로 EST·푸터에 반영 */
+function renderSiteInfo(){
+  var si=(getSettings().site)||{};
+  var brand=si.brandName||'LIMINAL SPACE';
+  var est=si.estYear||'', copy=si.copyrightYear||'';
+  var e=document.getElementById('estYear'); if(e&&est) e.textContent='EST. '+est;
+  var fb=document.getElementById('footBrand'); if(fb) fb.textContent=brand+' — PERFUME WORKSHOP';
+  var fc=document.getElementById('footCopy'); if(fc) fc.textContent='© '+(copy||est||'')+' '+brand;
+}
 /* 위치 섹션을 지점설정과 연동 */
 function renderLocation(){
   const dl=document.getElementById('locInfo'); if(!dl)return;
@@ -845,7 +855,8 @@ function renderLocation(){
     const soc=[];
     if(b.instagram)soc.push(`<a href="${esc(b.instagram)}" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline">Instagram</a>`);
     if(b.facebook)soc.push(`<a href="${esc(b.facebook)}" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline">Facebook</a>`);
-    return `<dt>${esc(b.name)}</dt><dd>${esc(Lval(b.location,curLang()))}${b.contact?` · ${esc(b.contact)}`:''}${b.link?` · <a href="${esc(b.link)}" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline">${curLang()==='en'?'Visit':(curLang()==='vi'?'Xem':'바로가기')}</a>`:''}${soc.length?'<br>'+soc.join(' · '):''}</dd>`;
+    var hrs=Lval(b.hours,curLang());
+    return `<dt>${esc(b.name)}</dt><dd>${esc(Lval(b.location,curLang()))}${b.contact?` · ${esc(b.contact)}`:''}${b.link?` · <a href="${esc(b.link)}" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline">${curLang()==='en'?'Visit':(curLang()==='vi'?'Xem':'바로가기')}</a>`:''}${hrs?'<br>'+esc(hrs):''}${soc.length?'<br>'+soc.join(' · '):''}</dd>`;
   }).join('');
 }
 function bookedOn(dateStr,time){
@@ -1055,6 +1066,7 @@ document.querySelectorAll('[data-open-apply]').forEach(b=>b.addEventListener('cl
   renderClasses();
   renderLocation();
   renderFooterSocial();
+  renderSiteInfo();
 });
 /* close triggers */
 document.getElementById('modalClose').addEventListener('click',closeModal);
