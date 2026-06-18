@@ -140,6 +140,10 @@
   .pillar p{font-size:13px;color:var(--ink-soft);margin:0}
 
   /* ---------- CLASSES ---------- */
+  .branch-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:24px}
+  .branch-tab{background:transparent;border:1px solid var(--line);color:var(--ink-soft);padding:9px 18px;border-radius:999px;cursor:pointer;font:inherit;font-size:13px;letter-spacing:.04em}
+  .branch-tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .class-empty{color:var(--ink-soft);font-size:14px;padding:20px 0}
   .class-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:22px}
   .class-grid.cols-1{grid-template-columns:1fr}
   .class-grid.cols-2{grid-template-columns:repeat(2,1fr)}
@@ -354,6 +358,7 @@
       <h2 data-i18n="classes.title">클래스 & 프로그램</h2>
       <p class="coord mono">02 — PROGRAMS</p>
     </div>
+    <div class="branch-tabs" id="classTabs"></div>
     <div class="class-grid">
       <div class="card card-wide">
         <span class="tag" data-i18n="prog.w.tag">Signature Scent Workshop</span>
@@ -721,11 +726,8 @@ const INDEX_DEFAULTS={
   defaultSchedule:{},schedule:{}
 };
 function getSettings(){const s=(window.LS?LS.getSettings():{})||{};
-  const m=Object.assign({},INDEX_DEFAULTS,s);
-  if(!Array.isArray(m.branches)||!m.branches.length)m.branches=INDEX_DEFAULTS.branches;
-  if(!Array.isArray(m.branchClasses)||!m.branchClasses.length)m.branchClasses=INDEX_DEFAULTS.branchClasses;
-  if(!Array.isArray(m.classDetails)||!m.classDetails.length)m.classDetails=INDEX_DEFAULTS.classDetails;
-  return m;}
+  // 실제 데이터(Supabase)만 사용. 키가 아예 없을 때만 기본값으로 채움(로컬 폴백).
+  return Object.assign({},INDEX_DEFAULTS,s);}
 function getApps(){return window.LS?LS.getApps():[];}
 const DAYKEYS=['sun','mon','tue','wed','thu','fri','sat'];
 function esc(s){return (s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
@@ -796,18 +798,30 @@ function applyActiveStates(){
     if(!isClassActiveAnywhere(btn.dataset.class)){btn.dataset.disabled='1';btn.classList.add('soon-btn');btn.textContent='오픈 준비중';}
   });
 }
-/* 클래스/프로그램 섹션을 어드민 데이터로 동적 생성 (전 지점 통합) */
+/* 클래스/프로그램 섹션 — 지점별 탭 + 실제 데이터(미등록 시 빈 상태) */
+let classTabBranch='';
 function renderClasses(){
   const wrap=document.querySelector('#classes .class-grid'); if(!wrap)return;
-  const s=getSettings();
-  const branch=(s.branches&&s.branches[0]||{}).name||'';     // 랜딩은 대표(첫) 지점 기준
-  const progs=programList(branch); if(!progs.length)return;   // 설정 없으면 정적 폴백 유지
+  const tabs=document.getElementById('classTabs');
   const lang=curLang();
-  const L=lang==='en'?{price:'Price',inq:'Inquire',cta:'Apply',soon:'Opening soon'}:(lang==='vi'?{price:'Giá',inq:'Liên hệ',cta:'Đăng ký',soon:'Sắp mở'}:{price:'가격',inq:'문의',cta:'이 프로그램 신청',soon:'오픈 준비중'});
+  const L=lang==='en'?{price:'Price',inq:'Inquire',cta:'Apply',soon:'Opening soon',none:'No programs registered yet.'}
+    :(lang==='vi'?{price:'Giá',inq:'Liên hệ',cta:'Đăng ký',soon:'Sắp mở',none:'Chưa có chương trình nào.'}
+    :{price:'가격',inq:'문의',cta:'이 프로그램 신청',soon:'오픈 준비중',none:'등록된 프로그램이 없습니다.'});
+  const branches=(getSettings().branches||[]).filter(b=>b&&b.name);
+  if(!branches.length){ if(tabs)tabs.innerHTML=''; wrap.className='class-grid'; wrap.innerHTML=`<div class="class-empty">${L.none}</div>`; return; }
+  if(!classTabBranch || !branches.some(b=>b.name===classTabBranch)) classTabBranch=branches[0].name;
+  // 지점 탭
+  if(tabs){
+    tabs.innerHTML=branches.map(b=>`<button class="branch-tab ${b.name===classTabBranch?'active':''}" data-b="${esc(b.name)}">${esc(b.name)}</button>`).join('');
+    tabs.querySelectorAll('.branch-tab').forEach(t=>t.addEventListener('click',()=>{classTabBranch=t.dataset.b;renderClasses();}));
+  }
+  const branch=classTabBranch;
+  const progs=programList(branch);
+  if(!progs.length){ wrap.className='class-grid'; wrap.innerHTML=`<div class="class-empty">${L.none}</div>`; return; }
   const n=progs.length;
-  const cols = n===4?2 : (n<=2?Math.max(1,n):3);   // 3→3, 4→2+2, 5↑→3(첫줄3·둘째줄2)
+  const cols = n===4?2 : (n<=2?Math.max(1,n):3);
   wrap.className='class-grid cols-'+cols;
-  wrap.innerHTML=progs.map((c,idx)=>{
+  wrap.innerHTML=progs.map(c=>{
     const key=keyOf(c.name);const active=c.active!==false;
     const ds=volumesForName(branch,key);
     let priceLine;
@@ -818,10 +832,10 @@ function renderClasses(){
       <h3 style="margin-top:0">${esc(Lval(c.name,lang))}</h3>
       <p class="desc">${esc(Lval(c.desc,lang))}</p>
       <div class="row"><span>${active?L.price:''}</span><span class="price">${active?priceLine:''}</span></div>
-      <button class="btn card-cta ${active?'':'soon-btn'}" ${active?`data-open-apply data-class="${esc(key)}"`:''}>${cta}</button>
+      <button class="btn card-cta ${active?'':'soon-btn'}" ${active?`data-open-apply data-class="${esc(key)}" data-branch="${esc(branch)}"`:''}>${cta}</button>
     </div>`;
   }).join('');
-  wrap.querySelectorAll('[data-open-apply]').forEach(b=>b.addEventListener('click',e=>{e.preventDefault();openModal(b.dataset.class||'');}));
+  wrap.querySelectorAll('[data-open-apply]').forEach(b=>b.addEventListener('click',e=>{e.preventDefault();if(b.dataset.branch)data.branch=b.dataset.branch;openModal(b.dataset.class||'');}));
 }
 /* 위치 섹션을 지점설정과 연동 */
 function renderLocation(){
