@@ -1,81 +1,170 @@
-/* LIMINAL SPACE — 공용 데이터 계층
- * Supabase(설정 시) 또는 localStorage(미설정/로컬) 자동 선택.
- *  - 설정(settings): kv 테이블의 JSON 한 행
- *  - 신청(applications): 전용 테이블에 "행 단위"로 저장 (동시 신청 경합 방지)
- * 동기 접근(LS.getApps/getSettings)은 메모리 캐시를 읽고, 쓰기는 캐시 갱신 + 원격 반영.
+/* LIMINAL SPACE — 공용 데이터 계층 (정규화 테이블 / localStorage 자동 선택)
+ * 원격(Supabase): branches, classes, class_details, default_slots, schedule_slots, schedule_days, applications
+ *   - 화면 코드는 기존과 동일하게 settings 객체 / apps 배열을 다룹니다.
+ *   - store.js가 테이블 ↔ 객체를 조립/분해하고, 지점/클래스는 자연키로 안정 ID를 유지합니다.
+ *   - 신청(applications)은 branch_id / class_id (코드)로 저장됩니다.
+ * 로컬(localStorage): 설정/신청을 JSON으로 저장(기존 동작 유지).
  */
 (function(){
   var CFG = window.SUPA_CONFIG || {};
-  var KEY_APPS = 'liminal_applications';
-  var KEY_SET  = 'liminal_settings';
+  var KEY_APPS = 'liminal_applications', KEY_SET = 'liminal_settings';
   var useRemote = !!(CFG.url && CFG.anonKey && window.supabase && window.supabase.createClient);
   var client = useRemote ? window.supabase.createClient(CFG.url, CFG.anonKey) : null;
-  var cache = {}; cache[KEY_APPS] = []; cache[KEY_SET] = {};
+  var cache = { settings:{}, apps:[] };
 
-  function lsGet(k, f){ try{ return JSON.parse(localStorage.getItem(k) || f); }catch(e){ return JSON.parse(f); } }
-  function lsSet(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+  function lsGet(k,f){ try{ return JSON.parse(localStorage.getItem(k)||f); }catch(e){ return JSON.parse(f); } }
+  function lsSet(k,v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+  function rid(p){ return p+'_'+Date.now().toString(36)+Math.random().toString(36).slice(2,8); }
+  function ko(v){ return (v&&typeof v==='object')?(v.ko||v.en||v.vi||''):(v||''); }
+  function en(v){ return (v&&typeof v==='object')?(v.en||''):''; }
+  function vi(v){ return (v&&typeof v==='object')?(v.vi||''):''; }
+  function tri(k,e,v){ return {ko:k||'',en:e||'',vi:v||''}; }
+  function numOrNull(x){ if(x===''||x==null) return null; var n=Number(x); return isNaN(n)?null:n; }
 
-  // 신청 객체 <-> 테이블 행 매핑 (예약어 회피: class→class_name, date→want_date, time→want_time)
-  function toRow(a){ return {
-    id:a.id, created_at:a.createdAt||new Date().toISOString(),
-    branch:a.branch||'', name:a.name||'', phone:a.phone||'', email:a.email||'', nationality:a.nationality||'',
-    class_name:a['class']||'', size:a.size||'', want_date:a.date||'', want_time:a.time||'',
-    people:String(a.people||'1'), msg:a.msg||'', status:a.status||'new'
-  };}
-  function fromRow(r){ return {
-    id:Number(r.id), createdAt:r.created_at,
-    branch:r.branch||'', name:r.name||'', phone:r.phone||'', email:r.email||'', nationality:r.nationality||'',
-    'class':r.class_name||'', size:r.size||'', date:r.want_date||'', time:r.want_time||'',
-    people:r.people||'1', msg:r.msg||'', status:r.status||'new'
-  };}
+  /* ---------- 조립: 테이블 rows → settings 객체 / apps 배열 ---------- */
+  function assemble(t){
+    var branchById={}, classById={}; // id→{branch,nameKo}
+    var settings={ branches:[], branchClasses:[], classDetails:[], defaultSchedule:{}, schedule:{} };
+    (t.branches||[]).sort(function(a,b){return (a.sort||0)-(b.sort||0);}).forEach(function(b){
+      branchById[b.id]=b.name;
+      settings.branches.push({ id:b.id, name:b.name, contact:b.contact||'', link:b.link||'',
+        location:tri(b.location_ko,b.location_en,b.location_vi), instagram:b.instagram||'', facebook:b.facebook||'' });
+    });
+    (t.classes||[]).sort(function(a,b){return (a.sort||0)-(b.sort||0);}).forEach(function(c){
+      var bn=branchById[c.branch_id]||''; classById[c.id]={branch:bn, nameKo:c.name_ko||''};
+      settings.branchClasses.push({ id:c.id, branch:bn, order:c.sort||0,
+        name:tri(c.name_ko,c.name_en,c.name_vi), desc:tri(c.desc_ko,c.desc_en,c.desc_vi), active:c.active!==false });
+    });
+    (t.class_details||[]).forEach(function(d){
+      var cm=classById[d.class_id]||{};
+      settings.classDetails.push({ id:d.id, branch:branchById[d.branch_id]||cm.branch||'', name:cm.nameKo||'',
+        volume:(d.volume==null?'':d.volume), priceKRW:d.price_krw||'', priceVND:d.price_vnd||'', priceUSD:d.price_usd||'',
+        detail:tri(d.detail_ko,d.detail_en,d.detail_vi) });
+    });
+    (t.default_slots||[]).sort(function(a,b){return (a.sort||0)-(b.sort||0);}).forEach(function(s){
+      var bn=branchById[s.branch_id]||''; if(!bn)return; (settings.defaultSchedule[bn]=settings.defaultSchedule[bn]||[])
+        .push({ cls:(s.class_id?(classById[s.class_id]||{}).nameKo||'':''), time:s.time||'', cap:s.cap||0 });
+    });
+    // 휴무(설정됐지만 빈) 날짜 먼저 표시
+    (t.schedule_days||[]).forEach(function(d){ var bn=branchById[d.branch_id]||''; if(!bn)return;
+      settings.schedule[bn]=settings.schedule[bn]||{}; if(!settings.schedule[bn][d.sched_date]) settings.schedule[bn][d.sched_date]=[]; });
+    (t.schedule_slots||[]).forEach(function(s){ var bn=branchById[s.branch_id]||''; if(!bn)return;
+      settings.schedule[bn]=settings.schedule[bn]||{}; (settings.schedule[bn][s.sched_date]=settings.schedule[bn][s.sched_date]||[])
+        .push({ cls:(s.class_id?(classById[s.class_id]||{}).nameKo||'':''), time:s.time||'', cap:s.cap||0 }); });
+    var apps=(t.applications||[]).map(function(a){ var cm=classById[a.class_id]||{};
+      return { id:Number(a.id), createdAt:a.created_at, branch:branchById[a.branch_id]||'', 'class':cm.nameKo||'',
+        size:a.size||'', date:a.want_date||'', time:a.want_time||'', people:a.people||'1',
+        name:a.name||'', phone:a.phone||'', email:a.email||'', nationality:a.nationality||'', msg:a.msg||'', status:a.status||'new' }; });
+    return { settings:settings, apps:apps };
+  }
+
+  /* ---------- 분해: settings → 테이블 행 + 변경계획 (자연키로 안정 ID 유지) ---------- */
+  function classKey(branch,nameKo){ return branch+'||'+nameKo; }
+  function plan(oldS, s){
+    var ob = oldS.branches||[], oc = oldS.branchClasses||[], od = oldS.classDetails||[];
+    var branchIdByName={}; ob.forEach(function(b){branchIdByName[b.name]=b.id;});
+    var classIdByKey={}; oc.forEach(function(c){classIdByKey[classKey(c.branch,ko(c.name))]=c.id;});
+    var detailKey=function(d){return d.branch+'||'+d.name+'||'+d.volume;};
+    var detIdByKey={}; od.forEach(function(d){detIdByKey[detailKey(d)]=d.id;});
+
+    var brNameToId={}, clKeyToId={};
+    var branchRows=(s.branches||[]).map(function(b,i){ var id=branchIdByName[b.name]||rid('br'); brNameToId[b.name]=id;
+      return { id:id, name:b.name, contact:b.contact||'', link:b.link||'',
+        location_ko:ko(b.location), location_en:en(b.location), location_vi:vi(b.location),
+        instagram:b.instagram||'', facebook:b.facebook||'', sort:i }; });
+    var classRows=(s.branchClasses||[]).map(function(c,i){ var k=classKey(c.branch,ko(c.name)); var id=classIdByKey[k]||rid('cl'); clKeyToId[k]=id;
+      return { id:id, branch_id:brNameToId[c.branch]||null, sort:(c.order!=null?c.order:i),
+        name_ko:ko(c.name), name_en:en(c.name), name_vi:vi(c.name),
+        desc_ko:ko(c.desc), desc_en:en(c.desc), desc_vi:vi(c.desc), active:c.active!==false }; });
+    var detKeyToId={};
+    var detailRows=(s.classDetails||[]).map(function(d){ var k=detailKey(d); var id=detIdByKey[k]||rid('cd'); detKeyToId[k]=id;
+      return { id:id, branch_id:brNameToId[d.branch]||null, class_id:clKeyToId[classKey(d.branch,d.name)]||null,
+        volume:numOrNull(d.volume), price_krw:d.priceKRW||'', price_vnd:d.priceVND||'', price_usd:d.priceUSD||'',
+        detail_ko:ko(d.detail), detail_en:en(d.detail), detail_vi:vi(d.detail) }; });
+    // 기본값/스케줄: 전체 교체 (참조 안 됨)
+    var defRows=[]; var ds=s.defaultSchedule||{};
+    Object.keys(ds).forEach(function(bn){ (ds[bn]||[]).forEach(function(sl,i){ defRows.push({ id:rid('dslot'),
+      branch_id:brNameToId[bn]||null, class_id:(sl.cls?clKeyToId[classKey(bn,sl.cls)]||null:null), time:sl.time||'', cap:sl.cap||0, sort:i }); }); });
+    var schRows=[], dayRows=[]; var sc=s.schedule||{};
+    Object.keys(sc).forEach(function(bn){ var byDate=sc[bn]||{}; Object.keys(byDate).forEach(function(dt){
+      dayRows.push({ branch_id:brNameToId[bn]||null, sched_date:dt });
+      (byDate[dt]||[]).forEach(function(sl){ schRows.push({ id:rid('sslot'), branch_id:brNameToId[bn]||null,
+        sched_date:dt, class_id:(sl.cls?clKeyToId[classKey(bn,sl.cls)]||null:null), time:sl.time||'', cap:sl.cap||0 }); }); }); });
+
+    var newBr={}; branchRows.forEach(function(r){newBr[r.id]=1;});
+    var newCl={}; classRows.forEach(function(r){newCl[r.id]=1;});
+    var newDt={}; detailRows.forEach(function(r){newDt[r.id]=1;});
+    return { branchRows:branchRows, classRows:classRows, detailRows:detailRows, defRows:defRows, schRows:schRows, dayRows:dayRows,
+      delBranchIds:ob.map(function(b){return b.id;}).filter(function(id){return id&&!newBr[id];}),
+      delClassIds:oc.map(function(c){return c.id;}).filter(function(id){return id&&!newCl[id];}),
+      delDetailIds:od.map(function(d){return d.id;}).filter(function(id){return id&&!newDt[id];}),
+      brNameToId:brNameToId, clKeyToId:clKeyToId, detKeyToId:detKeyToId };
+  }
+  // 저장 후 캐시 객체에 안정 ID 주입 (다음 분해가 같은 ID를 재사용하도록)
+  function applyIds(s,p){
+    (s.branches||[]).forEach(function(b){ if(p.brNameToId[b.name]) b.id=p.brNameToId[b.name]; });
+    (s.branchClasses||[]).forEach(function(c){ var id=p.clKeyToId[classKey(c.branch,ko(c.name))]; if(id) c.id=id; });
+    (s.classDetails||[]).forEach(function(d){ var id=p.detKeyToId[d.branch+'||'+d.name+'||'+d.volume]; if(id) d.id=id; });
+  }
+
+  function appToRow(a){
+    var bId=(cache.settings.branches||[]).reduce(function(r,b){return b.name===a.branch?b.id:r;},null);
+    var cId=(cache.settings.branchClasses||[]).reduce(function(r,c){return (c.branch===a.branch&&ko(c.name)===a['class'])?c.id:r;},null);
+    return { id:a.id, created_at:a.createdAt||new Date().toISOString(), branch_id:bId, class_id:cId,
+      size:a.size||'', want_date:a.date||'', want_time:a.time||'', people:String(a.people||'1'),
+      name:a.name||'', phone:a.phone||'', email:a.email||'', nationality:a.nationality||'', msg:a.msg||'', status:a.status||'new' }; }
+
+  /* ---------- 원격 실행 ---------- */
+  var NONE='___none___';
+  async function pushPlan(p){
+    if(p.branchRows.length) await client.from('branches').upsert(p.branchRows);
+    if(p.classRows.length)  await client.from('classes').upsert(p.classRows);
+    if(p.detailRows.length) await client.from('class_details').upsert(p.detailRows);
+    await client.from('default_slots').delete().neq('id',NONE);
+    if(p.defRows.length) await client.from('default_slots').insert(p.defRows);
+    await client.from('schedule_slots').delete().neq('id',NONE);
+    if(p.schRows.length) await client.from('schedule_slots').insert(p.schRows);
+    await client.from('schedule_days').delete().neq('sched_date',NONE);
+    if(p.dayRows.length) await client.from('schedule_days').insert(p.dayRows);
+    if(p.delDetailIds.length) await client.from('class_details').delete().in('id',p.delDetailIds);
+    if(p.delClassIds.length)  await client.from('classes').delete().in('id',p.delClassIds);
+    if(p.delBranchIds.length) await client.from('branches').delete().in('id',p.delBranchIds);
+  }
+  async function pushApps(newArr){
+    var old=cache.apps||[], oldById={}; old.forEach(function(a){oldById[a.id]=a;});
+    var keep={}, changed=[]; newArr.forEach(function(a){ keep[a.id]=1; var o=oldById[a.id];
+      if(!o||JSON.stringify(o)!==JSON.stringify(a)) changed.push(a); });
+    var del=old.filter(function(a){return !keep[a.id];}).map(function(a){return a.id;});
+    if(changed.length) await client.from('applications').upsert(changed.map(appToRow));
+    if(del.length) await client.from('applications').delete().in('id',del);
+  }
 
   async function init(){
     if(useRemote){
       try{
-        var sres = await client.from('kv').select('data').eq('key', KEY_SET).maybeSingle();
-        cache[KEY_SET] = (sres && !sres.error && sres.data && sres.data.data) ? sres.data.data : {};
-        var ares = await client.from('applications').select('*').order('id', { ascending:false });
-        cache[KEY_APPS] = (ares && !ares.error && ares.data) ? ares.data.map(fromRow) : [];
-      }catch(e){ console.warn('Supabase init failed → localStorage', e); useRemote = false; }
+        var tables=['branches','classes','class_details','default_slots','schedule_slots','schedule_days','applications'];
+        var res={}; for(var i=0;i<tables.length;i++){ var r=await client.from(tables[i]).select('*'); res[tables[i]]=(r.error?[]:r.data)||[]; }
+        var a=assemble(res); cache.settings=a.settings; cache.apps=a.apps;
+      }catch(e){ console.warn('Supabase init failed → localStorage', e); useRemote=false; }
     }
-    if(!useRemote){
-      cache[KEY_APPS] = lsGet(KEY_APPS, '[]');
-      cache[KEY_SET]  = lsGet(KEY_SET, '{}');
-    }
+    if(!useRemote){ cache.settings=lsGet(KEY_SET,'{}'); cache.apps=lsGet(KEY_APPS,'[]'); }
   }
 
   function setSettings(v){
-    cache[KEY_SET] = v;
-    if(useRemote){ client.from('kv').upsert({ key:KEY_SET, data:v, updated_at:new Date().toISOString() })
-      .then(function(r){ if(r.error) console.warn('settings save error', r.error); }); }
+    if(useRemote){ var p=plan(cache.settings||{}, v); applyIds(v,p); pushPlan(p).then(function(){},function(e){console.warn('settings save',e);}); }
     else { lsSet(KEY_SET, v); }
+    cache.settings = v;   // 안정 ID가 주입된 객체를 캐시 (다음 분해의 기준)
   }
-
-  // 전체 배열을 받아 이전 캐시와 비교 → 변경/추가는 upsert, 사라진 건 delete (행 단위)
-  function setApps(newArr){
-    var old = cache[KEY_APPS] || [];
-    if(useRemote){
-      var oldById = {}; old.forEach(function(a){ oldById[a.id] = a; });
-      var keep = {}; var changed = [];
-      newArr.forEach(function(a){ keep[a.id] = 1; var o = oldById[a.id];
-        if(!o || JSON.stringify(o) !== JSON.stringify(a)) changed.push(a); });
-      var del = old.filter(function(a){ return !keep[a.id]; }).map(function(a){ return a.id; });
-      if(changed.length) client.from('applications').upsert(changed.map(toRow))
-        .then(function(r){ if(r.error) console.warn('app upsert error', r.error); });
-      if(del.length) client.from('applications').delete().in('id', del)
-        .then(function(r){ if(r.error) console.warn('app delete error', r.error); });
-    } else {
-      lsSet(KEY_APPS, newArr);
-    }
-    cache[KEY_APPS] = newArr;
+  function setApps(v){
+    if(useRemote){ pushApps(v).then(function(){},function(e){console.warn('apps save',e);}); }
+    else { lsSet(KEY_APPS, v); }
+    cache.apps = v;
   }
 
   window.LS = {
-    init: init,
-    useRemote: function(){ return useRemote; },
-    getApps: function(){ return Array.isArray(cache[KEY_APPS]) ? cache[KEY_APPS] : []; },
-    setApps: setApps,
-    getSettings: function(){ return (cache[KEY_SET] && typeof cache[KEY_SET]==='object') ? cache[KEY_SET] : {}; },
-    setSettings: setSettings
+    init:init, useRemote:function(){return useRemote;},
+    getApps:function(){ return Array.isArray(cache.apps)?cache.apps:[]; }, setApps:setApps,
+    getSettings:function(){ return (cache.settings&&typeof cache.settings==='object')?cache.settings:{}; }, setSettings:setSettings,
+    _assemble:assemble, _plan:plan   // 단위 테스트용
   };
 })();
