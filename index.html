@@ -202,8 +202,8 @@
   .carousel{position:relative;margin-top:14px}
   .carousel-track{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scroll-behavior:smooth;-webkit-overflow-scrolling:touch;scrollbar-width:none}
   .carousel-track::-webkit-scrollbar{display:none}
-  .cslide{flex:0 0 100%;scroll-snap-align:center;height:clamp(420px,72vh,760px);background:#16171a;display:flex;align-items:center;justify-content:center}
-  .cslide img{width:100%;height:100%;object-fit:contain;display:block}
+  .cslide{flex:0 0 100%;scroll-snap-align:center;height:clamp(340px,56vh,600px);background:#16171a;display:flex;align-items:center;justify-content:center}
+  .cslide img{width:100%;height:100%;object-fit:cover;display:block}
   .carousel-arrow{position:absolute;top:50%;transform:translateY(-50%);width:42px;height:42px;border-radius:50%;border:1px solid var(--line);background:rgba(255,255,255,.85);color:var(--ink);font-size:22px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:2;transition:background .2s,transform .2s}
   .carousel-arrow:hover{background:#fff}
   .carousel-arrow.prev{left:14px}.carousel-arrow.next{right:14px}
@@ -406,13 +406,7 @@
       <p class="coord mono">02 — SPACE</p>
     </div>
     <div class="carousel" id="spaceCarousel">
-      <div class="carousel-track" id="spaceTrack">
-        <div class="cslide"><img src="assets/space-1.jpg" alt="LIMINAL SPACE" loading="lazy"></div>
-        <div class="cslide"><img src="assets/space-2.jpg" alt="LIMINAL SPACE" loading="lazy"></div>
-        <div class="cslide"><img src="assets/space-3.jpg" alt="LIMINAL SPACE" loading="lazy"></div>
-        <div class="cslide"><img src="assets/space-4.jpg" alt="LIMINAL SPACE" loading="lazy"></div>
-        <div class="cslide"><img src="assets/space-5.jpg" alt="LIMINAL SPACE" loading="lazy"></div>
-      </div>
+      <div class="carousel-track" id="spaceTrack"><!-- 갤러리 사진으로 JS가 채움(자동 회전) --></div>
       <button class="carousel-arrow prev" id="spacePrev" type="button" aria-label="이전">‹</button>
       <button class="carousel-arrow next" id="spaceNext" type="button" aria-label="다음">›</button>
       <div class="carousel-dots" id="spaceDots"></div>
@@ -952,38 +946,33 @@ function initSpaceCarousel(){
   const sec=document.getElementById('space');
   const dotsEl=document.getElementById('spaceDots');
   const prev=document.getElementById('spacePrev'), next=document.getElementById('spaceNext');
-  const imgs=[...track.querySelectorAll('img')];
-  let pending=imgs.length;
-  function finalize(){
-    const slides=[...track.querySelectorAll('.cslide')];
-    if(!slides.length){ if(sec)sec.style.display='none'; return; }
-    if(sec)sec.style.display='';
-    dotsEl.innerHTML=slides.map((_,i)=>`<button type="button" class="${i===0?'active':''}" aria-label="${i+1}"></button>`).join('');
-    const dots=[...dotsEl.children];
-    const goTo=i=>track.scrollTo({left:i*track.clientWidth,behavior:'smooth'});
-    const cur=()=>Math.round(track.scrollLeft/(track.clientWidth||1));
-    const update=()=>{const i=cur();dots.forEach((d,di)=>d.classList.toggle('active',di===i));if(prev)prev.disabled=i<=0;if(next)next.disabled=i>=slides.length-1;};
-    dots.forEach((d,i)=>d.addEventListener('click',()=>goTo(i)));
-    if(prev)prev.onclick=()=>goTo(Math.max(0,cur()-1));
-    if(next)next.onclick=()=>goTo(Math.min(slides.length-1,cur()+1));
-    track.addEventListener('scroll',()=>{clearTimeout(track._st);track._st=setTimeout(update,60);});
-    update();
-  }
-  if(!pending){ finalize(); return; }
-  imgs.forEach(img=>{
-    const done=()=>{ if(--pending<=0) finalize(); };
-    if(img.complete && img.naturalWidth>0) done();
-    else if(img.complete) { const sl=img.closest('.cslide'); if(sl)sl.remove(); done(); }
-    else { img.addEventListener('load',done); img.addEventListener('error',()=>{ const sl=img.closest('.cslide'); if(sl)sl.remove(); done(); }); }
-  });
+  // 공간 캐러셀은 갤러리 사진을 공유(없으면 예시 플레이스홀더)
+  let items=(getSettings().gallery||[]).filter(g=>g&&g.img);
+  if(!items.length) items=GALLERY_PLACEHOLDER;
+  if(!items.length){ if(sec)sec.style.display='none'; return; }
+  if(sec)sec.style.display='';
+  track.innerHTML=items.map(g=>`<div class="cslide"><img src="${esc(g.img)}" alt="LIMINAL SPACE" loading="lazy"></div>`).join('');
+  const n=items.length;
+  dotsEl.innerHTML=items.map((_,i)=>`<button type="button" class="${i===0?'active':''}" aria-label="${i+1}"></button>`).join('');
+  const dots=[...dotsEl.children];
+  const goTo=i=>track.scrollTo({left:i*track.clientWidth,behavior:'smooth'});
+  const cur=()=>Math.round(track.scrollLeft/(track.clientWidth||1));
+  const update=()=>{const i=cur();dots.forEach((d,di)=>d.classList.toggle('active',di===i));};
+  let timer=null;
+  const tick=()=>goTo((cur()+1)%n);                 // 오른쪽으로 순환
+  const play=()=>{ if(!timer && n>1) timer=setInterval(tick,4000); };
+  const stop=()=>{ clearInterval(timer); timer=null; };
+  const kick=()=>{ stop(); setTimeout(play,6000); }; // 수동 조작 후 6초 뒤 자동 재개
+  dots.forEach((d,i)=>d.addEventListener('click',()=>{goTo(i);kick();}));
+  if(prev)prev.onclick=()=>{goTo((cur()-1+n)%n);kick();};
+  if(next)next.onclick=()=>{goTo((cur()+1)%n);kick();};
+  track.addEventListener('scroll',()=>{clearTimeout(track._st);track._st=setTimeout(update,60);});
+  const car=document.getElementById('spaceCarousel');
+  if(car){ car.addEventListener('mouseenter',stop); car.addEventListener('mouseleave',play); }
+  update(); play();
 }
 /* 갤러리 · 협업 로고 (어드민 관리; 비어있으면 예시 플레이스홀더 표시) */
-var GALLERY_PLACEHOLDER=[
-  {img:'assets/gallery-1.jpg',title:tri('시그니처 클래스','Signature Class','Lớp Signature'),desc:tri('센트 디자이너와 1:1로 완성하는 나만의 향수 클래스.','A 1:1 perfume class crafted with a scent designer.','Lớp nước hoa 1:1 cùng scent designer.')},
-  {img:'assets/gallery-2.jpg',title:tri('브랜드 협업','Brand Collaboration','Hợp tác thương hiệu'),desc:tri('브랜드·행사와 함께한 시그니처 향 제작 협업.','Signature scent collaborations with brands and events.','Hợp tác tạo hương cùng thương hiệu và sự kiện.')},
-  {img:'assets/gallery-3.jpg',title:tri('팝업 이벤트','Pop-up Event','Sự kiện Pop-up'),desc:tri('팝업·전시에서 진행한 향 체험 이벤트.','Scent experience events at pop-ups and exhibitions.','Trải nghiệm hương tại pop-up và triển lãm.')},
-  {img:'assets/gallery-4.jpg',title:tri('그룹 워크숍','Group Workshop','Workshop nhóm'),desc:tri('단체·기업을 위한 맞춤 향수 워크숍.','Custom perfume workshops for groups and companies.','Workshop nước hoa cho nhóm và doanh nghiệp.')}
-];
+var GALLERY_PLACEHOLDER=(function(){var a=[];for(var i=1;i<=20;i++){a.push({img:'assets/gallery-'+i+'.jpg',title:tri('',''),desc:tri('','')});}return a;})();
 var PARTNER_PLACEHOLDER=[
   {name:'BRAND 1',logo:'assets/logo-1.png',link:''},{name:'BRAND 2',logo:'assets/logo-2.png',link:''},
   {name:'BRAND 3',logo:'assets/logo-3.png',link:''},{name:'BRAND 4',logo:'assets/logo-4.png',link:''},
