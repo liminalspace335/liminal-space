@@ -159,6 +159,11 @@
   .card .desc{font-size:14px;color:var(--ink-soft);flex:1}
   .card .row{display:flex;justify-content:space-between;font-size:13px;border-top:1px solid var(--line);padding-top:14px;margin-top:18px}
   .card .price{font-weight:700}
+  /* 할인 표시 */
+  .price-old{text-decoration:line-through;color:var(--ink-soft);font-weight:400;font-size:.85em;margin-right:7px}
+  .price-new{font-weight:800;color:var(--ink)}
+  .disc-badge{display:inline-block;margin-left:7px;font-size:11px;font-weight:700;letter-spacing:.02em;color:#fff;background:var(--accent);padding:2px 7px;border-radius:3px;vertical-align:middle;line-height:1.5}
+  .opt .pr .price-old{font-size:12px}
 
   /* ---------- APPLY FORM ---------- */
   #apply{background:var(--accent);color:#e9e9ea}
@@ -708,6 +713,24 @@ function isClassActive(branch,name){const c=branchClassesOf(branch).find(c=>keyO
 function priceNum(p){const n=parseInt(String(p||'').replace(/[^0-9]/g,''),10);return isNaN(n)?Infinity:n;}
 function fmtMoney(v,sym){v=(v==null?'':String(v)).trim();if(!v)return '';if(/^[0-9,]+$/.test(v))return Number(v.replace(/,/g,'')).toLocaleString('en-US')+sym;return v;}
 function priceDisplay(d){if(!d)return '';if(d.priceVND)return fmtMoney(d.priceVND,'₫');if(d.priceKRW)return fmtMoney(d.priceKRW,'₩');if(d.priceUSD)return fmtMoney(d.priceUSD,'$');return '';}
+/* 표시 통화(동→원→달러 우선) */
+function chosenCurr(d){if(!d)return null;if(d.priceVND)return{raw:d.priceVND,sym:'₫'};if(d.priceKRW)return{raw:d.priceKRW,sym:'₩'};if(d.priceUSD)return{raw:d.priceUSD,sym:'$'};return null;}
+/* 할인 계산 → {orig,final,sym,origStr,finalStr,label} (할인 없으면 final=null) */
+function discInfo(d){
+  const cp=chosenCurr(d); if(!cp)return null;
+  const orig=parseInt(String(cp.raw).replace(/[^0-9]/g,''),10); if(isNaN(orig))return null;
+  const type=(d.discType||'none'), val=parseFloat(d.discVal);
+  let fin=null,label='';
+  if(type==='percent'&&val>0){fin=Math.max(0,Math.round(orig*(1-val/100)));label=(val%1===0?val:val)+'%';}
+  else if(type==='fixed'&&val>0){fin=Math.max(0,orig-Math.round(val));label='-'+Math.round(val).toLocaleString('en-US')+cp.sym;}
+  const origStr=orig.toLocaleString('en-US')+cp.sym;
+  if(fin==null||fin>=orig)return {orig,final:null,sym:cp.sym,origStr};
+  return {orig,final:fin,sym:cp.sym,origStr,finalStr:fin.toLocaleString('en-US')+cp.sym,label};
+}
+/* 최저가 비교용 실효가(할인 적용) */
+function effPriceNum(d){const di=discInfo(d);if(!di)return priceNum(priceDisplay(d));return di.final!=null?di.final:di.orig;}
+/* 가격 HTML (할인 시 정가 취소선 + 할인가 + 배지) */
+function priceHTML(d){const di=discInfo(d);if(!di)return esc(priceDisplay(d));if(di.final==null)return esc(di.origStr);return `<span class="price-old">${esc(di.origStr)}</span><span class="price-new">${esc(di.finalStr)}</span><span class="disc-badge">${esc(di.label)}</span>`;}
 function needsSize(){return volumesForName(data.branch,data.class).length>0;}
 function slotsFor(dateStr){
   if(!dateStr||!data.branch) return [];
@@ -742,7 +765,7 @@ function renderPrograms(){
     const key=keyOf(c.name);const inactive=c.active===false;
     const vols=volumesForName(data.branch,key);
     let price;
-    if(vols.length){const min=vols.reduce((m,t)=>priceNum(priceDisplay(t))<priceNum(priceDisplay(m))?t:m);price=esc(priceDisplay(min))+(vols.length>1?'~':'');}
+    if(vols.length){const min=vols.reduce((m,t)=>effPriceNum(t)<effPriceNum(m)?t:m);price=priceHTML(min)+(vols.length>1?'~':'');}
     else price=inq;
     return `<div class="opt ${inactive?'disabled':''} ${key===data.class?'sel':''}" data-val="${esc(key)}">
       <div><div class="ti">${esc(Lval(c.name,lang))}</div><div class="de">${esc(Lval(c.desc,lang))}${inactive?soon:''}</div></div>
@@ -756,7 +779,7 @@ function renderSizes(){
   const lang=curLang();
   const vols=volumesForName(data.branch,data.class);
   list.innerHTML=vols.map(t=>{const dt=Lval(t.detail,lang);return `<div class="opt ${(t.volume+'ml')===data.size?'sel':''}" data-val="${t.volume}ml">
-    <div><div class="ti">${t.volume}ml</div>${dt?`<div class="de">${esc(dt)}</div>`:''}</div><div class="pr">${esc(priceDisplay(t))}</div></div>`;}).join('');
+    <div><div class="ti">${t.volume}ml</div>${dt?`<div class="de">${esc(dt)}</div>`:''}</div><div class="pr">${priceHTML(t)}</div></div>`;}).join('');
   bindOptList(list);
 }
 /* 인덱스 카드 비활성 클래스 → "오픈 준비중" (모든 지점에서 비활성일 때) */
@@ -793,7 +816,7 @@ function renderClasses(){
     const key=keyOf(c.name);const active=c.active!==false;
     const ds=volumesForName(branch,key);
     let priceLine;
-    if(ds.length){const min=ds.reduce((m,t)=>priceNum(priceDisplay(t))<priceNum(priceDisplay(m))?t:m);priceLine=esc(priceDisplay(min))+(ds.length>1?'~':'');}
+    if(ds.length){const min=ds.reduce((m,t)=>effPriceNum(t)<effPriceNum(m)?t:m);priceLine=priceHTML(min)+(ds.length>1?'~':'');}
     else priceLine=L.inq;
     const cta=active?L.cta:L.soon;
     return `<div class="card">

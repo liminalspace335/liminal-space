@@ -49,9 +49,13 @@ create table if not exists public.class_details (
   class_id text references public.classes(id) on delete cascade,
   volume int,
   price_krw text default '', price_vnd text default '', price_usd text default '',
+  disc_type text default 'none', disc_val text default '',
   detail_ko text default '', detail_en text default '', detail_vi text default ''
 );
 create index if not exists class_details_class_idx on public.class_details(class_id);
+-- 기존 테이블에 할인 컬럼 추가(이미 운영 중인 DB 대응)
+alter table public.class_details add column if not exists disc_type text default 'none';
+alter table public.class_details add column if not exists disc_val text default '';
 
 -- 기본값 시간대 (지점별 하루치)
 create table if not exists public.default_slots (

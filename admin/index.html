@@ -112,7 +112,8 @@
   #sub-branch .box{max-width:1320px}
   .br-row{grid-template-columns:.9fr .8fr .9fr 1fr 1fr .9fr .9fr 44px}
   .bc-row{grid-template-columns:48px 1.2fr 1.8fr 92px 46px}
-  .cd-row{grid-template-columns:1.1fr 1.2fr 70px .9fr .9fr .9fr 1.3fr 46px}
+  .cd-row{grid-template-columns:1fr 1.05fr 58px .72fr .72fr .72fr 84px 76px 1.05fr 40px}
+  #sub-detail .box{max-width:1500px}
   .vol{display:flex;align-items:center;gap:6px}.vol input{width:100%}.vol span{font-size:12px;color:var(--ink-soft)}
   .field-row{display:flex;flex-direction:column;gap:7px;margin-bottom:14px;max-width:520px}
   .field-row label{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft)}
@@ -233,8 +234,8 @@
 
         <div class="subpanel" id="sub-detail">
           <div class="box">
-            <h3>상세 설정 (용량 · 가격 · 상세설명)</h3><p class="desc">지점과 클래스를 선택하고, 용량별 가격(원화·동·달러)과 상세설명을 등록합니다. 신청 페이지 가격은 동(₫) → 원(₩) → 달러($) 순으로 표기됩니다.</p>
-            <div class="gen-row cd-row head-row"><div>지점</div><div>클래스</div><div>용량</div><div>₩ 원화</div><div>₫ 동</div><div>$ 달러</div><div>상세설명</div><div></div></div>
+            <h3>상세 설정 (용량 · 가격 · 할인 · 상세설명)</h3><p class="desc">지점과 클래스를 선택하고, 용량별 가격(원화·동·달러)·할인·상세설명을 등록합니다. 신청 페이지 가격은 동(₫) → 원(₩) → 달러($) 순으로 표기됩니다. 할인은 표시되는 통화 가격에 적용됩니다(% 할인은 모든 통화 공통, 정액 할인은 표시 통화 금액 기준).</p>
+            <div class="gen-row cd-row head-row"><div>지점</div><div>클래스</div><div>용량</div><div>₩ 원화</div><div>₫ 동</div><div>$ 달러</div><div>할인유형</div><div>할인값</div><div>상세설명</div><div></div></div>
             <div id="cdList"></div>
             <div class="save-row"><button class="btn ghost sm" id="cdAdd">+ 항목 추가</button><button class="btn sm" id="cdSave">저장</button><span class="saved" id="cdSaved">저장됨 ✓</span></div>
           </div>
@@ -581,16 +582,24 @@ function renderClassDetails(){
     <input class="cd-krw" value="${esc(d.priceKRW||'')}" placeholder="₩" />
     <input class="cd-vnd" value="${esc(d.priceVND||'')}" placeholder="₫" />
     <input class="cd-usd" value="${esc(d.priceUSD||'')}" placeholder="$" />
+    <select class="cd-dtype">
+      <option value="none" ${(d.discType||'none')==='none'?'selected':''}>없음</option>
+      <option value="percent" ${d.discType==='percent'?'selected':''}>% 할인</option>
+      <option value="fixed" ${d.discType==='fixed'?'selected':''}>정액 할인</option>
+    </select>
+    <input class="cd-dval" value="${esc(d.discVal||'')}" placeholder="${d.discType==='fixed'?'금액':'%'}" />
     <input class="cd-detail" value="${esc(Lval(d.detail,admLang))}" placeholder="상세설명 (${admLang})" />
     <button class="icon-btn cd-del">삭제</button></div>`).join('');
   document.querySelectorAll('#cdList .cd-row').forEach(row=>{
     const br=row.querySelector('.cd-branch'),nm=row.querySelector('.cd-name');
     br.addEventListener('change',()=>{nm.innerHTML=cdNameOpts(br.value,'');});
+    const dt=row.querySelector('.cd-dtype'),dv=row.querySelector('.cd-dval');
+    dt.addEventListener('change',()=>{dv.placeholder=dt.value==='fixed'?'금액':(dt.value==='percent'?'%':'');if(dt.value==='none')dv.value='';});
     row.querySelector('.cd-del').addEventListener('click',()=>row.remove());
   });
 }
-document.getElementById('cdAdd').addEventListener('click',()=>{const s=loadSettings();s.classDetails=s.classDetails||[];const b=branchNames()[0]||'';s.classDetails.push({id:Date.now(),branch:b,name:classNamesOf(b)[0]||'',volume:'',priceKRW:'',priceVND:'',priceUSD:'',detail:''});saveSettings(s);renderClassDetails();});
-document.getElementById('cdSave').addEventListener('click',()=>{const s=loadSettings();const prevAll=s.classDetails||[];s.classDetails=[...document.querySelectorAll('#cdList .cd-row')].map(r=>{const v=r.querySelector('.cd-vol').value.trim();const id=r.dataset.id||(Date.now()+Math.random());const prev=prevAll.find(d=>String(d.id)===String(r.dataset.id))||{};const detail=Object.assign({},txObj(prev.detail));detail[admLang]=r.querySelector('.cd-detail').value.trim();return {id,branch:r.querySelector('.cd-branch').value,name:r.querySelector('.cd-name').value,volume:v===''?'':Number(v),priceKRW:r.querySelector('.cd-krw').value.trim(),priceVND:r.querySelector('.cd-vnd').value.trim(),priceUSD:r.querySelector('.cd-usd').value.trim(),detail};}).filter(d=>d.name);saveSettings(s);toast('cdSaved');renderClassDetails();});
+document.getElementById('cdAdd').addEventListener('click',()=>{const s=loadSettings();s.classDetails=s.classDetails||[];const b=branchNames()[0]||'';s.classDetails.push({id:Date.now(),branch:b,name:classNamesOf(b)[0]||'',volume:'',priceKRW:'',priceVND:'',priceUSD:'',discType:'none',discVal:'',detail:''});saveSettings(s);renderClassDetails();});
+document.getElementById('cdSave').addEventListener('click',()=>{const s=loadSettings();const prevAll=s.classDetails||[];s.classDetails=[...document.querySelectorAll('#cdList .cd-row')].map(r=>{const v=r.querySelector('.cd-vol').value.trim();const id=r.dataset.id||(Date.now()+Math.random());const prev=prevAll.find(d=>String(d.id)===String(r.dataset.id))||{};const detail=Object.assign({},txObj(prev.detail));detail[admLang]=r.querySelector('.cd-detail').value.trim();const dtype=r.querySelector('.cd-dtype').value;const dval=dtype==='none'?'':r.querySelector('.cd-dval').value.trim();return {id,branch:r.querySelector('.cd-branch').value,name:r.querySelector('.cd-name').value,volume:v===''?'':Number(v),priceKRW:r.querySelector('.cd-krw').value.trim(),priceVND:r.querySelector('.cd-vnd').value.trim(),priceUSD:r.querySelector('.cd-usd').value.trim(),discType:dtype,discVal:dval,detail};}).filter(d=>d.name);saveSettings(s);toast('cdSaved');renderClassDetails();});
 
 /* 신청관리 기본값 (지점별 탭) */
 function renderDefaults(){

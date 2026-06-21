@@ -41,6 +41,7 @@
       var cm=classById[d.class_id]||{};
       settings.classDetails.push({ id:d.id, branch:branchById[d.branch_id]||cm.branch||'', name:cm.nameKo||'',
         volume:(d.volume==null?'':d.volume), priceKRW:d.price_krw||'', priceVND:d.price_vnd||'', priceUSD:d.price_usd||'',
+        discType:d.disc_type||'none', discVal:d.disc_val||'',
         detail:tri(d.detail_ko,d.detail_en,d.detail_vi) });
     });
     (t.default_slots||[]).sort(function(a,b){return (a.sort||0)-(b.sort||0);}).forEach(function(s){
@@ -84,6 +85,7 @@
     var detailRows=(s.classDetails||[]).map(function(d){ var k=detailKey(d); var id=detIdByKey[k]||rid('cd'); detKeyToId[k]=id;
       return { id:id, branch_id:brNameToId[d.branch]||null, class_id:clKeyToId[classKey(d.branch,d.name)]||null,
         volume:numOrNull(d.volume), price_krw:d.priceKRW||'', price_vnd:d.priceVND||'', price_usd:d.priceUSD||'',
+        disc_type:d.discType||'none', disc_val:d.discVal||'',
         detail_ko:ko(d.detail), detail_en:en(d.detail), detail_vi:vi(d.detail) }; });
     // 기본값/스케줄: 전체 교체 (참조 안 됨)
     var defRows=[]; var ds=s.defaultSchedule||{};
