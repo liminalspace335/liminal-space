@@ -212,6 +212,14 @@
   .carousel-dots button{width:7px;height:7px;border-radius:50%;border:0;background:var(--line);cursor:pointer;padding:0}
   .carousel-dots button.active{background:var(--ink)}
   @media(max-width:640px){.carousel-arrow{width:34px;height:34px;font-size:18px}}
+  /* ---------- SPACE 마퀴(연속 흐름) ---------- */
+  .marquee{overflow:hidden;width:100%;margin-top:14px;-webkit-mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent);mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent)}
+  .marquee-track{display:flex;width:max-content;will-change:transform;animation:marquee linear infinite}
+  .marquee:hover .marquee-track{animation-play-state:paused}
+  .mcard{flex:0 0 auto;width:clamp(280px,30vw,440px);height:clamp(220px,34vh,360px);margin-right:18px;overflow:hidden;background:#16171a}
+  .mcard img{width:100%;height:100%;object-fit:cover;display:block;filter:grayscale(.2)}
+  @keyframes marquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+  @media(prefers-reduced-motion:reduce){.marquee-track{animation:none}}
   /* ---------- CTA 밴드 ---------- */
   .cta-band{background:var(--accent);color:#e9e9ea;text-align:center}
   .cta-lead{font-size:clamp(22px,3vw,34px);font-weight:700;color:#fff;margin:0;letter-spacing:-.01em;line-height:1.35}
@@ -231,6 +239,8 @@
   .logo-strip img{height:32px;width:auto;opacity:.5;filter:grayscale(1);transition:opacity .3s}
   .logo-strip a:hover img{opacity:.9}
   @media(max-width:640px){.gallery-grid{grid-template-columns:1fr}}
+  .gallery-more-wrap{text-align:center;margin-top:30px}
+  .gallery-more{letter-spacing:.04em}
   footer{background:var(--accent);color:#9a9ca1;padding:44px 0;font-size:12px}
   .foot{display:flex;justify-content:space-between;flex-wrap:wrap;gap:16px;letter-spacing:.1em;align-items:center}
   .foot .social a{color:#c9cacd;text-decoration:none;margin-right:14px}
@@ -405,13 +415,8 @@
       <h2 data-i18n="space.title">공간</h2>
       <p class="coord mono">02 — SPACE</p>
     </div>
-    <div class="carousel" id="spaceCarousel">
-      <div class="carousel-track" id="spaceTrack"><!-- 갤러리 사진으로 JS가 채움(자동 회전) --></div>
-      <button class="carousel-arrow prev" id="spacePrev" type="button" aria-label="이전">‹</button>
-      <button class="carousel-arrow next" id="spaceNext" type="button" aria-label="다음">›</button>
-      <div class="carousel-dots" id="spaceDots"></div>
-    </div>
   </div>
+  <div class="marquee" id="spaceMarquee"><div class="marquee-track" id="spaceTrack"><!-- 갤러리 사진으로 JS가 채움(연속 흐름) --></div></div>
 </section>
 
 <!-- CLASSES -->
@@ -466,6 +471,7 @@
       <p class="coord mono">05 — GALLERY</p>
     </div>
     <div class="gallery-grid" id="galleryGrid"></div>
+    <div class="gallery-more-wrap"><a class="btn ghost gallery-more" href="gallery.html" data-i18n="gallery.more">갤러리 더 보기 →</a></div>
     <div class="logo-strip-wrap" id="logoStripWrap" style="display:none">
       <p class="logo-strip-label" data-i18n="gallery.featured">함께한 곳</p>
       <div class="logo-strip" id="logoStrip"></div>
@@ -608,7 +614,7 @@ const I18N = {
   en: {
     "nav.concept":"Brand","nav.space":"Space","nav.classes":"Classes","nav.apply":"Apply","nav.gallery":"Gallery","nav.location":"Location","space.title":"The Space",
     "cta.lead":"Complete your own scent, together with a scent designer.","cta.sub":"A premium perfume workshop where you smell 100+ notes, blend, and take home your own bottle.","cta.btn":"Book a class",
-    "gallery.title":"Gallery","gallery.featured":"Featured with",
+    "gallery.title":"Gallery","gallery.featured":"Featured with","gallery.more":"View full gallery →",
     "hero.eyebrow":"Perfume Workshop","hero.sub":"The scent of moments between boundaries. A workshop where you blend and bottle a perfume of your own.",
     "hero.tag1":"Completely new experience","hero.tag2":"Eau de Parfum","hero.cta":"Apply for a class","hero.cta2":"View classes",
     "concept.title":"A scent that begins at the threshold",
@@ -648,7 +654,7 @@ const I18N = {
   vi: {
     "nav.concept":"Thương hiệu","nav.space":"Không gian","nav.classes":"Lớp học","nav.apply":"Đăng ký","nav.gallery":"Thư viện","nav.location":"Vị trí","space.title":"Không gian",
     "cta.lead":"Hoàn thiện mùi hương của riêng bạn, cùng scent designer.","cta.sub":"Workshop nước hoa cao cấp: thử hơn 100 loại hương, pha chế và mang về chai của riêng bạn.","cta.btn":"Đăng ký lớp học",
-    "gallery.title":"Thư viện","gallery.featured":"Đã đồng hành cùng",
+    "gallery.title":"Thư viện","gallery.featured":"Đã đồng hành cùng","gallery.more":"Xem toàn bộ thư viện →",
     "hero.eyebrow":"Perfume Workshop · Xưởng nước hoa",
     "hero.sub":"Hương thơm của khoảnh khắc giữa hai ranh giới. Lớp học tự pha chế và mang về một chai nước hoa của riêng bạn.",
     "hero.tag1":"Completely new experience","hero.tag2":"Eau de Parfum",
@@ -944,32 +950,15 @@ function renderMap(){
 function initSpaceCarousel(){
   const track=document.getElementById('spaceTrack'); if(!track)return;
   const sec=document.getElementById('space');
-  const dotsEl=document.getElementById('spaceDots');
-  const prev=document.getElementById('spacePrev'), next=document.getElementById('spaceNext');
-  // 공간 캐러셀은 갤러리 사진을 공유(없으면 예시 플레이스홀더)
+  // 공간 마퀴는 갤러리 사진을 공유(없으면 예시 플레이스홀더)
   let items=(getSettings().gallery||[]).filter(g=>g&&g.img);
   if(!items.length) items=GALLERY_PLACEHOLDER;
   if(!items.length){ if(sec)sec.style.display='none'; return; }
   if(sec)sec.style.display='';
-  track.innerHTML=items.map(g=>`<div class="cslide"><img src="${esc(g.img)}" alt="LIMINAL SPACE" loading="lazy"></div>`).join('');
-  const n=items.length;
-  dotsEl.innerHTML=items.map((_,i)=>`<button type="button" class="${i===0?'active':''}" aria-label="${i+1}"></button>`).join('');
-  const dots=[...dotsEl.children];
-  const goTo=i=>track.scrollTo({left:i*track.clientWidth,behavior:'smooth'});
-  const cur=()=>Math.round(track.scrollLeft/(track.clientWidth||1));
-  const update=()=>{const i=cur();dots.forEach((d,di)=>d.classList.toggle('active',di===i));};
-  let timer=null;
-  const tick=()=>goTo((cur()+1)%n);                 // 오른쪽으로 순환
-  const play=()=>{ if(!timer && n>1) timer=setInterval(tick,4000); };
-  const stop=()=>{ clearInterval(timer); timer=null; };
-  const kick=()=>{ stop(); setTimeout(play,6000); }; // 수동 조작 후 6초 뒤 자동 재개
-  dots.forEach((d,i)=>d.addEventListener('click',()=>{goTo(i);kick();}));
-  if(prev)prev.onclick=()=>{goTo((cur()-1+n)%n);kick();};
-  if(next)next.onclick=()=>{goTo((cur()+1)%n);kick();};
-  track.addEventListener('scroll',()=>{clearTimeout(track._st);track._st=setTimeout(update,60);});
-  const car=document.getElementById('spaceCarousel');
-  if(car){ car.addEventListener('mouseenter',stop); car.addEventListener('mouseleave',play); }
-  update(); play();
+  const card=g=>`<div class="mcard"><img src="${esc(g.img)}" alt="LIMINAL SPACE" loading="lazy"></div>`;
+  const seq=items.map(card).join('');
+  track.innerHTML=seq+seq;                       // 끊김 없는 루프(translateX -50%)
+  track.style.animationDuration=Math.max(18,items.length*3.2)+'s';  // 카드 수에 비례한 일정 속도
 }
 /* 갤러리 · 협업 로고 (어드민 관리; 비어있으면 예시 플레이스홀더 표시) */
 var GALLERY_PLACEHOLDER=(function(){var a=[];for(var i=1;i<=20;i++){a.push({img:'assets/gallery-'+i+'.jpg',title:tri('',''),desc:tri('','')});}return a;})();
@@ -983,6 +972,7 @@ function renderGallery(){
   const lang=curLang();
   let items=(getSettings().gallery||[]).filter(g=>g&&g.img);
   if(!items.length) items=GALLERY_PLACEHOLDER;
+  items=items.slice(0,4);   // 홈에서는 최초 4개만, 전체는 gallery.html
   grid.innerHTML=items.map(g=>{
     const t=esc(Lval(g.title,lang)), d=esc(Lval(g.desc,lang));
     const inner=`<img src="${esc(g.img)}" alt="${t||'LIMINAL SPACE'}" loading="lazy">${(t||d)?`<div class="cap">${t?`<div class="gcap-t">${t}</div>`:''}${d?`<div class="gcap-d">${d}</div>`:''}</div>`:''}`;
