@@ -198,6 +198,20 @@
   .map iframe.map-frame{width:100%;height:100%;border:0;display:block;filter:grayscale(.85) contrast(1.05)}
   .map .map-cover{position:absolute;inset:0;cursor:pointer;background:transparent}
   .map .map-hint{position:absolute;left:0;right:0;bottom:0;font-size:11px;letter-spacing:.08em;color:#fff;background:rgba(20,21,22,.72);padding:8px 10px;text-align:center;pointer-events:none}
+  /* ---------- SPACE 캐러셀 ---------- */
+  .carousel{position:relative;margin-top:14px}
+  .carousel-track{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scroll-behavior:smooth;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+  .carousel-track::-webkit-scrollbar{display:none}
+  .cslide{flex:0 0 100%;scroll-snap-align:center;height:clamp(420px,72vh,760px);background:#16171a;display:flex;align-items:center;justify-content:center}
+  .cslide img{width:100%;height:100%;object-fit:contain;display:block}
+  .carousel-arrow{position:absolute;top:50%;transform:translateY(-50%);width:42px;height:42px;border-radius:50%;border:1px solid var(--line);background:rgba(255,255,255,.85);color:var(--ink);font-size:22px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:2;transition:background .2s,transform .2s}
+  .carousel-arrow:hover{background:#fff}
+  .carousel-arrow.prev{left:14px}.carousel-arrow.next{right:14px}
+  .carousel-arrow[disabled]{opacity:.3;cursor:default}
+  .carousel-dots{display:flex;gap:8px;justify-content:center;margin-top:16px}
+  .carousel-dots button{width:7px;height:7px;border-radius:50%;border:0;background:var(--line);cursor:pointer;padding:0}
+  .carousel-dots button.active{background:var(--ink)}
+  @media(max-width:640px){.carousel-arrow{width:34px;height:34px;font-size:18px}}
   footer{background:var(--accent);color:#9a9ca1;padding:44px 0;font-size:12px}
   .foot{display:flex;justify-content:space-between;flex-wrap:wrap;gap:16px;letter-spacing:.1em;align-items:center}
   .foot .social a{color:#c9cacd;text-decoration:none;margin-right:14px}
@@ -296,6 +310,7 @@
     <div class="brand">LIMINAL SPACE</div>
     <nav class="nav-links" id="navLinks">
       <a href="#concept" data-i18n="nav.concept">브랜드</a>
+      <a href="#space" data-i18n="nav.space">공간</a>
       <a href="#classes" data-i18n="nav.classes">클래스</a>
       <a href="#apply" data-i18n="nav.apply">신청</a>
       <a href="#location" data-i18n="nav.location">위치</a>
@@ -363,12 +378,34 @@
   </div>
 </section>
 
+<!-- SPACE (공간) -->
+<section id="space" style="background:var(--paper)">
+  <div class="wrap">
+    <div class="sec-head">
+      <h2 data-i18n="space.title">공간</h2>
+      <p class="coord mono">02 — SPACE</p>
+    </div>
+    <div class="carousel" id="spaceCarousel">
+      <div class="carousel-track" id="spaceTrack">
+        <div class="cslide"><img src="assets/space-1.jpg" alt="LIMINAL SPACE" loading="lazy"></div>
+        <div class="cslide"><img src="assets/space-2.jpg" alt="LIMINAL SPACE" loading="lazy"></div>
+        <div class="cslide"><img src="assets/space-3.jpg" alt="LIMINAL SPACE" loading="lazy"></div>
+        <div class="cslide"><img src="assets/space-4.jpg" alt="LIMINAL SPACE" loading="lazy"></div>
+        <div class="cslide"><img src="assets/space-5.jpg" alt="LIMINAL SPACE" loading="lazy"></div>
+      </div>
+      <button class="carousel-arrow prev" id="spacePrev" type="button" aria-label="이전">‹</button>
+      <button class="carousel-arrow next" id="spaceNext" type="button" aria-label="다음">›</button>
+      <div class="carousel-dots" id="spaceDots"></div>
+    </div>
+  </div>
+</section>
+
 <!-- CLASSES -->
 <section id="classes" style="background:var(--bg)">
   <div class="wrap">
     <div class="sec-head">
       <h2 data-i18n="classes.title">클래스 & 프로그램</h2>
-      <p class="coord mono">02 — PROGRAMS</p>
+      <p class="coord mono">03 — PROGRAMS</p>
     </div>
     <div class="branch-tabs" id="classTabs"></div>
     <!-- 클래스 카드는 renderClasses()가 실제 데이터로 채웁니다. 렌더 전 깜빡임 방지를 위해 정적 카드 없음. -->
@@ -381,7 +418,7 @@
   <div class="wrap">
     <div class="sec-head">
       <h2 data-i18n="proc.title">클래스 진행 순서</h2>
-      <p class="coord mono" style="color:#9a9ca1">03 — THE PROCESS</p>
+      <p class="coord mono" style="color:#9a9ca1">04 — THE PROCESS</p>
     </div>
     <p class="lede" data-i18n="apply.note">소요 1–2시간 · 사전 예약제로 운영됩니다.</p>
     <div class="steps-grid">
@@ -403,7 +440,7 @@
   <div class="wrap">
     <div class="sec-head">
       <h2 data-i18n="loc.title">찾아오는 길</h2>
-      <p class="coord mono">04 — LOCATION</p>
+      <p class="coord mono">05 — LOCATION</p>
     </div>
     <div class="loc-grid">
       <dl class="loc-info" id="locInfo">
@@ -531,7 +568,7 @@
 const I18N = {
   ko: {}, // 기본값은 HTML에 그대로 둠 (data-i18n 키만 매핑)
   en: {
-    "nav.concept":"Brand","nav.classes":"Classes","nav.apply":"Apply","nav.location":"Location",
+    "nav.concept":"Brand","nav.space":"Space","nav.classes":"Classes","nav.apply":"Apply","nav.location":"Location","space.title":"The Space",
     "hero.eyebrow":"Perfume Workshop","hero.sub":"The scent of moments between boundaries. A workshop where you blend and bottle a perfume of your own.",
     "hero.tag1":"Completely new experience","hero.tag2":"Eau de Parfum","hero.cta":"Apply for a class","hero.cta2":"View classes",
     "concept.title":"A scent that begins at the threshold",
@@ -569,7 +606,7 @@ const I18N = {
     "loc.title":"Getting here","loc.addr.t":"Address","loc.hours.t":"Hours","loc.hours.d":"Tue–Sun 11:00 – 20:00 (Mon closed)","loc.contact.t":"Contact","loc.mapnote":"Map area","slot":"Photo area"
   },
   vi: {
-    "nav.concept":"Thương hiệu","nav.classes":"Lớp học","nav.apply":"Đăng ký","nav.location":"Vị trí",
+    "nav.concept":"Thương hiệu","nav.space":"Không gian","nav.classes":"Lớp học","nav.apply":"Đăng ký","nav.location":"Vị trí","space.title":"Không gian",
     "hero.eyebrow":"Perfume Workshop · Xưởng nước hoa",
     "hero.sub":"Hương thơm của khoảnh khắc giữa hai ranh giới. Lớp học tự pha chế và mang về một chai nước hoa của riêng bạn.",
     "hero.tag1":"Completely new experience","hero.tag2":"Eau de Parfum",
@@ -859,6 +896,37 @@ function renderMap(){
     +`<span class="map-cover"></span>`
     +`<span class="map-hint">${hint}</span></a>`;
 }
+/* 공간 캐러셀 — 가로 스와이프 + 화살표/도트, 누락 이미지 자동 숨김 */
+function initSpaceCarousel(){
+  const track=document.getElementById('spaceTrack'); if(!track)return;
+  const sec=document.getElementById('space');
+  const dotsEl=document.getElementById('spaceDots');
+  const prev=document.getElementById('spacePrev'), next=document.getElementById('spaceNext');
+  const imgs=[...track.querySelectorAll('img')];
+  let pending=imgs.length;
+  function finalize(){
+    const slides=[...track.querySelectorAll('.cslide')];
+    if(!slides.length){ if(sec)sec.style.display='none'; return; }
+    if(sec)sec.style.display='';
+    dotsEl.innerHTML=slides.map((_,i)=>`<button type="button" class="${i===0?'active':''}" aria-label="${i+1}"></button>`).join('');
+    const dots=[...dotsEl.children];
+    const goTo=i=>track.scrollTo({left:i*track.clientWidth,behavior:'smooth'});
+    const cur=()=>Math.round(track.scrollLeft/(track.clientWidth||1));
+    const update=()=>{const i=cur();dots.forEach((d,di)=>d.classList.toggle('active',di===i));if(prev)prev.disabled=i<=0;if(next)next.disabled=i>=slides.length-1;};
+    dots.forEach((d,i)=>d.addEventListener('click',()=>goTo(i)));
+    if(prev)prev.onclick=()=>goTo(Math.max(0,cur()-1));
+    if(next)next.onclick=()=>goTo(Math.min(slides.length-1,cur()+1));
+    track.addEventListener('scroll',()=>{clearTimeout(track._st);track._st=setTimeout(update,60);});
+    update();
+  }
+  if(!pending){ finalize(); return; }
+  imgs.forEach(img=>{
+    const done=()=>{ if(--pending<=0) finalize(); };
+    if(img.complete && img.naturalWidth>0) done();
+    else if(img.complete) { const sl=img.closest('.cslide'); if(sl)sl.remove(); done(); }
+    else { img.addEventListener('load',done); img.addEventListener('error',()=>{ const sl=img.closest('.cslide'); if(sl)sl.remove(); done(); }); }
+  });
+}
 function bookedOn(dateStr,time){
   return getApps().filter(a=>a.date===dateStr && a.time===time && a.status!=='cancel')
     .reduce((s,a)=>s+(parseInt(a.people)||1),0);
@@ -1068,6 +1136,7 @@ document.querySelectorAll('[data-open-apply]').forEach(b=>b.addEventListener('cl
   renderMap();
   renderFooterSocial();
   renderSiteInfo();
+  initSpaceCarousel();
 });
 /* close triggers */
 document.getElementById('modalClose').addEventListener('click',closeModal);
