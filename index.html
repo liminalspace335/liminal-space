@@ -194,6 +194,10 @@
     display:flex;align-items:center;justify-content:center;
   }
   .map .pin{font-size:13px;letter-spacing:.1em;color:#43444a;text-align:center}
+  .map a.map-link{position:absolute;inset:0;display:block;text-decoration:none}
+  .map iframe.map-frame{width:100%;height:100%;border:0;display:block;filter:grayscale(.85) contrast(1.05)}
+  .map .map-cover{position:absolute;inset:0;cursor:pointer;background:transparent}
+  .map .map-hint{position:absolute;left:0;right:0;bottom:0;font-size:11px;letter-spacing:.08em;color:#fff;background:rgba(20,21,22,.72);padding:8px 10px;text-align:center;pointer-events:none}
   footer{background:var(--accent);color:#9a9ca1;padding:44px 0;font-size:12px}
   .foot{display:flex;justify-content:space-between;flex-wrap:wrap;gap:16px;letter-spacing:.1em;align-items:center}
   .foot .social a{color:#c9cacd;text-decoration:none;margin-right:14px}
@@ -410,7 +414,7 @@
         <dt data-i18n="loc.contact.t">Contact</dt>
         <dd>hello@liminalspace.studio</dd>
       </dl>
-      <div class="map"><div class="pin">◎<br><span class="mono">10°47'27.49"N 106°41'36.89"E</span><br><span data-i18n="loc.mapnote">지도 영역</span></div></div>
+      <div class="map" id="mapArea"><div class="pin">◎<br><span data-i18n="loc.mapnote">지도 영역</span></div></div>
     </div>
   </div>
 </section>
@@ -642,6 +646,7 @@ function setLang(lang){
   if(typeof applyActiveStates==='function') applyActiveStates();  // 카드 준비중 재적용
   if(typeof renderClasses==='function') renderClasses();          // 클래스 카드 언어/데이터 재적용
   if(typeof renderLocation==='function') renderLocation();        // 위치 섹션 언어 재적용
+  if(typeof renderMap==='function') renderMap();                  // 지도(언어별 위치 텍스트) 재적용
 }
 document.querySelectorAll('.lang button').forEach(b=>{
   b.addEventListener('click',()=>setLang(b.dataset.lang));
@@ -836,6 +841,23 @@ function renderLocation(){
     var hrs=Lval(b.hours,curLang());
     return `<dt>${esc(b.name)}</dt><dd>${esc(Lval(b.location,curLang()))}${b.contact?` · ${esc(b.contact)}`:''}${b.link?` · <a href="${esc(b.link)}" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline">${curLang()==='en'?'Visit':(curLang()==='vi'?'Xem':'바로가기')}</a>`:''}${hrs?'<br>'+esc(hrs):''}${soc.length?'<br>'+soc.join(' · '):''}</dd>`;
   }).join('');
+}
+/* 찾아오는 길 지도 — 저장된 위치를 구글맵으로 표시(클릭 시 새 창) */
+function renderMap(){
+  const el=document.getElementById('mapArea'); if(!el)return;
+  const lang=curLang();
+  const brs=(getSettings().branches||[]).filter(b=>b&&b.name);
+  const b=brs[0];
+  const loc=b?Lval(b.location,lang):'';
+  if(!loc){ el.innerHTML=`<div class="pin">◎<br><span>${lang==='en'?'Map area':(lang==='vi'?'Khu vực bản đồ':'지도 영역')}</span></div>`; return; }
+  const q=encodeURIComponent(loc);
+  const embed=`https://www.google.com/maps?q=${q}&z=16&output=embed`;
+  const open=`https://www.google.com/maps/search/?api=1&query=${q}`;
+  const hint=lang==='en'?'Open in Google Maps ↗':(lang==='vi'?'Mở trong Google Maps ↗':'Google 지도에서 보기 ↗');
+  el.innerHTML=`<a class="map-link" href="${open}" target="_blank" rel="noopener" aria-label="${esc(loc)}">`
+    +`<iframe class="map-frame" src="${embed}" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="${esc(loc)}"></iframe>`
+    +`<span class="map-cover"></span>`
+    +`<span class="map-hint">${hint}</span></a>`;
 }
 function bookedOn(dateStr,time){
   return getApps().filter(a=>a.date===dateStr && a.time===time && a.status!=='cancel')
@@ -1043,6 +1065,7 @@ document.querySelectorAll('[data-open-apply]').forEach(b=>b.addEventListener('cl
   applyActiveStates();
   renderClasses();
   renderLocation();
+  renderMap();
   renderFooterSocial();
   renderSiteInfo();
 });
