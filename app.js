@@ -2,7 +2,7 @@
 const I18N = {
   ko: {}, // 기본값은 HTML에 그대로 둠 (data-i18n 키만 매핑)
   en: {
-    "nav.concept":"Brand","nav.home":"About","nav.space":"Space","nav.classes":"Classes","nav.apply":"Apply","nav.gallery":"Gallery","nav.location":"Location","nav.contact":"Contact","space.title":"The Space","contact.title":"Contact","contact.note":"Inquiries for classes, companies/groups and collaborations are welcome.",
+    "nav.concept":"Brand","nav.home":"About","nav.space":"Space","nav.classes":"Classes","nav.apply":"Apply","nav.gallery":"Gallery","nav.location":"Location","nav.contact":"Apply · Contact","space.title":"The Space","space.more":"More about the space →","contact.title":"Contact","contact.note":"Inquiries for classes, companies/groups and collaborations are welcome.",
     "cta.lead":"Complete your own scent, together with a scent designer.","cta.sub":"A premium perfume workshop where you smell 100+ notes, blend, and take home your own bottle.","cta.btn":"Book a class",
     "gallery.title":"Gallery","gallery.featured":"Featured with","gallery.more":"View full gallery →",
     "hero.eyebrow":"Perfume Workshop","hero.sub":"The scent of moments between boundaries. A workshop where you blend and bottle a perfume of your own.",
@@ -42,7 +42,7 @@ const I18N = {
     "loc.title":"Getting here","loc.addr.t":"Address","loc.hours.t":"Hours","loc.hours.d":"Tue–Sun 11:00 – 20:00 (Mon closed)","loc.contact.t":"Contact","loc.mapnote":"Map area","slot":"Photo area"
   },
   vi: {
-    "nav.concept":"Thương hiệu","nav.home":"Giới thiệu","nav.space":"Không gian","nav.classes":"Lớp học","nav.apply":"Đăng ký","nav.gallery":"Thư viện","nav.location":"Vị trí","nav.contact":"Liên hệ","space.title":"Không gian","contact.title":"Liên hệ","contact.note":"Chào đón liên hệ về lớp học, doanh nghiệp/nhóm và hợp tác.",
+    "nav.concept":"Thương hiệu","nav.home":"Giới thiệu","nav.space":"Không gian","nav.classes":"Lớp học","nav.apply":"Đăng ký","nav.gallery":"Thư viện","nav.location":"Vị trí","nav.contact":"Đăng ký · Liên hệ","space.title":"Không gian","space.more":"Xem thêm về không gian →","contact.title":"Liên hệ","contact.note":"Chào đón liên hệ về lớp học, doanh nghiệp/nhóm và hợp tác.",
     "cta.lead":"Hoàn thiện mùi hương của riêng bạn, cùng scent designer.","cta.sub":"Workshop nước hoa cao cấp: thử hơn 100 loại hương, pha chế và mang về chai của riêng bạn.","cta.btn":"Đăng ký lớp học",
     "gallery.title":"Thư viện","gallery.featured":"Đã đồng hành cùng","gallery.more":"Xem toàn bộ thư viện →",
     "hero.eyebrow":"Perfume Workshop · Xưởng nước hoa",
@@ -635,13 +635,9 @@ function initEffects(){
     var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}});},{threshold:.12});
     targets.forEach(function(t){t.classList.add('reveal');io.observe(t);});
   } else { targets.forEach(function(t){t.classList.add('in');}); }
-  // 2) 스크롤스파이(현재 섹션 네비 강조)
-  var navA={}; document.querySelectorAll('#navLinks a').forEach(function(a){var h=a.getAttribute('href')||'';if(h.charAt(0)==='#')navA[h.slice(1)]=a;});
-  var secs=[].slice.call(document.querySelectorAll('section[id]'));
-  if('IntersectionObserver' in window && secs.length){
-    var so=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){var id=e.target.id;for(var k in navA)navA[k].classList.remove('active');if(navA[id])navA[id].classList.add('active');}});},{rootMargin:'-45% 0px -50% 0px'});
-    secs.forEach(function(s){so.observe(s);});
-  }
+  // 2) 현재 페이지 네비 강조(멀티페이지)
+  var curPg=(location.pathname.split('/').pop()||'index.html');
+  document.querySelectorAll('#navLinks a').forEach(function(a){var h=a.getAttribute('href')||'';if(h&&h!=='#'&&h===curPg)a.classList.add('active');});
   // 3) 라이트박스(갤러리·공간 사진 확대)
   var lb=document.getElementById('lightbox');
   if(lb){
@@ -665,6 +661,17 @@ function initEffects(){
     var onScroll=function(){var y=window.scrollY||window.pageYOffset||0,vh=window.innerHeight||800;
       if(y<=vh){hero.style.transform='translateY('+(y*0.2)+'px)';hero.style.opacity=String(Math.max(0,1-y/(vh*0.85)));}};
     window.addEventListener('scroll',onScroll,{passive:true}); onScroll();
+  }
+  // 5) 플로팅 버튼(예약하기 · 맨 위로) — 스크롤해도 항상 표시
+  if(!document.querySelector('.floaty')){
+    try{ I18N.en['floaty.book']='Book a class'; I18N.vi['floaty.book']='Đặt lịch'; I18N.ko['floaty.book']='예약하기'; }catch(e){}
+    var f=document.createElement('div'); f.className='floaty';
+    var book=document.createElement('button'); book.type='button'; book.className='floaty-book';
+    book.setAttribute('data-i18n','floaty.book'); book.textContent=(I18N[curLang()]&&I18N[curLang()]['floaty.book'])||'예약하기';
+    book.addEventListener('click',function(){ if(typeof openModal==='function') openModal(''); });
+    var top=document.createElement('button'); top.type='button'; top.className='floaty-top'; top.setAttribute('aria-label','top'); top.innerHTML='↑';
+    top.addEventListener('click',function(){ window.scrollTo({top:0,behavior:'smooth'}); });
+    f.appendChild(book); f.appendChild(top); document.body.appendChild(f);
   }
 }
 initEffects();

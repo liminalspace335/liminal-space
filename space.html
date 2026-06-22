@@ -1,7 +1,164 @@
 <!doctype html>
-<html lang="ko"><head><meta charset="utf-8" />
-<title>LIMINAL SPACE</title>
-<link rel="canonical" href="index.html#space" />
-<meta http-equiv="refresh" content="0; url=index.html#space" />
-<script>location.replace('index.html#space');</script>
-</head><body>이동 중… <a href="index.html#space">LIMINAL SPACE</a></body></html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>LIMINAL SPACE — 공간</title>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<header>
+  <div class="wrap nav">
+    <div class="brand"><a href="index.html">LIMINAL SPACE</a></div>
+    <nav class="nav-links" id="navLinks">
+      <a href="brand.html" data-i18n="nav.home">소개</a>
+      <a href="space.html" data-i18n="nav.space">공간</a>
+      <a href="classes.html" data-i18n="nav.classes">클래스</a>
+      <a href="gallery.html" data-i18n="nav.gallery">갤러리</a>
+      <a href="location.html" data-i18n="nav.location">위치</a>
+      <a href="#" data-open-apply data-i18n="nav.contact">신청·문의</a>
+    </nav>
+    <div style="display:flex;align-items:center;gap:14px">
+      <div class="lang">
+        <button data-lang="ko" class="active">KO</button>
+        <button data-lang="en">EN</button>
+        <button data-lang="vi">VI</button>
+      </div>
+      <button class="menu-toggle" id="menuToggle" aria-label="menu">≡</button>
+    </div>
+  </div>
+</header>
+
+<!-- SPACE (공간) -->
+<section id="space" style="background:var(--paper)">
+  <div class="wrap">
+    <div class="sec-head">
+      <h2 data-i18n="space.title">공간</h2>
+      <p class="coord mono">02 — SPACE</p>
+    </div>
+  </div>
+  <div class="marquee" id="spaceMarquee"><div class="marquee-track" id="spaceTrack"><!-- 갤러리 사진으로 JS가 채움(연속 흐름) --></div></div>
+</section>
+
+<footer id="contact">
+  <div class="wrap foot-grid">
+    <div class="foot-col">
+      <div id="footBrand" class="foot-brand">LIMINAL SPACE — PERFUME WORKSHOP</div>
+      <div class="mono foot-coord">10° 47' 27.49" N 106° 41' 36.89" E</div>
+    </div>
+    <div class="foot-col">
+      <div class="foot-h" data-i18n="contact.title">문의하기</div>
+      <a href="mailto:hello@liminalspace.studio">hello@liminalspace.studio</a>
+      <div class="foot-sub" data-i18n="contact.note">클래스 · 기업/단체 · 협업 문의를 환영합니다.</div>
+    </div>
+    <div class="foot-col">
+      <span class="social" id="socialLinks"></span>
+      <div id="footCopy" class="foot-copy">© 2026 LIMINAL SPACE</div>
+    </div>
+  </div>
+</footer>
+
+<!-- ===== APPLY MODAL (STEP WIZARD) ===== -->
+<div class="modal-overlay" id="applyModal" aria-hidden="true">
+  <div class="modal" role="dialog" aria-modal="true">
+    <div class="modal-head">
+      <div>
+        <div class="t">LIMINAL SPACE</div>
+        <div class="c" data-i18n="modal.sub">클래스 신청 · 5단계</div>
+      </div>
+      <button class="modal-close" id="modalClose" aria-label="close">×</button>
+    </div>
+    <div class="progress" id="progress">
+      <span class="dot active"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span>
+    </div>
+    <div class="modal-body">
+
+      <!-- STEP 1: BRANCH -->
+      <div class="modal-step active" data-step="1">
+        <div class="step-label" data-i18n="modal.step1">STEP 1 / 5</div>
+        <div class="step-q" data-i18n="modal.q0">방문할 지점을 선택해 주세요.</div>
+        <div class="opt-list" data-field="branch"></div>
+        <div class="err" data-err="branch" data-i18n="modal.err">항목을 선택해 주세요.</div>
+      </div>
+
+      <!-- STEP 2: CLASS -->
+      <div class="modal-step" data-step="2">
+        <div class="step-label" data-i18n="modal.step2">STEP 2 / 5</div>
+        <div class="step-q" data-i18n="modal.q1">어떤 프로그램을 신청할까요?</div>
+        <div class="opt-list" data-field="class"></div>
+        <div class="err" data-err="class" data-i18n="modal.err">항목을 선택해 주세요.</div>
+      </div>
+
+      <!-- STEP 3: SIZE -->
+      <div class="modal-step" data-step="3">
+        <div class="step-label" data-i18n="modal.step3">STEP 3 / 5</div>
+        <div class="step-q" data-i18n="modal.q2">완성할 향수 용량을 골라주세요.</div>
+        <div class="opt-list" data-field="size"></div>
+        <div class="err" data-err="size" data-i18n="modal.err">항목을 선택해 주세요.</div>
+      </div>
+
+      <!-- STEP 4: VISIT INFO -->
+      <div class="modal-step" data-step="4">
+        <div class="step-label" data-i18n="modal.step4">STEP 4 / 5</div>
+        <div class="step-q" data-i18n="modal.q3">방문 정보를 알려주세요.</div>
+        <div class="grid2">
+          <div class="mfield"><label data-i18n="form.date">희망 날짜</label><input type="date" data-field="date" /></div>
+          <div class="mfield"><label data-i18n="modal.time">희망 시간</label><select data-field="time"><option value="" data-i18n="modal.pickdate">날짜를 먼저 선택</option></select></div>
+        </div>
+        <div class="mfield"><label data-i18n="form.people">인원</label><input type="number" min="1" value="1" data-field="people" /></div>
+        <div class="capnote" id="capNote"></div>
+        <div class="err" data-err="visit" data-i18n="modal.errdate">날짜와 시간을 입력해 주세요.</div>
+        <div class="err" data-err="cap"></div>
+      </div>
+
+      <!-- STEP 5: CONTACT + CONFIRM -->
+      <div class="modal-step" data-step="5">
+        <div class="step-label" data-i18n="modal.step5">STEP 5 / 5</div>
+        <div class="step-q" data-i18n="modal.q4">신청자 정보를 입력하고 확인해 주세요.</div>
+        <div class="grid2">
+          <div class="mfield"><label data-i18n="form.name">이름</label><input type="text" data-field="name" /></div>
+          <div class="mfield"><label data-i18n="form.phone">연락처</label><input type="tel" data-field="phone" /></div>
+        </div>
+        <div class="grid2">
+          <div class="mfield"><label data-i18n="form.email">이메일</label><input type="email" data-field="email" /></div>
+          <div class="mfield"><label data-i18n="form.nationality">국적</label><input type="text" data-field="nationality" list="natList" autocomplete="off" data-i18n-ph="form.natph" placeholder="검색 또는 선택" /></div>
+        </div>
+        <datalist id="natList"></datalist>
+        <div class="mfield"><label data-i18n="form.msg">남길 말 (선택)</label><textarea rows="2" data-field="msg"></textarea></div>
+        <div class="err" data-err="contact" data-i18n="modal.errcontact">메모를 제외한 모든 항목을 입력해 주세요.</div>
+      </div>
+
+      <!-- STEP 6: CONFIRM REVIEW -->
+      <div class="modal-step" data-step="6">
+        <div class="step-label" data-i18n="modal.confirmlabel">CONFIRM</div>
+        <div class="step-q" data-i18n="modal.confirmq">입력하신 내용을 확인해 주세요.</div>
+        <div class="summary" id="confirmSummary"></div>
+        <p class="form-note" data-i18n="modal.confirmnote">정보가 잘못 입력된 경우 신청이 정상적으로 접수되지 않을 수 있습니다. 입력 내용을 다시 한번 확인하신 후 신청완료를 눌러 접수해 주세요.</p>
+      </div>
+
+      <!-- DONE -->
+      <div class="modal-step" data-step="7">
+        <div class="modal-done">
+          <div class="check">◎</div>
+          <h3 data-i18n="modal.donet">신청이 접수되었습니다</h3>
+          <p data-i18n="modal.doned">확인 후 입력하신 연락처로 예약 확정을 안내드립니다.</p>
+        </div>
+      </div>
+
+    </div>
+    <div class="modal-foot" id="modalFoot">
+      <button class="btn ghost" id="btnBack" data-i18n="modal.back">이전</button>
+      <button class="btn" id="btnNext" data-i18n="modal.next">다음</button>
+    </div>
+  </div>
+</div>
+
+<!-- 라이트박스(사진 확대) -->
+<div class="lightbox" id="lightbox" aria-hidden="true"><button class="lb-close" type="button" aria-label="close">×</button><img alt="" /><div class="lb-cap"></div></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script src="store.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

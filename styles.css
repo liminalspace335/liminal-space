@@ -330,7 +330,14 @@
 .nav-links a.active{color:var(--ink)}
 
 /* ===== 원페이지 효과 (고정네비 오프셋 · 등장 · 라이트박스 · 푸터) ===== */
-section[id], footer[id]{scroll-margin-top:74px}
+section[id], footer[id]{scroll-margin-top:63px}  /* 고정 네비 높이에 딱 맞춤 */
+/* 플로팅 버튼 (예약하기 · 맨 위로) */
+.floaty{position:fixed;right:22px;bottom:22px;z-index:120;display:flex;align-items:center;gap:10px}
+.floaty-book{height:46px;padding:0 22px;border:0;border-radius:999px;background:var(--accent);color:#fff;font:inherit;font-size:13px;letter-spacing:.06em;cursor:pointer;box-shadow:0 6px 20px rgba(0,0,0,.18)}
+.floaty-book:hover{background:#000}
+.floaty-top{width:46px;height:46px;border-radius:50%;border:1px solid var(--line);background:rgba(255,255,255,.92);color:var(--ink);font-size:20px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 20px rgba(0,0,0,.12)}
+.floaty-top:hover{background:#fff}
+@media(max-width:640px){.floaty{right:14px;bottom:14px;gap:8px}.floaty-book{height:42px;padding:0 16px}.floaty-top{width:42px;height:42px}}
 /* 스크롤 등장 효과 */
 .reveal{opacity:0;transform:translateY(26px);transition:opacity .7s ease,transform .7s cubic-bezier(.2,.7,.2,1)}
 .reveal.in{opacity:1;transform:none}
