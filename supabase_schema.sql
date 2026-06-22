@@ -43,9 +43,12 @@ create table if not exists public.classes (
   sort int default 0,
   name_ko text default '', name_en text default '', name_vi text default '',
   desc_ko text default '', desc_en text default '', desc_vi text default '',
-  active boolean not null default true
+  active boolean not null default true,
+  inquiry_only boolean not null default false
 );
 create index if not exists classes_branch_idx on public.classes(branch_id);
+-- 기존 classes에 문의전용 컬럼 보강
+alter table public.classes add column if not exists inquiry_only boolean not null default false;
 
 -- 상세설정 (용량·가격·상세설명)
 create table if not exists public.class_details (

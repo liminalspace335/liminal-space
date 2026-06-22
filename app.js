@@ -466,13 +466,34 @@ const data={branch:'',class:'',size:'',date:'',time:'',people:'1',name:'',phone:
 const COUNTRIES=['대한민국 (Korea)','베트남 (Vietnam)','일본 (Japan)','중국 (China)','대만 (Taiwan)','홍콩 (Hong Kong)','싱가포르 (Singapore)','말레이시아 (Malaysia)','태국 (Thailand)','인도네시아 (Indonesia)','필리핀 (Philippines)','인도 (India)','미국 (USA)','캐나다 (Canada)','영국 (UK)','프랑스 (France)','독일 (Germany)','이탈리아 (Italy)','스페인 (Spain)','네덜란드 (Netherlands)','스위스 (Switzerland)','스웨덴 (Sweden)','러시아 (Russia)','호주 (Australia)','뉴질랜드 (New Zealand)','브라질 (Brazil)','멕시코 (Mexico)','아랍에미리트 (UAE)','사우디아라비아 (Saudi Arabia)','튀르키예 (Türkiye)','기타 (Other)'];
 (function(){const dl=document.getElementById('natList');if(dl)dl.innerHTML=COUNTRIES.map(c=>`<option value="${c}"></option>`).join('');})();
 
+function classObjOf(){return branchClassesOf(data.branch).find(c=>keyOf(c.name)===data.class);}
+function isInquiry(){const c=classObjOf();return !!(c&&c.inquiry);}
+function inquiryTemplate(){var l=curLang();
+  if(l==='en')return '[Inquiry]\n- Group size: \n- Preferred date/time: \n- Details: \n';
+  if(l==='vi')return '[Liên hệ]\n- Số người: \n- Ngày/giờ mong muốn: \n- Nội dung: \n';
+  return '[문의 내용]\n- 희망 인원: \n- 희망 일정/시간: \n- 문의 사항: \n';
+}
+/* 열 때마다 기본값으로 리셋(캐시 잔존 방지): 첫 지점·첫 클래스·30ml·오늘·가장 빠른 시간·1명·신청자 공란 */
+function resetApplyData(preClass){
+  var brs=(getSettings().branches||[]).filter(function(b){return b&&b.name;});
+  data.branch=brs.length?brs[0].name:'';
+  var progs=programList(data.branch);
+  data.class=preClass||(progs.length?keyOf(progs[0].name):'');
+  var vols=volumesForName(data.branch,data.class);
+  if(vols.length){var v30=vols.find(function(v){return String(v.volume)==='30';});data.size=((v30?v30.volume:vols[0].volume))+'ml';}
+  else data.size='';
+  data.date=vnToday();
+  var avail=slotsFor(data.date).filter(function(s){return !isPastSlot(data.date,s.time);}).map(function(s){return s.time;}).sort();
+  data.time=avail.length?avail[0]:'';
+  data.people='1';
+  data.name='';data.phone='';data.email='';data.nationality='';data.msg='';
+}
 function openModal(preClass){
-  if(preClass){data.class=preClass;}
+  resetApplyData(preClass||'');     // 매번 기본값으로 초기화
   cur=1;
   populateBranches();
   renderPrograms();
   applyActiveStates();
-  // 선택 상태 반영
   syncSelections();
   goto(1);
   modal.classList.add('open');
@@ -504,7 +525,20 @@ function goto(n){
   applyBtnLabels();
   if(n===2) renderPrograms();
   if(n===3) renderSizes();
-  if(n===4){const di=modal.querySelector('[data-field="date"]');if(di)di.min=vnToday();populateTimes();updateCapNote();}
+  if(n===4){
+    var inq=isInquiry();
+    var di=modal.querySelector('[data-field="date"]');if(di)di.min=vnToday();
+    var tf=modal.querySelector('.modal-step[data-step="4"] [data-field="time"]'); var tw=tf?tf.closest('.mfield'):null;
+    var pf=modal.querySelector('.modal-step[data-step="4"] [data-field="people"]'); var pw=pf?pf.closest('.mfield'):null;
+    if(tw)tw.style.display=inq?'none':'';
+    if(pw)pw.style.display=inq?'none':'';
+    var cap=document.getElementById('capNote'); if(cap)cap.style.display=inq?'none':'';
+    if(!inq){populateTimes();updateCapNote();}
+  }
+  if(n===5 && isInquiry()){
+    var ta=modal.querySelector('[data-field="msg"]');
+    if(ta && !data.msg){ ta.value=inquiryTemplate(); data.msg=ta.value; }
+  }
   hideErrors();
 }
 function applyBtnLabels(){
@@ -536,11 +570,12 @@ function validate(n){
   collectInputs();
   if(n===1&&!data.branch){showErr('branch');return false;}
   if(n===2&&!data.class){showErr('class');return false;}
-  if(n===3&&!data.size){showErr('size');return false;}
+  if(n===3 && !isInquiry() && !data.size){showErr('size');return false;}
   if(n===4){
     const lang=curLang();const vi=lang==='vi';const en=lang==='en';
     if(!data.date){showErr('visit');return false;}
     if(data.date<vnToday()){const e=modal.querySelector('[data-err="cap"]');e.textContent=vi?'Không thể chọn ngày đã qua.':en?'Past dates cannot be selected.':'지난 날짜는 선택할 수 없습니다.';e.style.display='block';return false;}
+    if(isInquiry()) return true;   // 문의전용: 날짜만 확인(시간/슬롯/정원 검증 없음)
     const slots=slotsFor(data.date);
     if(!slots.length){const e=modal.querySelector('[data-err="cap"]');e.textContent=dayMsg(data.date);e.style.display='block';return false;}
     if(!data.time){showErr('visit');return false;}
@@ -556,16 +591,20 @@ function validate(n){
 }
 function renderConfirm(){
   const lang=curLang();
-  const L = lang==='en'?{branch:'Branch',class:'Class',size:'Volume',date:'Date',time:'Time',people:'People',name:'Name',phone:'Phone',email:'Email',nat:'Nationality'}
-    : lang==='vi'?{branch:'Chi nhánh',class:'Lớp',size:'Dung tích',date:'Ngày',time:'Giờ',people:'Số người',name:'Họ tên',phone:'SĐT',email:'Email',nat:'Quốc tịch'}
-    : {branch:'지점',class:'클래스',size:'용량',date:'날짜',time:'시간',people:'인원',name:'이름',phone:'연락처',email:'이메일',nat:'국적'};
+  const L = lang==='en'?{branch:'Branch',class:'Class',size:'Volume',date:'Date',time:'Time',people:'People',name:'Name',phone:'Phone',email:'Email',nat:'Nationality',msg:'Note'}
+    : lang==='vi'?{branch:'Chi nhánh',class:'Lớp',size:'Dung tích',date:'Ngày',time:'Giờ',people:'Số người',name:'Họ tên',phone:'SĐT',email:'Email',nat:'Quốc tịch',msg:'Ghi chú'}
+    : {branch:'지점',class:'클래스',size:'용량',date:'날짜',time:'시간',people:'인원',name:'이름',phone:'연락처',email:'이메일',nat:'국적',msg:'메모'};
   const cObj=branchClassesOf(data.branch).find(c=>keyOf(c.name)===data.class);
   const clsDisp=cObj?Lval(cObj.name,lang):data.class;
+  const inq=isInquiry();
   const rows=[['branch',data.branch],['class',clsDisp]];
-  if(data.size) rows.push(['size',data.size]);
-  rows.push(['date',data.date||'-'],['time',data.time||'-'],['people',(data.people||'1')+(lang==='ko'?'명':'')],['name',data.name],['phone',data.phone],['email',data.email],['nat',data.nationality]);
+  if(data.size && !inq) rows.push(['size',data.size]);
+  rows.push(['date',data.date||'-']);
+  if(!inq) rows.push(['time',data.time||'-'],['people',(data.people||'1')+(lang==='ko'?'명':'')]);
+  rows.push(['name',data.name],['phone',data.phone],['email',data.email],['nat',data.nationality]);
+  if(data.msg) rows.push(['msg',data.msg]);
   document.getElementById('confirmSummary').innerHTML=
-    rows.map(([k,v])=>`<div class="sr"><span class="k">${L[k]}</span><span class="v">${esc(v)}</span></div>`).join('');
+    rows.map(([k,v])=>`<div class="sr"><span class="k">${L[k]}</span><span class="v"${k==='msg'?' style="white-space:pre-line;text-align:right"':''}>${esc(v)}</span></div>`).join('');
 }
 function submitApplication(){
   const entry={id:Date.now(),createdAt:new Date().toISOString(),
@@ -595,13 +634,13 @@ btnNext.addEventListener('click',()=>{
   if(!validate(cur))return;
   if(m==='review'){goto(6);return;}                      // STEP5 접수 → 확인 화면
   let n=cur+1;
-  if(n===3 && !needsSize()) n=4; // 용량 단계 건너뛰기
+  if(n===3 && (!needsSize()||isInquiry())) n=4; // 용량 단계 건너뛰기(문의전용 포함)
   goto(n);
 });
 btnBack.addEventListener('click',()=>{
   if(cur===6){goto(5);return;}                            // 확인 → 다시 입력
   let n=cur-1;
-  if(n===3 && !needsSize()) n=2;
+  if(n===3 && (!needsSize()||isInquiry())) n=2;
   if(n>=1) goto(n);
 });
 /* open triggers */

@@ -111,7 +111,7 @@
   .head-row{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--coord)}
   #sub-branch .box{max-width:1320px}
   .br-row{grid-template-columns:.9fr .8fr .9fr 1fr 1fr .9fr .9fr 44px}
-  .bc-row{grid-template-columns:48px 1.2fr 1.8fr 92px 46px}
+  .bc-row{grid-template-columns:48px 1.1fr 1.5fr 92px 100px 44px}
   .cd-row{grid-template-columns:1fr 1fr 82px .58fr .58fr .58fr 82px 70px 1fr 56px}
   #sub-detail .box{max-width:1500px}
   .gl-row{grid-template-columns:1.4fr 1fr 1.7fr .9fr 40px}
@@ -228,7 +228,7 @@
           <div class="box">
             <h3>클래스 설정 (지점별)</h3><p class="desc">지점을 선택하고 그 지점의 클래스 이름·클래스 설명을 등록합니다.</p>
             <div class="branch-picker"><label class="head-row">지점</label><select id="bcBranchSel"></select></div>
-            <div class="gen-row bc-row head-row"><div>순서</div><div>이름</div><div>클래스 설명</div><div>상태</div><div></div></div>
+            <div class="gen-row bc-row head-row"><div>순서</div><div>이름</div><div>클래스 설명</div><div>상태</div><div>문의전용</div><div></div></div>
             <div id="bcList"></div>
             <div class="save-row"><button class="btn ghost sm" id="bcAdd">+ 클래스 추가</button><button class="btn sm" id="bcSave">저장</button><span class="saved" id="bcSaved">저장됨 ✓</span></div>
           </div>
@@ -384,7 +384,7 @@ function buildCalendar(monthDate,cellFn){
   let cells='';DOW.forEach(d=>cells+=`<div class="cal-dow">${d}</div>`);
   for(let i=0;i<startDow;i++)cells+='<div class="cal-cell empty"></div>';
   for(let day=1;day<=days;day++){const ds=ymd(new Date(y,m,day));cells+=`<div class="cal-cell" data-date="${ds}">${cellFn(ds,day)}</div>`;}
-  return `<div class="cal-head"><button class="icon-btn" data-nav="-1">‹</button><span class="m">${y}. ${String(m+1).padStart(2,'0')}</span><button class="icon-btn" data-nav="1">›</button></div><div class="cal-grid">${cells}</div>`;
+  return `<div class="cal-head"><button class="icon-btn" data-nav="-1">‹</button><span class="m">${y}. ${String(m+1).padStart(2,'0')}</span><button class="icon-btn" data-nav="1">›</button><button class="icon-btn" data-today="1" title="오늘로">오늘</button></div><div class="cal-grid">${cells}</div>`;
 }
 function applicantsByDate(branch){const map={};load().forEach(a=>{if(a.status==='cancel'||!a.date)return;if(branch&&a.branch!==branch)return;map[a.date]=(map[a.date]||0)+(parseInt(a.people)||1);});return map;}
 function bookedAt(branch,dateStr,time){return load().filter(a=>a.date===dateStr&&a.time===time&&a.status!=='cancel'&&(!branch||a.branch===branch)).reduce((s,a)=>s+(parseInt(a.people)||1),0);}
@@ -399,13 +399,14 @@ function renderOverview(){
   const cal=document.getElementById('ovCal');
   cal.innerHTML=buildCalendar(ovMonth,(ds)=>{const n=by[ds]||0;const day=+ds.slice(-2);return `<span class="d">${day}</span>`+(n?`<div><span class="pill">${n}명</span></div><span class="heat" style="opacity:${(0.15+0.6*n/max).toFixed(2)}"></span>`:'');});
   cal.querySelectorAll('[data-nav]').forEach(b=>b.addEventListener('click',()=>{ovMonth.setMonth(ovMonth.getMonth()+ +b.dataset.nav);renderOverview();}));
+  cal.querySelectorAll('[data-today]').forEach(b=>b.addEventListener('click',()=>{ovMonth=new Date();ovMonth.setDate(1);renderOverview();}));
   document.getElementById('byClass').innerHTML='<h3>클래스별 신청</h3>'+breakdown(list,'class');
   document.getElementById('byBranch').innerHTML='<h3>지점별 신청</h3>'+breakdown(list,'branch');
 }
 function breakdown(list,field){const map={};list.forEach(x=>{const k=x[field]||'(미지정)';map[k]=(map[k]||0)+1;});const e=Object.entries(map).sort((a,b)=>b[1]-a[1]);if(!e.length)return '<div style="color:var(--ink-soft);font-size:13px">데이터 없음</div>';const mx=Math.max(...e.map(x=>x[1]));return e.map(([k,v])=>`<div class="brow"><span class="lab">${esc(k)}</span><span class="bar"><i style="width:${Math.round(v/mx*100)}%"></i></span><span class="cnt mono">${v}</span></div>`).join('');}
 
 /* ===== 신청관리 (캘린더 + 선택일자 클래스별 신청목록) ===== */
-let amMonth=new Date();amMonth.setDate(1);let amSelected=null;
+let amMonth=new Date();amMonth.setDate(1);let amSelected=ymd(new Date());
 function populateFilters(){document.getElementById('amBranch').innerHTML='<option value="">전체 지점</option>'+branchNames().map(n=>`<option>${esc(n)}</option>`).join('');}
 function amCountByDate(){const fb=document.getElementById('amBranch').value,fs=document.getElementById('amStatus').value;const map={};load().forEach(a=>{if(!a.date)return;if(fb&&a.branch!==fb)return;if(fs?a.status!==fs:a.status==='cancel')return;map[a.date]=(map[a.date]||0)+(parseInt(a.people)||1);});return map;}
 function amApps(dateStr){const fb=document.getElementById('amBranch').value,fs=document.getElementById('amStatus').value;return load().filter(a=>a.date===dateStr&&(!fb||a.branch===fb)&&(!fs||a.status===fs));}
@@ -414,6 +415,7 @@ function renderList(){  // 신청관리 탭
   const cal=document.getElementById('amCal');
   cal.innerHTML=buildCalendar(amMonth,(ds,day)=>{const n=by[ds]||0;return `<span class="d">${day}</span>`+(n?`<div class="slots">${n}명</div><span class="heat" style="opacity:${(0.15+0.6*n/max).toFixed(2)}"></span>`:'');});
   cal.querySelectorAll('[data-nav]').forEach(b=>b.addEventListener('click',()=>{amMonth.setMonth(amMonth.getMonth()+ +b.dataset.nav);renderList();}));
+  cal.querySelectorAll('[data-today]').forEach(b=>b.addEventListener('click',()=>{amMonth=new Date();amMonth.setDate(1);amSelected=ymd(new Date());renderList();}));
   cal.querySelectorAll('.cal-cell[data-date]').forEach(c=>{if(c.dataset.date===amSelected)c.classList.add('current');c.addEventListener('click',()=>{amSelected=c.dataset.date;renderList();});});
   renderAmView();
 }
@@ -459,7 +461,7 @@ document.getElementById('exportBtn').addEventListener('click',()=>{const list=lo
 
 /* ===== BOOKING (지점별) ===== */
 let bkMonth=new Date();bkMonth.setDate(1);
-let bkBranch='';let bkSelected=null;let clipboard=null;
+let bkBranch='';let bkSelected=ymd(new Date());let clipboard=null;
 let bkSel=new Set();let dragging=false,dragStart=null,dragMoved=false,baseSel=null;let copyMode=false;
 function dateRange(a,b){const lo=a<b?a:b,hi=a<b?b:a;const out=[];let d=new Date(lo+'T00:00:00');const end=new Date(hi+'T00:00:00');while(d<=end){out.push(ymd(d));d.setDate(d.getDate()+1);}return out;}
 function updateCalSelection(){document.querySelectorAll('#bkCal .cal-cell[data-date]').forEach(c=>{c.classList.toggle('selected',bkSel.has(c.dataset.date));c.classList.toggle('current',c.dataset.date===bkSelected);});}
@@ -472,6 +474,7 @@ function renderBooking(){
   const cal=document.getElementById('bkCal');
   cal.innerHTML=buildCalendar(bkMonth,(ds,day)=>{const ov=sc[ds];const n=by[ds]||0;return `<span class="d">${day}</span>`+(ov?`<span class="cfg">●설정</span>`:'')+(n?`<div class="slots">${n}명 신청</div>`:'')+(ov?`<div class="slots">${ov.length?ov.length+'개 시간대':'휴무'}</div>`:'');});
   cal.querySelectorAll('[data-nav]').forEach(b=>b.addEventListener('click',()=>{bkMonth.setMonth(bkMonth.getMonth()+ +b.dataset.nav);renderBooking();}));
+  cal.querySelectorAll('[data-today]').forEach(b=>b.addEventListener('click',()=>{bkMonth=new Date();bkMonth.setDate(1);bkSelected=ymd(new Date());bkSel=new Set();renderBooking();}));
   cal.querySelectorAll('.cal-cell[data-date]').forEach(c=>{const ds=c.dataset.date;
     c.addEventListener('mousedown',e=>{if(!copyMode)return;e.preventDefault();dragging=true;dragStart=ds;dragMoved=false;baseSel=new Set(bkSel);});  // 복사모드에서만 드래그
     c.addEventListener('mouseenter',()=>{if(!dragging)return;if(ds!==dragStart)dragMoved=true;bkSel=new Set([...baseSel,...dateRange(dragStart,ds)]);bkSelected=ds;updateCalSelection();});
@@ -584,11 +587,12 @@ function renderBranchClasses(){
   const sel=document.getElementById('bcBranchSel');sel.innerHTML=names.map(n=>`<option ${n===bcBranch?'selected':''}>${esc(n)}</option>`).join('');
   sel.onchange=()=>{bcBranch=sel.value;renderBranchClasses();};
   const rows=(s.branchClasses||[]).filter(c=>c.branch===bcBranch).sort((a,b)=>(a.order??99)-(b.order??99));
-  document.getElementById('bcList').innerHTML=rows.map((c,i)=>`<div class="gen-row bc-row" data-id="${c.id}"><input type="number" class="bc-order" value="${c.order??(i+1)}" /><input class="bc-name" value="${esc(Lval(c.name,admLang))}" placeholder="이름 (${admLang})" /><input class="bc-desc" value="${esc(Lval(c.desc,admLang))}" placeholder="클래스 설명 (${admLang})" /><label class="switch"><input type="checkbox" class="bc-active" ${c.active!==false?'checked':''} /><span class="track"></span><span class="st">${c.active!==false?'활성':'준비중'}</span></label><button class="icon-btn bc-del">삭제</button></div>`).join('');
+  document.getElementById('bcList').innerHTML=rows.map((c,i)=>`<div class="gen-row bc-row" data-id="${c.id}"><input type="number" class="bc-order" value="${c.order??(i+1)}" /><input class="bc-name" value="${esc(Lval(c.name,admLang))}" placeholder="이름 (${admLang})" /><input class="bc-desc" value="${esc(Lval(c.desc,admLang))}" placeholder="클래스 설명 (${admLang})" /><label class="switch"><input type="checkbox" class="bc-active" ${c.active!==false?'checked':''} /><span class="track"></span><span class="st">${c.active!==false?'활성':'준비중'}</span></label><label class="switch"><input type="checkbox" class="bc-inquiry" ${c.inquiry?'checked':''} /><span class="track"></span><span class="st">${c.inquiry?'문의':'일반'}</span></label><button class="icon-btn bc-del">삭제</button></div>`).join('');
   document.querySelectorAll('#bcList .bc-active').forEach(ch=>ch.addEventListener('change',e=>e.target.parentNode.querySelector('.st').textContent=e.target.checked?'활성':'준비중'));
+  document.querySelectorAll('#bcList .bc-inquiry').forEach(ch=>ch.addEventListener('change',e=>e.target.parentNode.querySelector('.st').textContent=e.target.checked?'문의':'일반'));
   document.querySelectorAll('#bcList .bc-del').forEach(b=>b.addEventListener('click',e=>e.target.closest('.bc-row').remove()));
 }
-document.getElementById('bcAdd').addEventListener('click',()=>{const wrap=document.getElementById('bcList');const t=document.createElement('div');const n=wrap.querySelectorAll('.bc-row').length+1;t.innerHTML=`<div class="gen-row bc-row"><input type="number" class="bc-order" value="${n}" /><input class="bc-name" placeholder="이름 (${admLang})" /><input class="bc-desc" placeholder="클래스 설명 (${admLang})" /><label class="switch"><input type="checkbox" class="bc-active" checked /><span class="track"></span><span class="st">활성</span></label><button class="icon-btn bc-del">삭제</button></div>`;const row=t.firstChild;row.querySelector('.bc-active').addEventListener('change',e=>e.target.parentNode.querySelector('.st').textContent=e.target.checked?'활성':'준비중');row.querySelector('.bc-del').addEventListener('click',e=>e.target.closest('.bc-row').remove());wrap.appendChild(row);});
+document.getElementById('bcAdd').addEventListener('click',()=>{const wrap=document.getElementById('bcList');const t=document.createElement('div');const n=wrap.querySelectorAll('.bc-row').length+1;t.innerHTML=`<div class="gen-row bc-row"><input type="number" class="bc-order" value="${n}" /><input class="bc-name" placeholder="이름 (${admLang})" /><input class="bc-desc" placeholder="클래스 설명 (${admLang})" /><label class="switch"><input type="checkbox" class="bc-active" checked /><span class="track"></span><span class="st">활성</span></label><label class="switch"><input type="checkbox" class="bc-inquiry" /><span class="track"></span><span class="st">일반</span></label><button class="icon-btn bc-del">삭제</button></div>`;const row=t.firstChild;row.querySelector('.bc-active').addEventListener('change',e=>e.target.parentNode.querySelector('.st').textContent=e.target.checked?'활성':'준비중');row.querySelector('.bc-inquiry').addEventListener('change',e=>e.target.parentNode.querySelector('.st').textContent=e.target.checked?'문의':'일반');row.querySelector('.bc-del').addEventListener('click',e=>e.target.closest('.bc-row').remove());wrap.appendChild(row);});
 document.getElementById('bcSave').addEventListener('click',()=>{
   const s=loadSettings();const prevAll=s.branchClasses||[];const others=prevAll.filter(c=>c.branch!==bcBranch);
   const cur=[...document.querySelectorAll('#bcList .bc-row')].map(r=>{
@@ -596,7 +600,7 @@ document.getElementById('bcSave').addEventListener('click',()=>{
     const prev=prevAll.find(c=>String(c.id)===String(r.dataset.id))||{};
     const name=Object.assign({},txObj(prev.name));name[admLang]=r.querySelector('.bc-name').value.trim();
     const desc=Object.assign({},txObj(prev.desc));desc[admLang]=r.querySelector('.bc-desc').value.trim();
-    return {id,branch:bcBranch,order:+r.querySelector('.bc-order').value||0,name,desc,active:r.querySelector('.bc-active').checked};
+    return {id,branch:bcBranch,order:+r.querySelector('.bc-order').value||0,name,desc,active:r.querySelector('.bc-active').checked,inquiry:r.querySelector('.bc-inquiry').checked};
   }).filter(c=>keyOf(c.name)).sort((a,b)=>a.order-b.order);
   s.branchClasses=others.concat(cur);saveSettings(s);toast('bcSaved');populateFilters();renderBranchClasses();
 });

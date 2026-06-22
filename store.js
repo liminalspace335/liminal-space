@@ -37,7 +37,7 @@
     (t.classes||[]).sort(function(a,b){return (a.sort||0)-(b.sort||0);}).forEach(function(c){
       var bn=branchById[c.branch_id]||''; classById[c.id]={branch:bn, nameKo:c.name_ko||''};
       settings.branchClasses.push({ id:c.id, branch:bn, order:c.sort||0,
-        name:tri(c.name_ko,c.name_en,c.name_vi), desc:tri(c.desc_ko,c.desc_en,c.desc_vi), active:c.active!==false });
+        name:tri(c.name_ko,c.name_en,c.name_vi), desc:tri(c.desc_ko,c.desc_en,c.desc_vi), active:c.active!==false, inquiry:c.inquiry_only===true });
     });
     (t.class_details||[]).forEach(function(d){
       var cm=classById[d.class_id]||{};
@@ -83,7 +83,7 @@
     var classRows=(s.branchClasses||[]).map(function(c,i){ var k=classKey(c.branch,ko(c.name)); var id=classIdByKey[k]||rid('cl'); clKeyToId[k]=id;
       return { id:id, branch_id:brNameToId[c.branch]||null, sort:(c.order!=null?c.order:i),
         name_ko:ko(c.name), name_en:en(c.name), name_vi:vi(c.name),
-        desc_ko:ko(c.desc), desc_en:en(c.desc), desc_vi:vi(c.desc), active:c.active!==false }; });
+        desc_ko:ko(c.desc), desc_en:en(c.desc), desc_vi:vi(c.desc), active:c.active!==false, inquiry_only:!!c.inquiry }; });
     var detKeyToId={};
     var detailRows=(s.classDetails||[]).map(function(d){ var k=detailKey(d); var id=detIdByKey[k]||rid('cd'); detKeyToId[k]=id;
       return { id:id, branch_id:brNameToId[d.branch]||null, class_id:clKeyToId[classKey(d.branch,d.name)]||null,
