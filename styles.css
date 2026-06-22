@@ -328,3 +328,27 @@
   }
 
 .nav-links a.active{color:var(--ink)}
+
+/* ===== 원페이지 효과 (고정네비 오프셋 · 등장 · 라이트박스 · 푸터) ===== */
+section[id], footer[id]{scroll-margin-top:74px}
+/* 스크롤 등장 효과 */
+.reveal{opacity:0;transform:translateY(26px);transition:opacity .7s ease,transform .7s cubic-bezier(.2,.7,.2,1)}
+.reveal.in{opacity:1;transform:none}
+@media(prefers-reduced-motion:reduce){.reveal{opacity:1;transform:none;transition:none}}
+/* 갤러리/공간 사진 클릭 확대(라이트박스) */
+.gitem,.mcard .mc-img{cursor:zoom-in}
+.lightbox{position:fixed;inset:0;z-index:210;background:rgba(10,11,12,.93);display:none;align-items:center;justify-content:center;padding:32px}
+.lightbox.open{display:flex}
+.lightbox img{max-width:92vw;max-height:84vh;object-fit:contain;box-shadow:0 10px 60px rgba(0,0,0,.5)}
+.lightbox .lb-close{position:absolute;top:16px;right:22px;background:none;border:0;color:#fff;font-size:32px;line-height:1;cursor:pointer}
+.lightbox .lb-cap{position:absolute;left:0;right:0;bottom:22px;text-align:center;color:#cfd0d3;font-size:13px;letter-spacing:.02em;padding:0 24px}
+/* 푸터(하단 네비 · 업체/문의 정보) */
+.foot-grid{display:flex;justify-content:space-between;flex-wrap:wrap;gap:24px 40px}
+.foot-col{display:flex;flex-direction:column;gap:7px;font-size:12px;letter-spacing:.06em}
+.foot-brand{letter-spacing:.1em}
+.foot-coord{color:#75777d}
+.foot-h{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#cfd0d3;margin-bottom:2px}
+.foot-col a{color:#cfd0d3;text-decoration:none}.foot-col a:hover{color:#fff}
+.foot-sub{color:#75777d;line-height:1.6}
+.foot-copy{color:#75777d;margin-top:6px}
+@media(max-width:640px){.foot-grid{flex-direction:column;gap:18px}}

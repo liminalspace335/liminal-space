@@ -2,7 +2,7 @@
 const I18N = {
   ko: {}, // 기본값은 HTML에 그대로 둠 (data-i18n 키만 매핑)
   en: {
-    "nav.concept":"Brand","nav.space":"Space","nav.classes":"Classes","nav.apply":"Apply","nav.gallery":"Gallery","nav.location":"Location","space.title":"The Space",
+    "nav.concept":"Brand","nav.home":"About","nav.space":"Space","nav.classes":"Classes","nav.apply":"Apply","nav.gallery":"Gallery","nav.location":"Location","nav.contact":"Contact","space.title":"The Space","contact.title":"Contact","contact.note":"Inquiries for classes, companies/groups and collaborations are welcome.",
     "cta.lead":"Complete your own scent, together with a scent designer.","cta.sub":"A premium perfume workshop where you smell 100+ notes, blend, and take home your own bottle.","cta.btn":"Book a class",
     "gallery.title":"Gallery","gallery.featured":"Featured with","gallery.more":"View full gallery →",
     "hero.eyebrow":"Perfume Workshop","hero.sub":"The scent of moments between boundaries. A workshop where you blend and bottle a perfume of your own.",
@@ -42,7 +42,7 @@ const I18N = {
     "loc.title":"Getting here","loc.addr.t":"Address","loc.hours.t":"Hours","loc.hours.d":"Tue–Sun 11:00 – 20:00 (Mon closed)","loc.contact.t":"Contact","loc.mapnote":"Map area","slot":"Photo area"
   },
   vi: {
-    "nav.concept":"Thương hiệu","nav.space":"Không gian","nav.classes":"Lớp học","nav.apply":"Đăng ký","nav.gallery":"Thư viện","nav.location":"Vị trí","space.title":"Không gian",
+    "nav.concept":"Thương hiệu","nav.home":"Giới thiệu","nav.space":"Không gian","nav.classes":"Lớp học","nav.apply":"Đăng ký","nav.gallery":"Thư viện","nav.location":"Vị trí","nav.contact":"Liên hệ","space.title":"Không gian","contact.title":"Liên hệ","contact.note":"Chào đón liên hệ về lớp học, doanh nghiệp/nhóm và hợp tác.",
     "cta.lead":"Hoàn thiện mùi hương của riêng bạn, cùng scent designer.","cta.sub":"Workshop nước hoa cao cấp: thử hơn 100 loại hương, pha chế và mang về chai của riêng bạn.","cta.btn":"Đăng ký lớp học",
     "gallery.title":"Thư viện","gallery.featured":"Đã đồng hành cùng","gallery.more":"Xem toàn bộ thư viện →",
     "hero.eyebrow":"Perfume Workshop · Xưởng nước hoa",
@@ -627,6 +627,45 @@ document.getElementById('modalClose').addEventListener('click',closeModal);
 /* 바깥(오버레이) 클릭으로는 닫히지 않음 — X 버튼/ESC 로만 닫힘 */
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&modal.classList.contains('open'))closeModal();});
 
-/* 현재 페이지 네비 활성 표시 */
-(function(){var p=(location.pathname.split('/').pop()||'index.html');document.querySelectorAll('#navLinks a').forEach(function(a){var h=a.getAttribute('href')||'';if(h===p)a.classList.add('active');});})();
+/* ===== 원페이지 효과: 스크롤 등장 · 스크롤스파이 · 라이트박스 · 패럴랙스 ===== */
+function initEffects(){
+  // 1) 스크롤 등장(fade-in-up)
+  var targets=document.querySelectorAll('.sec-head,.concept-grid,.steps-grid,.gallery-grid,.gallery-more-wrap,.loc-grid,.cta-band .wrap,.marquee,.logo-strip-wrap');
+  if('IntersectionObserver' in window){
+    var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}});},{threshold:.12});
+    targets.forEach(function(t){t.classList.add('reveal');io.observe(t);});
+  } else { targets.forEach(function(t){t.classList.add('in');}); }
+  // 2) 스크롤스파이(현재 섹션 네비 강조)
+  var navA={}; document.querySelectorAll('#navLinks a').forEach(function(a){var h=a.getAttribute('href')||'';if(h.charAt(0)==='#')navA[h.slice(1)]=a;});
+  var secs=[].slice.call(document.querySelectorAll('section[id]'));
+  if('IntersectionObserver' in window && secs.length){
+    var so=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){var id=e.target.id;for(var k in navA)navA[k].classList.remove('active');if(navA[id])navA[id].classList.add('active');}});},{rootMargin:'-45% 0px -50% 0px'});
+    secs.forEach(function(s){so.observe(s);});
+  }
+  // 3) 라이트박스(갤러리·공간 사진 확대)
+  var lb=document.getElementById('lightbox');
+  if(lb){
+    var lbImg=lb.querySelector('img'), lbCap=lb.querySelector('.lb-cap');
+    function lbOpen(src,cap){lbImg.src=src;lbCap.textContent=cap||'';lb.classList.add('open');document.body.style.overflow='hidden';}
+    function lbClose(){lb.classList.remove('open');document.body.style.overflow='';lbImg.removeAttribute('src');}
+    document.addEventListener('click',function(e){
+      var hit=e.target.closest('#galleryGrid .gitem, .mcard .mc-img'); if(!hit)return;
+      if(hit.tagName==='A') return;                 // 링크가 걸린 항목은 링크 우선
+      var img=hit.querySelector('img'); if(!img)return;
+      var cap=''; var t=hit.querySelector('.gcap-t'); var mc=hit.closest('.mcard');
+      if(t)cap=t.textContent; else if(mc){var d=mc.querySelector('.mc-d'); if(d)cap=d.textContent;}
+      e.preventDefault(); lbOpen(img.currentSrc||img.src,cap);
+    });
+    lb.addEventListener('click',function(e){if(e.target===lb||e.target.classList.contains('lb-close'))lbClose();});
+    document.addEventListener('keydown',function(e){if(e.key==='Escape'&&lb.classList.contains('open'))lbClose();});
+  }
+  // 4) 히어로 패럴랙스(스크롤 시 천천히 위로 + 페이드)
+  var hero=document.querySelector('.hero .hero-inner');
+  if(hero){
+    var onScroll=function(){var y=window.scrollY||window.pageYOffset||0,vh=window.innerHeight||800;
+      if(y<=vh){hero.style.transform='translateY('+(y*0.2)+'px)';hero.style.opacity=String(Math.max(0,1-y/(vh*0.85)));}};
+    window.addEventListener('scroll',onScroll,{passive:true}); onScroll();
+  }
+}
+initEffects();
 

@@ -31,6 +31,12 @@
   footer{background:var(--accent);color:#9a9ca1;padding:30px 40px;font-size:12px;letter-spacing:.08em;text-align:center}
   @media(max-width:900px){.gallery-grid{grid-template-columns:repeat(2,1fr)}.g-nav,.g-wrap{padding-left:20px;padding-right:20px}}
   @media(max-width:560px){.gallery-grid{grid-template-columns:1fr}}
+  .gitem{cursor:zoom-in}
+  .lightbox{position:fixed;inset:0;z-index:210;background:rgba(10,11,12,.93);display:none;align-items:center;justify-content:center;padding:32px}
+  .lightbox.open{display:flex}
+  .lightbox img{max-width:92vw;max-height:84vh;object-fit:contain;box-shadow:0 10px 60px rgba(0,0,0,.5)}
+  .lightbox .lb-close{position:absolute;top:16px;right:22px;background:none;border:0;color:#fff;font-size:32px;line-height:1;cursor:pointer}
+  .lightbox .lb-cap{position:absolute;left:0;right:0;bottom:22px;text-align:center;color:#cfd0d3;font-size:13px;padding:0 24px}
 </style>
 </head>
 <body>
@@ -46,6 +52,7 @@
   <div class="gallery-grid" id="grid"></div>
 </main>
 <footer>© <span id="yr"></span> LIMINAL SPACE — PERFUME WORKSHOP</footer>
+<div class="lightbox" id="lightbox" aria-hidden="true"><button class="lb-close" type="button" aria-label="close">×</button><img alt="" /><div class="lb-cap"></div></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="config.js"></script>
@@ -73,6 +80,12 @@
   }
   document.querySelectorAll('#lang button').forEach(function(b){b.addEventListener('click',function(){LANG=b.dataset.l;document.querySelectorAll('#lang button').forEach(function(x){x.classList.toggle('active',x===b);});render();});});
   document.getElementById('yr').textContent=new Date().getFullYear();
+  // 라이트박스
+  (function(){var lb=document.getElementById('lightbox');if(!lb)return;var im=lb.querySelector('img'),cap=lb.querySelector('.lb-cap');
+    document.addEventListener('click',function(e){var hit=e.target.closest('#grid .gitem');if(!hit||hit.tagName==='A')return;var img=hit.querySelector('img');if(!img)return;var t=hit.querySelector('.gcap-t');e.preventDefault();im.src=img.currentSrc||img.src;cap.textContent=t?t.textContent:'';lb.classList.add('open');document.body.style.overflow='hidden';});
+    function c(){lb.classList.remove('open');document.body.style.overflow='';im.removeAttribute('src');}
+    lb.addEventListener('click',function(e){if(e.target===lb||e.target.classList.contains('lb-close'))c();});
+    document.addEventListener('keydown',function(e){if(e.key==='Escape'&&lb.classList.contains('open'))c();});})();
   (window.LS?LS.init():Promise.resolve()).then(render);
 </script>
 </body>
