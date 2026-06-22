@@ -174,7 +174,10 @@
     if(useRemote){
       try{
         var tables=['branches','classes','class_details','default_slots','schedule_slots','schedule_days','applications','site_info'];
-        var res={}; for(var i=0;i<tables.length;i++){ var r=await client.from(tables[i]).select('*'); res[tables[i]]=(r.error?[]:r.data)||[]; }
+        var res={};
+        // 8개 테이블을 병렬로 조회(순차 → 병렬, 로딩 속도 대폭 단축)
+        var rs=await Promise.all(tables.map(function(t){ return client.from(t).select('*'); }));
+        tables.forEach(function(t,i){ res[t]=(rs[i] && !rs[i].error && rs[i].data)?rs[i].data:[]; });
         var a=assemble(res); cache.settings=a.settings; cache.apps=a.apps;
       }catch(e){ console.warn('Supabase init failed → localStorage', e); useRemote=false; }
     }

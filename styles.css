@@ -359,3 +359,7 @@ section[id], footer[id]{scroll-margin-top:63px}  /* 고정 네비 높이에 딱 
 .foot-sub{color:#75777d;line-height:1.6}
 .foot-copy{color:#75777d;margin-top:6px}
 @media(max-width:640px){.foot-grid{flex-direction:column;gap:18px}}
+
+.gallery-grid[data-full]{grid-template-columns:repeat(3,1fr)}
+@media(max-width:900px){.gallery-grid[data-full]{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:560px){.gallery-grid[data-full]{grid-template-columns:1fr}}

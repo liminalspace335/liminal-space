@@ -391,7 +391,7 @@ function renderGallery(){
   const lang=curLang();
   let items=(getSettings().gallery||[]).filter(g=>g&&g.img);
   if(!items.length) items=GALLERY_PLACEHOLDER;
-  items=items.slice(0,4);   // 홈에서는 최초 4개만, 전체는 gallery.html
+  if(!grid.hasAttribute('data-full')) items=items.slice(0,4);   // 홈은 4개, 갤러리 페이지(data-full)는 전체
   grid.innerHTML=items.map(g=>{
     const t=esc(Lval(g.title,lang)), d=esc(Lval(g.desc,lang));
     const inner=`<img src="${esc(g.img)}" alt="${t||'LIMINAL SPACE'}" loading="lazy">${(t||d)?`<div class="cap">${t?`<div class="gcap-t">${t}</div>`:''}${d?`<div class="gcap-d">${d}</div>`:''}</div>`:''}`;
