@@ -212,6 +212,7 @@
           <button class="subtab" data-sub="detail">상세설정</button>
           <button class="subtab" data-sub="default">신청관리 기본값</button>
           <button class="subtab" data-sub="media">갤러리·협업</button>
+          <button class="subtab" data-sub="spacephotos">공간</button>
         </div>
 
         <div class="subpanel active" id="sub-branch">
@@ -279,6 +280,21 @@
             <div class="save-row"><button class="btn ghost sm" id="lgAdd">+ 로고 추가</button><button class="btn sm" id="lgSave">저장</button><span class="saved" id="lgSaved">저장됨 ✓</span></div>
           </div>
         </div>
+
+        <div class="subpanel" id="sub-spacephotos">
+          <div class="box" style="max-width:1400px">
+            <h3>공간 폴더</h3><p class="desc">'공간(02)' 섹션 상단 칩으로 표시됩니다. 폴더명(현재 입력 언어)·순서를 등록하세요.</p>
+            <div class="gen-row gf-row head-row"><div>순서</div><div>폴더명</div><div></div></div>
+            <div id="sfList"></div>
+            <div class="save-row"><button class="btn ghost sm" id="sfAdd">+ 폴더 추가</button><button class="btn sm" id="sfSave">저장</button><span class="saved" id="sfSaved">저장됨 ✓</span></div>
+          </div>
+          <div class="box" style="max-width:1400px">
+            <h3>공간 사진</h3><p class="desc">랜딩 '공간(02)' 마퀴에 흐르는 사진입니다. 이미지(업로드/URL)·제목·설명·폴더·대표·순서를 등록하세요. (없으면 예시 플레이스홀더 표시)</p>
+            <div class="gen-row gl-row head-row"><div>이미지</div><div>제목</div><div>설명</div><div>폴더</div><div>대표</div><div>순서</div><div>링크</div><div></div></div>
+            <div id="spList"></div>
+            <div class="save-row"><button class="btn ghost sm" id="spAdd">+ 사진 추가</button><button class="btn sm" id="spSave">저장</button><span class="saved" id="spSaved">저장됨 ✓</span></div>
+          </div>
+        </div>
       </div>
 
     </div>
@@ -335,7 +351,9 @@ const DEFAULT_SETTINGS={
   schedule:{},
   gallery:[],
   partners:[],
-  galleryFolders:[]
+  galleryFolders:[],
+  space:[],
+  spaceFolders:[]
 };
 
 function load(){return window.LS?LS.getApps():[];}
@@ -540,7 +558,34 @@ function renderAdmLang(){
   document.getElementById('admLangTabs').innerHTML='<span class="head-row" style="align-self:center;margin-right:4px">입력 언어</span>'+LANGS.map(([k,l])=>`<button class="pill-tab ${k===admLang?'active':''}" data-l="${k}">${l}</button>`).join('');
   document.querySelectorAll('#admLangTabs .pill-tab').forEach(b=>b.addEventListener('click',()=>{admLang=b.dataset.l;renderSettings();}));
 }
-function renderSettings(){renderAdmLang();renderBranches();renderBranchClasses();renderClassDetails();renderDefaults();renderGalleryFolders();renderGalleryItems();renderPartnerItems();}
+function renderSettings(){renderAdmLang();renderBranches();renderBranchClasses();renderClassDetails();renderDefaults();renderGalleryFolders();renderGalleryItems();renderPartnerItems();renderSpaceFolders();renderSpaceItems();}
+/* ===== 공간(사진+폴더) — 갤러리와 동일 구조 ===== */
+function spaceFolderOpts(cur){const s=loadSettings();const fs=(s.spaceFolders||[]).slice().sort((a,b)=>(+a.order||999)-(+b.order||999));return '<option value="">(폴더 없음)</option>'+fs.map(f=>`<option value="${esc(f.id)}" ${f.id===cur?'selected':''}>${esc(Lval(f.name,admLang))}</option>`).join('');}
+function renderSpaceFolders(){
+  const list=document.getElementById('sfList'); if(!list)return;
+  const s=loadSettings();const fs=(s.spaceFolders||[]).slice().sort((a,b)=>(+a.order||999)-(+b.order||999));
+  list.innerHTML=fs.map((f,i)=>`<div class="gen-row gf-row" data-id="${f.id}"><input type="number" class="sf-order" value="${f.order??(i+1)}" /><input class="sf-name" value="${esc(Lval(f.name,admLang))}" placeholder="폴더명 (${admLang})" /><button class="icon-btn sf-del">삭제</button></div>`).join('');
+  list.querySelectorAll('.sf-del').forEach(b=>b.addEventListener('click',e=>e.target.closest('.gf-row').remove()));
+}
+document.getElementById('sfAdd').addEventListener('click',()=>{const s=loadSettings();s.spaceFolders=s.spaceFolders||[];s.spaceFolders.push({id:'sf_'+Date.now().toString(36),name:{},order:s.spaceFolders.length+1});saveSettings(s);renderSpaceFolders();renderSpaceItems();});
+document.getElementById('sfSave').addEventListener('click',()=>{const s=loadSettings();const prev=s.spaceFolders||[];s.spaceFolders=[...document.querySelectorAll('#sfList .gf-row')].map(r=>{const id=r.dataset.id||('sf_'+Date.now().toString(36)+Math.random().toString(36).slice(2,5));const p=prev.find(x=>x.id===r.dataset.id)||{};const name=Object.assign({},txObj(p.name));name[admLang]=r.querySelector('.sf-name').value.trim();return {id,name,order:+r.querySelector('.sf-order').value||0};}).filter(f=>Lval(f.name,admLang)).sort((a,b)=>a.order-b.order);saveSettings(s);toast('sfSaved');renderSpaceFolders();renderSpaceItems();});
+function renderSpaceItems(){
+  const list=document.getElementById('spList'); if(!list)return;
+  const s=loadSettings();
+  list.innerHTML=(s.space||[]).map((g,i)=>`<div class="gen-row gl-row" data-i="${i}">
+    <div class="upwrap"><input class="sp-img" value="${esc(g.img||'')}" placeholder="URL 또는 업로드 →" /><label class="upbtn" title="이미지 업로드">⬆<input type="file" class="upfile" accept="image/*" data-target="sp-img" hidden /></label></div>
+    <input class="sp-title" value="${esc(Lval(g.title,admLang))}" placeholder="제목 (${admLang})" />
+    <input class="sp-desc" value="${esc(Lval(g.desc,admLang))}" placeholder="설명 (${admLang})" />
+    <select class="sp-folder">${spaceFolderOpts(g.folder||'')}</select>
+    <label class="ck"><input type="checkbox" class="sp-feat" ${g.featured?'checked':''} /></label>
+    <input type="number" class="sp-order" value="${g.order??(i+1)}" />
+    <input class="sp-link" value="${esc(g.link||'')}" placeholder="링크" />
+    <button class="icon-btn sp-del">삭제</button></div>`).join('');
+  list.querySelectorAll('.sp-del').forEach(b=>b.addEventListener('click',e=>e.target.closest('.gl-row').remove()));
+  bindUploads(list);
+}
+document.getElementById('spAdd').addEventListener('click',()=>{const s=loadSettings();s.space=s.space||[];s.space.push({img:'',title:{},desc:{},link:'',folder:'',featured:false,order:s.space.length+1});saveSettings(s);renderSpaceItems();});
+document.getElementById('spSave').addEventListener('click',()=>{const s=loadSettings();const prev=s.space||[];s.space=[...document.querySelectorAll('#spList .gl-row')].map(r=>{const p=prev[+r.dataset.i]||{};const title=Object.assign({},txObj(p.title));title[admLang]=r.querySelector('.sp-title').value.trim();const desc=Object.assign({},txObj(p.desc));desc[admLang]=r.querySelector('.sp-desc').value.trim();return {img:r.querySelector('.sp-img').value.trim(),title,desc,link:r.querySelector('.sp-link').value.trim(),folder:r.querySelector('.sp-folder').value,featured:r.querySelector('.sp-feat').checked,order:+r.querySelector('.sp-order').value||0};}).filter(g=>g.img||Lval(g.title,admLang));saveSettings(s);toast('spSaved');renderSpaceItems();});
 /* 갤러리 폴더 */
 function folderOpts(cur){const s=loadSettings();const fs=(s.galleryFolders||[]).slice().sort((a,b)=>(+a.order||999)-(+b.order||999));return '<option value="">(폴더 없음)</option>'+fs.map(f=>`<option value="${esc(f.id)}" ${f.id===cur?'selected':''}>${esc(Lval(f.name,admLang))}</option>`).join('');}
 function renderGalleryFolders(){
@@ -573,7 +618,7 @@ function bindUploads(listEl){
     const row=e.target.closest('.gen-row'); const tgt=row.querySelector('.'+e.target.dataset.target); if(!tgt)return;
     const txt=e.target.parentNode.childNodes[0];
     if(txt)txt.textContent='…';
-    const kind=e.target.dataset.target==='lg-logo'?'logo':'gallery';
+    const tk=e.target.dataset.target||''; const kind=tk==='lg-logo'?'logo':(tk==='sp-img'?'space':'gallery');
     let r={error:'사용 불가'};
     try{ r=await (window.LS&&LS.uploadImage?LS.uploadImage(file,kind):Promise.resolve({error:'Supabase 필요'})); }catch(err){ r={error:String(err)}; }
     if(txt)txt.textContent='⬆';

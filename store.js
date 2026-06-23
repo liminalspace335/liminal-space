@@ -24,7 +24,7 @@
   /* ---------- 조립: 테이블 rows → settings 객체 / apps 배열 ---------- */
   function assemble(t){
     var branchById={}, classById={}; // id→{branch,nameKo}
-    var settings={ branches:[], branchClasses:[], classDetails:[], defaultSchedule:{}, schedule:{}, site:{}, gallery:[], partners:[], galleryFolders:[] };
+    var settings={ branches:[], branchClasses:[], classDetails:[], defaultSchedule:{}, schedule:{}, site:{}, gallery:[], partners:[], galleryFolders:[], space:[], spaceFolders:[] };
     (t.branches||[]).sort(function(a,b){return (a.sort||0)-(b.sort||0);}).forEach(function(b){
       branchById[b.id]=b.name;
       settings.branches.push({ id:b.id, name:b.name, contact:b.contact||'', link:b.link||'',
@@ -34,7 +34,9 @@
     var si=(t.site_info||[])[0]; if(si){ settings.site={ brandName:si.brand_name||'', estYear:si.est_year||'', copyrightYear:si.copyright_year||'' };
       try{ settings.gallery=JSON.parse(si.gallery_json||'[]')||[]; }catch(e){ settings.gallery=[]; }
       try{ settings.partners=JSON.parse(si.partners_json||'[]')||[]; }catch(e){ settings.partners=[]; }
-      try{ settings.galleryFolders=JSON.parse(si.galleryfolders_json||'[]')||[]; }catch(e){ settings.galleryFolders=[]; } }
+      try{ settings.galleryFolders=JSON.parse(si.galleryfolders_json||'[]')||[]; }catch(e){ settings.galleryFolders=[]; }
+      try{ settings.space=JSON.parse(si.space_json||'[]')||[]; }catch(e){ settings.space=[]; }
+      try{ settings.spaceFolders=JSON.parse(si.spacefolders_json||'[]')||[]; }catch(e){ settings.spaceFolders=[]; } }
     (t.classes||[]).sort(function(a,b){return (a.sort||0)-(b.sort||0);}).forEach(function(c){
       var bn=branchById[c.branch_id]||''; classById[c.id]={branch:bn, nameKo:c.name_ko||''};
       settings.branchClasses.push({ id:c.id, branch:bn, order:c.sort||0,
@@ -80,7 +82,8 @@
         hours_ko:ko(b.hours), hours_en:en(b.hours), hours_vi:vi(b.hours),
         instagram:b.instagram||'', facebook:b.facebook||'', sort:i }; });
     var siteRow={ id:'main', brand_name:(s.site&&s.site.brandName)||'', est_year:(s.site&&s.site.estYear)||'', copyright_year:(s.site&&s.site.copyrightYear)||'',
-      gallery_json:JSON.stringify(s.gallery||[]), partners_json:JSON.stringify(s.partners||[]), galleryfolders_json:JSON.stringify(s.galleryFolders||[]) };
+      gallery_json:JSON.stringify(s.gallery||[]), partners_json:JSON.stringify(s.partners||[]), galleryfolders_json:JSON.stringify(s.galleryFolders||[]),
+      space_json:JSON.stringify(s.space||[]), spacefolders_json:JSON.stringify(s.spaceFolders||[]) };
     var classRows=(s.branchClasses||[]).map(function(c,i){ var k=classKey(c.branch,ko(c.name)); var id=classIdByKey[k]||rid('cl'); clKeyToId[k]=id;
       return { id:id, branch_id:brNameToId[c.branch]||null, sort:(c.order!=null?c.order:i),
         name_ko:ko(c.name), name_en:en(c.name), name_vi:vi(c.name),
@@ -100,6 +103,8 @@
       dayRows.push({ branch_id:brNameToId[bn]||null, sched_date:dt });
       (byDate[dt]||[]).forEach(function(sl){ schRows.push({ id:rid('sslot'), branch_id:brNameToId[bn]||null,
         sched_date:dt, class_id:(sl.cls?clKeyToId[classKey(bn,sl.cls)]||null:null), time:sl.time||'', cap:sl.cap||0 }); }); }); });
+    // schedule_days 복합 PK(branch_id,sched_date) 중복 제거 + branch_id 없는 행 제외
+    var _seenDay={}; dayRows=dayRows.filter(function(r){ if(!r.branch_id) return false; var k=r.branch_id+'|'+r.sched_date; if(_seenDay[k]) return false; _seenDay[k]=1; return true; });
 
     var newBr={}; branchRows.forEach(function(r){newBr[r.id]=1;});
     var newCl={}; classRows.forEach(function(r){newCl[r.id]=1;});
@@ -150,7 +155,7 @@
       p.detailRows.length ? _ck(client.from('class_details').upsert(p.detailRows),'class_details') : null,
       p.defRows.length ? _ck(client.from('default_slots').insert(p.defRows),'default_slots') : null,
       p.schRows.length ? _ck(client.from('schedule_slots').insert(p.schRows),'schedule_slots') : null,
-      p.dayRows.length ? _ck(client.from('schedule_days').insert(p.dayRows),'schedule_days') : null,
+      p.dayRows.length ? _ck(client.from('schedule_days').upsert(p.dayRows,{onConflict:'branch_id,sched_date',ignoreDuplicates:true}),'schedule_days') : null,
       p.delDetailIds.length ? _ck(client.from('class_details').delete().in('id',p.delDetailIds),'class_details(del)') : null
     ]));
     // 4단계: 삭제된 classes·branches 제거 (branches 삭제는 종속행 cascade)

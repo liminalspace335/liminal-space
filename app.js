@@ -125,6 +125,7 @@ function setLang(lang){
   if(typeof renderFolderChips==='function') renderFolderChips();  // 폴더 칩 언어 재적용
   if(typeof renderGallery==='function') renderGallery();          // 갤러리 캡션 언어 재적용
   if(typeof renderPartners==='function') renderPartners();
+  if(typeof renderSpaceFolderChips==='function') renderSpaceFolderChips(); // 공간 폴더 칩 언어 재적용
   if(typeof initSpaceCarousel==='function') initSpaceCarousel();   // 공간 마퀴 캡션 언어 재적용
 }
 document.querySelectorAll('.lang button').forEach(b=>{
@@ -338,13 +339,32 @@ function renderMap(){
     +`<span class="map-cover"></span>`
     +`<span class="map-hint">${hint}</span></a>`;
 }
-/* 공간 캐러셀 — 가로 스와이프 + 화살표/도트, 누락 이미지 자동 숨김 */
+/* 공간 폴더 칩 (갤러리와 동일 구조) */
+var spaceFolder='';
+function spaceItemsAll(){var it=(getSettings().space||[]).filter(function(g){return g&&g.img;});if(!it.length)it=GALLERY_PLACEHOLDER;return it;}
+function spaceCover(fid){var inf=sortGal(spaceItemsAll().filter(function(g){return (g.folder||'')===fid;}));return inf[0]?inf[0].img:'';}
+function renderSpaceFolderChips(){
+  var box=document.getElementById('spaceFolders'); if(!box)return;
+  var lang=curLang();
+  var folders=(getSettings().spaceFolders||[]).slice().sort(function(a,b){return (Number(a.order)||999)-(Number(b.order)||999);});
+  if(!folders.length){ box.innerHTML=''; box.style.display='none'; spaceFolder=''; return; }
+  box.style.display='';
+  var allLabel=lang==='en'?'All':(lang==='vi'?'Tất cả':'전체');
+  function chip(fid,name,cover){return '<button class="folder-chip '+(spaceFolder===fid?'active':'')+'" data-fid="'+esc(fid)+'"><span class="fc-thumb" style="background-image:url(\''+esc(cover)+'\')"></span><span class="fc-name">'+esc(name)+'</span></button>';}
+  var html=chip('',allLabel,spaceCover(''));
+  folders.forEach(function(f){ html+=chip(f.id,Lval(f.name,lang),spaceCover(f.id)); });
+  box.innerHTML=html;
+  box.querySelectorAll('.folder-chip').forEach(function(b){b.addEventListener('click',function(){spaceFolder=b.dataset.fid||'';renderSpaceFolderChips();initSpaceCarousel();});});
+}
+/* 공간 캐러셀 — 연속 흐름 마퀴(공간 사진) */
 function initSpaceCarousel(){
   const track=document.getElementById('spaceTrack'); if(!track)return;
   const sec=document.getElementById('space');
-  // 공간 마퀴는 갤러리 사진을 공유(없으면 예시 플레이스홀더)
-  let items=(getSettings().gallery||[]).filter(g=>g&&g.img);
+  // 공간 마퀴는 '공간' 사진을 사용(없으면 예시 플레이스홀더), 폴더 필터 + 대표/순서 정렬
+  let items=(getSettings().space||[]).filter(g=>g&&g.img);
   if(!items.length) items=GALLERY_PLACEHOLDER;
+  if(spaceFolder) items=items.filter(function(g){return (g.folder||'')===spaceFolder;});
+  items=sortGal(items);
   if(!items.length){ if(sec)sec.style.display='none'; return; }
   if(sec)sec.style.display='';
   const lang=curLang();
@@ -689,6 +709,7 @@ document.querySelectorAll('[data-open-apply]').forEach(b=>b.addEventListener('cl
   renderMap();
   renderFooterSocial();
   renderSiteInfo();
+  renderSpaceFolderChips();
   initSpaceCarousel();
   renderFolderChips();
   renderGallery();
