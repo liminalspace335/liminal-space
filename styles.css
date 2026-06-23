@@ -361,6 +361,10 @@ section[id], footer[id]{scroll-margin-top:63px}  /* 고정 네비 높이에 딱 
 .lightbox img{max-width:92vw;max-height:84vh;object-fit:contain;box-shadow:0 10px 60px rgba(0,0,0,.5)}
 .lightbox .lb-close{position:absolute;top:16px;right:22px;background:none;border:0;color:#fff;font-size:32px;line-height:1;cursor:pointer}
 .lightbox .lb-cap{position:absolute;left:0;right:0;bottom:22px;text-align:center;color:#cfd0d3;font-size:13px;letter-spacing:.02em;padding:0 24px}
+.lightbox .lb-prev,.lightbox .lb-next{position:absolute;top:50%;transform:translateY(-50%);width:52px;height:52px;border-radius:50%;border:1px solid rgba(255,255,255,.4);background:rgba(0,0,0,.35);color:#fff;font-size:26px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:2}
+.lightbox .lb-prev:hover,.lightbox .lb-next:hover{background:rgba(0,0,0,.6)}
+.lightbox .lb-prev{left:20px}.lightbox .lb-next{right:20px}
+@media(max-width:640px){.lightbox .lb-prev,.lightbox .lb-next{width:42px;height:42px;font-size:22px}.lightbox .lb-prev{left:8px}.lightbox .lb-next{right:8px}}
 /* 푸터(하단 네비 · 업체/문의 정보) */
 .foot-grid{display:flex;justify-content:space-between;flex-wrap:wrap;gap:24px 40px}
 .foot-col{display:flex;flex-direction:column;gap:7px;font-size:12px;letter-spacing:.06em}
