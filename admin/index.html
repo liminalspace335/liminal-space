@@ -116,6 +116,9 @@
   #sub-detail .box{max-width:1500px}
   .gl-row{grid-template-columns:1.4fr 1fr 1.7fr .9fr 40px}
   .lg-row{grid-template-columns:1fr 1.7fr 1fr 40px}
+  .upwrap{display:flex;gap:6px;min-width:0}.upwrap input{flex:1;min-width:0}
+  .upbtn{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;width:34px;border:1px solid var(--line);border-radius:2px;cursor:pointer;font-size:14px;background:#fff}
+  .upbtn:hover{border-color:var(--ink)}
   .vol{display:flex;align-items:center;gap:6px}.vol input{width:100%}.vol span{font-size:12px;color:var(--ink-soft)}
   .field-row{display:flex;flex-direction:column;gap:7px;margin-bottom:14px;max-width:520px}
   .field-row label{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft)}
@@ -533,12 +536,27 @@ function renderGalleryItems(){
   const list=document.getElementById('glList'); if(!list)return;
   const s=loadSettings();
   list.innerHTML=(s.gallery||[]).map((g,i)=>`<div class="gen-row gl-row" data-i="${i}">
-    <input class="gl-img" value="${esc(g.img||'')}" placeholder="https:// 이미지 URL" />
+    <div class="upwrap"><input class="gl-img" value="${esc(g.img||'')}" placeholder="URL 또는 업로드 →" /><label class="upbtn" title="이미지 업로드">⬆<input type="file" class="upfile" accept="image/*" data-target="gl-img" hidden /></label></div>
     <input class="gl-title" value="${esc(Lval(g.title,admLang))}" placeholder="제목 (${admLang})" />
     <input class="gl-desc" value="${esc(Lval(g.desc,admLang))}" placeholder="설명 (${admLang})" />
     <input class="gl-link" value="${esc(g.link||'')}" placeholder="링크(선택)" />
     <button class="icon-btn gl-del">삭제</button></div>`).join('');
   list.querySelectorAll('.gl-del').forEach(b=>b.addEventListener('click',e=>e.target.closest('.gl-row').remove()));
+  bindUploads(list);
+}
+function bindUploads(listEl){
+  listEl.querySelectorAll('.upfile').forEach(inp=>inp.addEventListener('change',async e=>{
+    const file=e.target.files&&e.target.files[0]; if(!file)return;
+    const row=e.target.closest('.gen-row'); const tgt=row.querySelector('.'+e.target.dataset.target); if(!tgt)return;
+    const txt=e.target.parentNode.childNodes[0];
+    if(txt)txt.textContent='…';
+    const kind=e.target.dataset.target==='lg-logo'?'logo':'gallery';
+    let r={error:'사용 불가'};
+    try{ r=await (window.LS&&LS.uploadImage?LS.uploadImage(file,kind):Promise.resolve({error:'Supabase 필요'})); }catch(err){ r={error:String(err)}; }
+    if(txt)txt.textContent='⬆';
+    if(r&&r.url){ tgt.value=r.url; } else { alert('업로드 실패: '+((r&&r.error)||'알 수 없음')+'\n\nSupabase에 \"images\" 공개 버킷과 업로드 정책이 있어야 합니다.'); }
+    e.target.value='';
+  }));
 }
 document.getElementById('glAdd').addEventListener('click',()=>{const s=loadSettings();s.gallery=s.gallery||[];s.gallery.push({img:'',title:{},desc:{},link:''});saveSettings(s);renderGalleryItems();});
 document.getElementById('glSave').addEventListener('click',()=>{const s=loadSettings();const prev=s.gallery||[];s.gallery=[...document.querySelectorAll('#glList .gl-row')].map(r=>{const p=prev[+r.dataset.i]||{};const title=Object.assign({},txObj(p.title));title[admLang]=r.querySelector('.gl-title').value.trim();const desc=Object.assign({},txObj(p.desc));desc[admLang]=r.querySelector('.gl-desc').value.trim();return {img:r.querySelector('.gl-img').value.trim(),title,desc,link:r.querySelector('.gl-link').value.trim()};}).filter(g=>g.img||Lval(g.title,admLang));saveSettings(s);toast('glSaved');renderGalleryItems();});
@@ -548,10 +566,11 @@ function renderPartnerItems(){
   const s=loadSettings();
   list.innerHTML=(s.partners||[]).map((p,i)=>`<div class="gen-row lg-row" data-i="${i}">
     <input class="lg-name" value="${esc(p.name||'')}" placeholder="이름" />
-    <input class="lg-logo" value="${esc(p.logo||'')}" placeholder="https:// 로고 URL" />
+    <div class="upwrap"><input class="lg-logo" value="${esc(p.logo||'')}" placeholder="URL 또는 업로드 →" /><label class="upbtn" title="로고 업로드">⬆<input type="file" class="upfile" accept="image/*" data-target="lg-logo" hidden /></label></div>
     <input class="lg-link" value="${esc(p.link||'')}" placeholder="링크(선택)" />
     <button class="icon-btn lg-del">삭제</button></div>`).join('');
   list.querySelectorAll('.lg-del').forEach(b=>b.addEventListener('click',e=>e.target.closest('.lg-row').remove()));
+  bindUploads(list);
 }
 document.getElementById('lgAdd').addEventListener('click',()=>{const s=loadSettings();s.partners=s.partners||[];s.partners.push({name:'',logo:'',link:''});saveSettings(s);renderPartnerItems();});
 document.getElementById('lgSave').addEventListener('click',()=>{const s=loadSettings();s.partners=[...document.querySelectorAll('#lgList .lg-row')].map(r=>({name:r.querySelector('.lg-name').value.trim(),logo:r.querySelector('.lg-logo').value.trim(),link:r.querySelector('.lg-link').value.trim()})).filter(p=>p.logo||p.name);saveSettings(s);toast('lgSaved');renderPartnerItems();});

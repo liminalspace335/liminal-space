@@ -195,12 +195,25 @@
     else { lsSet(KEY_APPS, v); }
     cache.apps = v;
   }
+  /* 이미지 업로드 → Supabase Storage('images' 공개 버킷) → 공개 URL 반환 */
+  async function uploadImage(file, prefix){
+    if(!useRemote || !client || !client.storage) return { error:'Supabase 연결이 필요합니다(로컬 모드에서는 업로드 불가).' };
+    try{
+      var ext=((file.name||'').split('.').pop()||'jpg').toLowerCase().replace(/[^a-z0-9]/g,'')||'jpg';
+      var path=(prefix||'img')+'/'+Date.now()+'_'+Math.random().toString(36).slice(2,8)+'.'+ext;
+      var up=await client.storage.from('images').upload(path, file, { upsert:false, contentType:file.type||'image/jpeg' });
+      if(up.error) return { error:(up.error.message||'업로드 실패') };
+      var pub=client.storage.from('images').getPublicUrl(path);
+      return { url:(pub && pub.data && pub.data.publicUrl)||'' };
+    }catch(e){ return { error:String(e&&e.message||e) }; }
+  }
 
   window.LS = {
     init:init, useRemote:function(){return useRemote;},
     getApps:function(){ return Array.isArray(cache.apps)?cache.apps:[]; }, setApps:setApps,
     getSettings:function(){ return (cache.settings&&typeof cache.settings==='object')?cache.settings:{}; }, setSettings:setSettings,
     onError:function(fn){ onErr=fn; },   // 저장 실패 콜백 등록
+    uploadImage:uploadImage,             // 이미지 업로드(Storage)
     _assemble:assemble, _plan:plan   // 단위 테스트용
   };
 })();
