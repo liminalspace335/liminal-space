@@ -395,3 +395,6 @@ section[id], footer[id]{scroll-margin-top:63px}  /* 고정 네비 높이에 딱 
 .soc-group a.lt:hover{color:#1ebe5d}
 .soc-group .ic{width:16px;height:16px;display:block}
 @media(max-width:980px){.socials{display:none}}
+/* 지점 1곳: 호버 없이 아이콘 항상 노출 */
+.socials.show-all .soc-icons{max-width:none;opacity:1;margin-left:9px}
+.socials.show-all .soc-b{color:var(--ink)}

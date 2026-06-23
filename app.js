@@ -725,6 +725,7 @@ function renderNavSocials(){
   var box=document.getElementById('navSocials');
   if(!brs.length){ if(box)box.parentNode.removeChild(box); return; }
   if(!box){ box=document.createElement('div'); box.className='socials'; box.id='navSocials'; langEl.parentNode.insertBefore(box, langEl); }
+  box.classList.toggle('show-all', brs.length<=1); // 지점 1곳이면 호버 없이 아이콘 항상 노출
   box.innerHTML=brs.map(function(b){
     var nm=esc(b.name); var ic='';
     if(b.instagram) ic+='<a class="ig" href="'+esc(b.instagram)+'" target="_blank" rel="noopener" aria-label="'+nm+' Instagram"><svg class="ic"><use href="#ic-instagram"/></svg></a>';
