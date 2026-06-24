@@ -140,6 +140,7 @@ function setLang(lang){
   if(typeof renderPartners==='function') renderPartners();
   if(typeof renderSpaceFolderChips==='function') renderSpaceFolderChips(); // 공간 폴더 칩 언어 재적용
   if(typeof initSpaceCarousel==='function') initSpaceCarousel();   // 공간 마퀴 캡션 언어 재적용
+  if(typeof renderSpaceGrid==='function') renderSpaceGrid();       // 공간 그리드(space.html) 캡션 언어 재적용
   if(typeof renderNavSocials==='function') renderNavSocials();     // 네비 지점 라벨 언어 재적용
 }
 document.querySelectorAll('.lang button').forEach(b=>{
@@ -368,7 +369,7 @@ function renderSpaceFolderChips(){
   var html=chip('',allLabel,(sortGal(spaceItemsAll())[0]||{}).img||'');   // 전체 = 모든 공간 사진 중 첫 번째(대표 우선)
   folders.forEach(function(f){ html+=chip(f.id,Lval(f.name,lang),spaceCover(f.id)); });
   box.innerHTML=html;
-  box.querySelectorAll('.folder-chip').forEach(function(b){b.addEventListener('click',function(){spaceFolder=b.dataset.fid||'';renderSpaceFolderChips();initSpaceCarousel();});});
+  box.querySelectorAll('.folder-chip').forEach(function(b){b.addEventListener('click',function(){spaceFolder=b.dataset.fid||'';renderSpaceFolderChips();initSpaceCarousel();renderSpaceGrid();});});
 }
 /* 공간 캐러셀 — 연속 흐름 마퀴(공간 사진) */
 function initSpaceCarousel(){
@@ -421,6 +422,19 @@ var PARTNER_PLACEHOLDER=[
   {name:'BRAND 3',logo:'assets/logo-3.png',link:''},{name:'BRAND 4',logo:'assets/logo-4.png',link:''},
   {name:'BRAND 5',logo:'assets/logo-5.png',link:''},{name:'BRAND 6',logo:'assets/logo-6.png',link:''}
 ];
+/* 공간 더보기(space.html): 공간 사진을 갤러리처럼 3열 그리드로 (홈은 마퀴 유지) */
+function renderSpaceGrid(){
+  var grid=document.getElementById('spaceGrid'); if(!grid)return;
+  var lang=curLang();
+  var items=spaceItemsAll();
+  if(spaceFolder) items=items.filter(function(g){return (g.folder||'')===spaceFolder;});
+  items=sortGal(items);
+  grid.innerHTML=items.map(function(g){
+    var t=esc(Lval(g.title,lang)), d=esc(Lval(g.desc,lang));
+    var inner='<img src="'+esc(g.img)+'" alt="'+(t||'LIMINAL SPACE')+'" loading="lazy">'+((t||d)?'<div class="cap">'+(t?'<div class="gcap-t">'+t+'</div>':'')+(d?'<div class="gcap-d">'+d+'</div>':'')+'</div>':'');
+    return g.link?'<a class="gitem" href="'+esc(g.link)+'" target="_blank" rel="noopener">'+inner+'</a>':'<div class="gitem">'+inner+'</div>';
+  }).join('');
+}
 var galleryFolder='';   // 활성 폴더 id ('' = 전체)
 function sortGal(arr){return arr.slice().sort(function(a,b){var fa=a.featured?0:1,fb=b.featured?0:1;if(fa!==fb)return fa-fb;return (Number(a.order)||999)-(Number(b.order)||999);});}
 function galItems(){var it=(getSettings().gallery||[]).filter(function(g){return g&&g.img;});if(!it.length)it=GALLERY_PLACEHOLDER;return it;}
@@ -758,6 +772,7 @@ function renderNavSocials(){
   renderSiteInfo();
   renderSpaceFolderChips();
   initSpaceCarousel();
+  renderSpaceGrid();
   renderFolderChips();
   renderGallery();
   renderPartners();
@@ -787,7 +802,7 @@ function initEffects(){
     function lbShow(i){ if(!lbList.length)return; lbIdx=(i+lbList.length)%lbList.length; var it=lbList[lbIdx]; lbImg.src=it.src; lbCap.textContent=it.cap||''; }
     function lbClose(){lb.classList.remove('open');document.body.style.overflow='';lbImg.removeAttribute('src');lbList=[];}
     function buildList(hit){
-      var grid=hit.closest('#galleryGrid');
+      var grid=hit.closest('#galleryGrid')||hit.closest('#spaceGrid');
       if(grid){ var ns=[].slice.call(grid.querySelectorAll('.gitem'));
         var list=ns.map(function(n){var im=n.querySelector('img');var t=n.querySelector('.gcap-t');return {src:(im&&(im.currentSrc||im.src))||'',cap:t?t.textContent:''};});
         return {list:list, idx:Math.max(0,ns.indexOf(hit.closest('.gitem')))}; }
@@ -799,7 +814,7 @@ function initEffects(){
       var im2=hit.querySelector('img'); return {list:[{src:im2?(im2.currentSrc||im2.src):'',cap:''}], idx:0};
     }
     document.addEventListener('click',function(e){
-      var hit=e.target.closest('#galleryGrid .gitem, .mcard .mc-img'); if(!hit)return;
+      var hit=e.target.closest('#galleryGrid .gitem, #spaceGrid .gitem, .mcard .mc-img'); if(!hit)return;
       if(hit.tagName==='A') return;                 // 링크가 걸린 항목은 링크 우선
       var img=hit.querySelector('img'); if(!img)return;
       e.preventDefault(); var r=buildList(hit); lbList=r.list; lbShow(r.idx); lb.classList.add('open'); document.body.style.overflow='hidden';
