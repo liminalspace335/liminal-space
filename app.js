@@ -1,3 +1,16 @@
+/* ---------- 홈(인덱스) 새로고침 시 항상 히어로(맨 위)부터 ---------- */
+(function(){
+  var seg=location.pathname.split('/').pop();
+  if(seg!==''&&seg!=='index.html') return;            // 홈에서만 동작
+  if('scrollRestoration' in history) history.scrollRestoration='manual'; // 브라우저 스크롤 복원 끔
+  function toTop(){
+    if(location.hash) history.replaceState(null,'',location.pathname+location.search); // 앵커 제거
+    window.scrollTo(0,0);
+  }
+  toTop();
+  window.addEventListener('load',function(){ setTimeout(toTop,0); });
+})();
+
 /* ---------- i18n ---------- */
 const I18N = {
   ko: {}, // 기본값은 HTML에 그대로 둠 (data-i18n 키만 매핑)
