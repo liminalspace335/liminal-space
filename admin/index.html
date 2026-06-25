@@ -172,8 +172,8 @@
     <div class="sb-brand"><div class="t">LIMINAL SPACE</div><div class="s">ADMIN CONSOLE</div></div>
     <nav class="sb-nav">
       <button class="sb-item active" data-tab="overview"><span class="ic">◧</span> 소개</button>
-      <button class="sb-item" data-tab="list"><span class="ic">▤</span> 신청관리</button>
-      <button class="sb-item" data-tab="list2"><span class="ic">▦</span> 신청관리 2</button>
+      <button class="sb-item" data-tab="list"><span class="ic">▤</span> 신청관리(캘린더)</button>
+      <button class="sb-item" data-tab="list2"><span class="ic">▦</span> 신청관리(리스트)</button>
       <button class="sb-item" data-tab="booking"><span class="ic">◷</span> 클래스설정</button>
       <button class="sb-item" data-tab="settings"><span class="ic">⚙</span> 환경설정</button>
     </nav>
@@ -433,7 +433,7 @@ document.getElementById('logout').addEventListener('click',e=>{e.preventDefault(
 function showApp(){document.getElementById('gate').style.display='none';document.getElementById('app').style.display='flex';renderAll();}
 
 /* tabs */
-const TITLES={overview:'소개',list:'신청관리',list2:'신청관리 2',booking:'클래스설정',settings:'환경설정'};
+const TITLES={overview:'소개',list:'신청관리(캘린더)',list2:'신청관리(리스트)',booking:'클래스설정',settings:'환경설정'};
 document.querySelectorAll('.sb-item').forEach(b=>b.addEventListener('click',()=>{
   const tab=b.dataset.tab;
   document.querySelectorAll('.sb-item').forEach(x=>x.classList.toggle('active',x===b));
