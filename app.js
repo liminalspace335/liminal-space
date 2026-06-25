@@ -760,9 +760,14 @@ var BRANCH_I18N={
   '다낭':{ko:'다낭',en:'Da Nang',vi:'Đà Nẵng'}
 };
 function branchLabel(name){
+  var L=curLang();
+  var brs=(getSettings().branches||[]), b=null;
+  for(var i=0;i<brs.length;i++){ if(brs[i]&&brs[i].name===name){ b=brs[i]; break; } }
+  if(b&&b.nameI18n&&b.nameI18n[L]) return b.nameI18n[L];       // 1) 저장된 해당 언어 지점명
   var key=((name||'').split('(')[0]||name||'').trim();
-  var m=BRANCH_I18N[key];
-  return m?(m[curLang()]||m.ko||key):key;
+  var m=BRANCH_I18N[key]; if(m&&m[L]) return m[L];             // 2) 알려진 지점명 매핑 폴백
+  if(b&&b.nameI18n&&b.nameI18n.ko) return b.nameI18n.ko;        // 3) 저장된 한국어
+  return name||'';
 }
 /* 상단 네비 지점별 소셜 버튼(호버 펼침) — 어드민 지점설정의 인스타·페북·링크트리 링크 사용 */
 function renderNavSocials(){

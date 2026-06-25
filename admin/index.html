@@ -385,6 +385,8 @@ function toast(id){const e=document.getElementById(id);if(!e)return;e.classList.
 function branchNames(){return (loadSettings().branches||[]).map(b=>b.name).filter(Boolean);}
 function branchClassesOf(branch){return (loadSettings().branchClasses||[]).filter(c=>c.branch===branch).sort((a,b)=>(a.order??99)-(b.order??99));}
 function classNamesOf(branch){return [...new Set(branchClassesOf(branch).map(c=>keyOf(c.name)))];}   // 안정 키(한글)
+function brLabelAdm(n){const b=(loadSettings().branches||[]).find(x=>x&&x.name===n);return b?Lval(b.nameI18n||b.name,admLang):n;}   // 지점 표시명(현재 어드민 언어)
+function clsLabelAdm(branch,key){const c=branchClassesOf(branch).find(x=>keyOf(x.name)===key);return c?Lval(c.name,admLang):key;}   // 클래스 표시명(현재 어드민 언어)
 function detailsOf(branch,name){return (loadSettings().classDetails||[]).filter(d=>d.branch===branch&&d.name===name);}
 function volumesOf(branch,name){return detailsOf(branch,name).filter(d=>d.volume!==''&&d.volume!=null);}
 function fmtMoney(v,sym){v=(v==null?'':String(v)).trim();if(!v)return '';if(/^[0-9,]+$/.test(v))return Number(v.replace(/,/g,'')).toLocaleString('en-US')+sym;return v;}
@@ -655,7 +657,7 @@ document.getElementById('lgSave').addEventListener('click',()=>{const s=loadSett
 
 /* 지점설정 (지점별 소셜 포함) */
 function renderBranches(){const s=loadSettings();
-  document.getElementById('brList').innerHTML=s.branches.map((b,i)=>`<div class="gen-row br-row" data-i="${i}" data-old="${esc(b.name)}"><input class="b-name" value="${esc(b.name)}" placeholder="지점명" /><input class="b-contact" value="${esc(b.contact)}" placeholder="연락처" /><input class="b-link" value="${esc(b.link)}" placeholder="링크주소" /><input class="b-loc" value="${esc(Lval(b.location,admLang))}" placeholder="위치 (${admLang})" /><input class="b-hours" value="${esc(Lval(b.hours,admLang))}" placeholder="운영시간 (${admLang})" /><input class="b-insta" value="${esc(b.instagram||'')}" placeholder="Instagram URL" /><input class="b-fb" value="${esc(b.facebook||'')}" placeholder="Facebook URL" /><input class="b-lt" value="${esc(b.linktree||'')}" placeholder="Linktree URL" /><button class="icon-btn b-del">삭제</button></div>`).join('');
+  document.getElementById('brList').innerHTML=s.branches.map((b,i)=>`<div class="gen-row br-row" data-i="${i}" data-old="${esc(b.name)}"><input class="b-name" value="${esc(Lval(b.nameI18n||b.name,admLang))}" placeholder="지점명 (${admLang})" /><input class="b-contact" value="${esc(b.contact)}" placeholder="연락처" /><input class="b-link" value="${esc(b.link)}" placeholder="링크주소" /><input class="b-loc" value="${esc(Lval(b.location,admLang))}" placeholder="위치 (${admLang})" /><input class="b-hours" value="${esc(Lval(b.hours,admLang))}" placeholder="운영시간 (${admLang})" /><input class="b-insta" value="${esc(b.instagram||'')}" placeholder="Instagram URL" /><input class="b-fb" value="${esc(b.facebook||'')}" placeholder="Facebook URL" /><input class="b-lt" value="${esc(b.linktree||'')}" placeholder="Linktree URL" /><button class="icon-btn b-del">삭제</button></div>`).join('');
   document.querySelectorAll('#brList .b-del').forEach(b=>b.addEventListener('click',e=>{const i=+e.target.closest('.gen-row').dataset.i;const st=loadSettings();st.branches.splice(i,1);saveSettings(st);renderSettings();populateFilters();}));
   // 사이트 정보
   document.getElementById('inBrand').value=(s.site&&s.site.brandName)||'';
@@ -675,9 +677,17 @@ document.getElementById('brSave').addEventListener('click',()=>{
   const s=loadSettings();
   const rows=[...document.querySelectorAll('#brList .br-row')];
   const rename={};
-  rows.forEach(r=>{const o=r.dataset.old||'';const n=r.querySelector('.b-name').value.trim();if(o&&n&&o!==n)rename[o]=n;});
   const prevBr=s.branches||[];
-  s.branches=rows.map(r=>{const old=r.dataset.old||'';const prev=prevBr.find(b=>b.name===old)||{};const loc=Object.assign({},txObj(prev.location));loc[admLang]=r.querySelector('.b-loc').value.trim();const hrs=Object.assign({},txObj(prev.hours));hrs[admLang]=r.querySelector('.b-hours').value.trim();return {id:Date.now()+Math.random(),name:r.querySelector('.b-name').value.trim(),contact:r.querySelector('.b-contact').value.trim(),link:r.querySelector('.b-link').value.trim(),location:loc,hours:hrs,instagram:r.querySelector('.b-insta').value.trim(),facebook:r.querySelector('.b-fb').value.trim(),linktree:r.querySelector('.b-lt').value.trim()};}).filter(b=>b.name);
+  s.branches=rows.map(r=>{
+    const old=r.dataset.old||'';const prev=prevBr.find(b=>b.name===old)||{};
+    const nm=Object.assign({}, prev.nameI18n?prev.nameI18n:txObj(prev.name||old));
+    nm[admLang]=r.querySelector('.b-name').value.trim();
+    const key=(nm.ko||nm.en||nm.vi||'').trim();           // 한국어를 내부 키로(없으면 입력값)
+    if(old&&key&&old!==key)rename[old]=key;
+    const loc=Object.assign({},txObj(prev.location));loc[admLang]=r.querySelector('.b-loc').value.trim();
+    const hrs=Object.assign({},txObj(prev.hours));hrs[admLang]=r.querySelector('.b-hours').value.trim();
+    return {id:Date.now()+Math.random(),name:key,nameI18n:nm,contact:r.querySelector('.b-contact').value.trim(),link:r.querySelector('.b-link').value.trim(),location:loc,hours:hrs,instagram:r.querySelector('.b-insta').value.trim(),facebook:r.querySelector('.b-fb').value.trim(),linktree:r.querySelector('.b-lt').value.trim()};
+  }).filter(b=>b.name);
   if(Object.keys(rename).length){
     (s.branchClasses||[]).forEach(c=>{if(rename[c.branch])c.branch=rename[c.branch];});
     (s.classDetails||[]).forEach(d=>{if(rename[d.branch])d.branch=rename[d.branch];});
@@ -712,11 +722,11 @@ document.getElementById('bcSave').addEventListener('click',()=>{
 });
 
 /* 상세 설정 */
-function cdNameOpts(branch,sel){return '<option value="">선택</option>'+classNamesOf(branch).map(n=>`<option ${n===sel?'selected':''}>${esc(n)}</option>`).join('');}
+function cdNameOpts(branch,sel){return '<option value="">선택</option>'+classNamesOf(branch).map(n=>`<option value="${esc(n)}" ${n===sel?'selected':''}>${esc(clsLabelAdm(branch,n))}</option>`).join('');}
 function renderClassDetails(){
   const s=loadSettings();const bnames=branchNames();
   document.getElementById('cdList').innerHTML=(s.classDetails||[]).map((d,i)=>`<div class="gen-row cd-row" data-i="${i}" data-id="${d.id}">
-    <select class="cd-branch">${bnames.map(n=>`<option ${n===d.branch?'selected':''}>${esc(n)}</option>`).join('')}</select>
+    <select class="cd-branch">${bnames.map(n=>`<option value="${esc(n)}" ${n===d.branch?'selected':''}>${esc(brLabelAdm(n))}</option>`).join('')}</select>
     <select class="cd-name">${cdNameOpts(d.branch,d.name)}</select>
     <div class="vol"><input type="number" min="0" class="cd-vol" value="${d.volume??''}" /><span>ml</span></div>
     <input class="cd-krw" value="${esc(d.priceKRW||'')}" placeholder="₩" />

@@ -18,8 +18,10 @@ create table if not exists public.branches (
   instagram text default '', facebook text default '', linktree text default '',
   sort int default 0
 );
--- (이미 branches가 있는 경우 대비) 운영시간·링크트리 컬럼 보강
+-- (이미 branches가 있는 경우 대비) 운영시간·링크트리·지점명 다국어 컬럼 보강
 alter table public.branches add column if not exists linktree text default '';
+alter table public.branches add column if not exists name_en text default '';
+alter table public.branches add column if not exists name_vi text default '';
 alter table public.branches add column if not exists hours_ko text default '';
 alter table public.branches add column if not exists hours_en text default '';
 alter table public.branches add column if not exists hours_vi text default '';

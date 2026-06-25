@@ -27,7 +27,7 @@
     var settings={ branches:[], branchClasses:[], classDetails:[], defaultSchedule:{}, schedule:{}, site:{}, gallery:[], partners:[], galleryFolders:[], space:[], spaceFolders:[] };
     (t.branches||[]).sort(function(a,b){return (a.sort||0)-(b.sort||0);}).forEach(function(b){
       branchById[b.id]=b.name;
-      settings.branches.push({ id:b.id, name:b.name, contact:b.contact||'', link:b.link||'',
+      settings.branches.push({ id:b.id, name:b.name, nameI18n:{ko:b.name||'',en:b.name_en||'',vi:b.name_vi||''}, contact:b.contact||'', link:b.link||'',
         location:tri(b.location_ko,b.location_en,b.location_vi), hours:tri(b.hours_ko,b.hours_en,b.hours_vi),
         instagram:b.instagram||'', facebook:b.facebook||'', linktree:b.linktree||'' });
     });
@@ -78,7 +78,7 @@
 
     var brNameToId={}, clKeyToId={};
     var branchRows=(s.branches||[]).map(function(b,i){ var id=branchIdByName[b.name]||rid('br'); brNameToId[b.name]=id;
-      return { id:id, name:b.name, contact:b.contact||'', link:b.link||'',
+      return { id:id, name:b.name, name_en:(b.nameI18n?en(b.nameI18n):''), name_vi:(b.nameI18n?vi(b.nameI18n):''), contact:b.contact||'', link:b.link||'',
         location_ko:ko(b.location), location_en:en(b.location), location_vi:vi(b.location),
         hours_ko:ko(b.hours), hours_en:en(b.hours), hours_vi:vi(b.hours),
         instagram:b.instagram||'', facebook:b.facebook||'', linktree:b.linktree||'', sort:i }; });
