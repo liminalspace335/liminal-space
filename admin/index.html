@@ -43,6 +43,7 @@
   /* 신청관리 2 표 */
   .l2-search{min-width:280px}
   .l2-count{font-size:13px;color:var(--ink-soft)}
+  .l2-dirty{font-size:12px;color:var(--cancel);font-weight:600}
   .l2-wrap{border:1px solid var(--line);background:var(--paper);overflow-x:auto}
   .l2-table{width:100%;border-collapse:collapse;font-size:13px;white-space:nowrap}
   .l2-table thead th{position:sticky;top:0;background:#f4f4f5;text-align:left;font-size:11px;letter-spacing:.06em;color:var(--coord);font-weight:600;padding:11px 12px;border-bottom:1px solid var(--line)}
@@ -217,8 +218,11 @@
           <select id="l2Status"><option value="">전체 상태</option><option value="new">신규</option><option value="confirmed">확정</option><option value="done">완료</option><option value="cancel">취소</option></select>
           <select id="l2Branch"><option value="">전체 지점</option></select>
           <span id="l2Sel" class="l2-count"></span>
-          <select id="l2Bulk"><option value="">상태 변경…</option><option value="new">신규</option><option value="confirmed">확정</option><option value="done">완료</option><option value="cancel">취소</option></select>
-          <button class="btn sm" id="l2Apply">선택 상태변경</button>
+          <button class="btn sm" id="l2StatusBtn">상태변경</button>
+          <button class="btn ghost sm" id="l2Add">+ 추가</button>
+          <button class="btn danger sm" id="l2Del">삭제</button>
+          <button class="btn sm" id="l2Save">저장</button>
+          <span id="l2DirtyHint" class="l2-dirty"></span>
           <div class="spacer"></div>
           <span id="l2Count" class="l2-count"></span>
           <button class="btn ghost" id="l2Export">CSV 내보내기</button>
@@ -363,6 +367,19 @@
   <div class="dfoot"><button class="btn danger sm" id="dDelete">삭제</button><span class="spacer"></span><button class="btn ghost sm" id="dCancel">닫기</button><button class="btn sm" id="dSave">저장</button></div>
 </div></div>
 
+<!-- 상태 일괄 변경 팝업 -->
+<div class="dmodal" id="l2Modal"><div class="dbox" style="width:420px">
+  <div class="dhead"><div><h3>상태 변경</h3><div class="dwhen" id="l2mInfo"></div></div><button class="dclose" id="l2mClose" aria-label="close">×</button></div>
+  <div class="dbody">
+    <div class="dgrid">
+      <div class="df"><label>변경 전 상태</label><select id="l2mFrom"></select></div>
+      <div class="df"><label>변경 후 상태</label><select id="l2mTo"></select></div>
+    </div>
+    <p class="desc" id="l2mPreview" style="margin-top:12px"></p>
+  </div>
+  <div class="dfoot"><span class="spacer"></span><button class="btn ghost sm" id="l2mCancel">취소</button><button class="btn sm" id="l2mApply">적용</button></div>
+</div></div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../config.js"></script>
 <script src="../store.js"></script>
@@ -446,7 +463,7 @@ document.querySelectorAll('.sb-item').forEach(b=>b.addEventListener('click',()=>
   document.getElementById('pageTitle').textContent=TITLES[tab];
   if(tab==='overview')renderOverview();
   if(tab==='list')renderList();
-  if(tab==='list2')renderList2();
+  if(tab==='list2'){l2Reset();renderList2();}
   if(tab==='booking')renderBooking();
   if(tab==='settings')renderSettings();
 }));
@@ -536,13 +553,16 @@ function exportCSV(list){if(!list||!list.length){alert('내보낼 신청이 없�
   const blob=new Blob(['﻿'+lines.join('\n')],{type:'text/csv;charset=utf-8'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='liminal_applications_'+new Date().toISOString().slice(0,10)+'.csv';a.click();}
 document.getElementById('exportBtn').addEventListener('click',()=>exportCSV(load()));
 
-/* ===== 신청관리(리스트) (행 목록형 대시보드) ===== */
-let l2Bound=false;let l2Sel=new Set();
+/* ===== 신청관리(리스트) (행 목록형 대시보드 · staged 편집) ===== */
+let l2Bound=false;let l2Sel=new Set();let l2Data=null;let l2Dirty=false;
+function l2Get(){ if(!l2Data) l2Data=load().map(a=>Object.assign({},a)); return l2Data; }   // 작업 복사본
+function l2Active(){ const p=document.getElementById('panel-list2'); return !!(p&&p.classList.contains('active')); }
+function l2Reset(){ if(!l2Dirty){ l2Data=null; l2Sel=new Set(); } }   // dirty 아니면 store에서 새로 로드
 function l2Filtered(){
   const q=(document.getElementById('l2Search').value||'').trim().toLowerCase();
   const st=document.getElementById('l2Status').value;
   const br=document.getElementById('l2Branch').value;
-  return load().filter(a=>{
+  return l2Get().filter(a=>{
     if(st&&a.status!==st)return false;
     if(br&&a.branch!==br)return false;
     if(q){const hay=((a.name||'')+' '+(a.phone||'')).toLowerCase();if(hay.indexOf(q)<0)return false;}
@@ -550,14 +570,43 @@ function l2Filtered(){
   }).sort((a,b)=>String(b.createdAt||'').localeCompare(String(a.createdAt||'')));
 }
 function l2UpdateSelCount(){const el=document.getElementById('l2Sel');if(el)el.textContent=l2Sel.size?l2Sel.size+'건 선택':'';}
-function l2ApplyBulk(){
-  const target=document.getElementById('l2Bulk').value;
-  if(!l2Sel.size){alert('변경할 신청을 먼저 체크하세요.');return;}
-  if(!target){alert('변경할 상태를 선택하세요.');return;}
-  if(!confirm(l2Sel.size+'건을 "'+(STATUS[target]||{}).label+'" 상태로 변경할까요?'))return;
-  const l=load();l.forEach(a=>{if(l2Sel.has(a.id))a.status=target;});save(l);
-  l2Sel=new Set();document.getElementById('l2Bulk').value='';
-  renderList2();renderOverview();
+/* 상태 일괄 변경 팝업 (선택분 중 A 상태만 B로) */
+function l2mPreviewUpdate(){
+  const from=document.getElementById('l2mFrom').value, to=document.getElementById('l2mTo').value;
+  const n=l2Get().filter(a=>l2Sel.has(a.id)&&a.status===from).length;
+  document.getElementById('l2mPreview').textContent='선택 '+l2Sel.size+'건 중 "'+((STATUS[from]||{}).label)+'" '+n+'건 → "'+((STATUS[to]||{}).label)+'"로 변경됩니다. (나머지는 유지)';
+}
+function l2OpenStatusModal(){
+  if(!l2Sel.size){alert('상태를 변경할 신청을 먼저 체크하세요.');return;}
+  const opts=Object.entries(STATUS).map(([v,o])=>`<option value="${v}">${o.label}</option>`).join('');
+  const f=document.getElementById('l2mFrom'),t=document.getElementById('l2mTo');
+  f.innerHTML=opts;t.innerHTML=opts;f.value='new';t.value='done';
+  document.getElementById('l2mInfo').textContent=l2Sel.size+'건 선택됨';
+  l2mPreviewUpdate();
+  document.getElementById('l2Modal').classList.add('open');
+}
+function l2CloseStatusModal(){document.getElementById('l2Modal').classList.remove('open');}
+function l2ApplyStatusModal(){
+  const from=document.getElementById('l2mFrom').value, to=document.getElementById('l2mTo').value;
+  if(from===to){alert('변경 전·후 상태가 같습니다.');return;}
+  const rows=l2Get().filter(a=>l2Sel.has(a.id)&&a.status===from);
+  if(!rows.length){alert('선택한 항목 중 "'+((STATUS[from]||{}).label)+'" 상태가 없습니다.');return;}
+  rows.forEach(a=>a.status=to); l2Dirty=true; l2CloseStatusModal(); renderList2();
+}
+function l2AddRow(){
+  const b=branchNames()[0]||'';
+  const row={id:Date.now()+Math.floor(Math.random()*1000),createdAt:new Date().toISOString(),branch:b,'class':'',size:'',date:'',time:'',people:'1',name:'',phone:'',email:'',nationality:'',facebook:'',instagram:'',msg:'',status:'new'};
+  l2Get().unshift(row); l2Dirty=true; renderList2(); openDetail(row.id);
+}
+function l2DelRows(){
+  if(!l2Sel.size){alert('삭제할 신청을 먼저 체크하세요.');return;}
+  if(!confirm(l2Sel.size+'건을 삭제할까요? (저장을 눌러야 최종 반영됩니다)'))return;
+  l2Data=l2Get().filter(a=>!l2Sel.has(a.id)); l2Sel=new Set(); l2Dirty=true; renderList2();
+}
+function l2Save(){
+  save(l2Get()); l2Dirty=false; l2Data=null; l2Sel=new Set();
+  renderList2(); renderOverview();
+  const dh=document.getElementById('l2DirtyHint'); if(dh){dh.textContent='저장됨 ✓';dh.classList.remove('on');setTimeout(()=>{if(!l2Dirty&&dh.textContent==='저장됨 ✓')dh.textContent='';},1600);}
 }
 function renderList2(){
   const bsel=document.getElementById('l2Branch');const curB=bsel.value;
@@ -567,11 +616,21 @@ function renderList2(){
     document.getElementById('l2Status').addEventListener('change',renderList2);
     document.getElementById('l2Branch').addEventListener('change',renderList2);
     document.getElementById('l2Export').addEventListener('click',()=>exportCSV(l2Filtered()));
-    document.getElementById('l2Apply').addEventListener('click',l2ApplyBulk);
+    document.getElementById('l2StatusBtn').addEventListener('click',l2OpenStatusModal);
+    document.getElementById('l2Add').addEventListener('click',l2AddRow);
+    document.getElementById('l2Del').addEventListener('click',l2DelRows);
+    document.getElementById('l2Save').addEventListener('click',l2Save);
+    document.getElementById('l2mClose').addEventListener('click',l2CloseStatusModal);
+    document.getElementById('l2mCancel').addEventListener('click',l2CloseStatusModal);
+    document.getElementById('l2mApply').addEventListener('click',l2ApplyStatusModal);
+    document.getElementById('l2mFrom').addEventListener('change',l2mPreviewUpdate);
+    document.getElementById('l2mTo').addEventListener('change',l2mPreviewUpdate);
+    document.getElementById('l2Modal').addEventListener('click',e=>{if(e.target.id==='l2Modal')l2CloseStatusModal();});
   }
-  const all=load();const c={total:all.length,new:0,confirmed:0,done:0,cancel:0};
+  const all=l2Get();const c={total:all.length,new:0,confirmed:0,done:0,cancel:0};
   all.forEach(x=>{if(c[x.status]!==undefined)c[x.status]++;});
   document.getElementById('l2Stats').innerHTML=[['전체',c.total],['신규',c.new],['확정',c.confirmed],['완료',c.done],['취소',c.cancel]].map(([k,v])=>`<div class="stat"><div class="k">${k}</div><div class="v mono">${v}</div></div>`).join('');
+  const dh=document.getElementById('l2DirtyHint'); if(dh)dh.textContent=l2Dirty?'● 미저장 변경':'';
   const rows=l2Filtered();
   document.getElementById('l2Count').textContent='총 '+rows.length+'명';
   const cols=['희망일','시간','이름','연락처','지점','클래스','용량','인원','국적','메모','신청일시','상태','작업'];
@@ -872,7 +931,8 @@ function dval(id){return document.getElementById(id).value.trim();}
 function dVolumeOpts(branch,name,current){const vols=[...new Set(volumesOf(branch,name).map(d=>d.volume+'ml'))];if(current&&!vols.includes(current))vols.push(current);return '<option value="">선택</option>'+vols.map(v=>`<option ${v===current?'selected':''}>${esc(v)}</option>`).join('');}
 function dTimeOpts(branch,date,current){const times=date?[...new Set(effectiveSlots(branch,date).map(s=>s.time))]:[];if(current&&!times.includes(current))times.push(current);return '<option value="">선택</option>'+times.map(t=>`<option ${t===current?'selected':''}>${esc(t)}</option>`).join('');}
 function openDetail(id){
-  const a=load().find(x=>x.id===id);if(!a)return;detailId=id;
+  const src=(typeof l2Active==='function'&&l2Active())?l2Get():load();
+  const a=src.find(x=>x.id===id);if(!a)return;detailId=id;
   document.getElementById('dWhen').textContent='신청일시 '+fmt(a.createdAt);
   document.getElementById('d_name').value=a.name||'';document.getElementById('d_phone').value=a.phone||'';document.getElementById('d_email').value=a.email||'';document.getElementById('d_nat').value=a.nationality||'';document.getElementById('d_fb').value=a.facebook||'';document.getElementById('d_ig').value=a.instagram||'';
   document.getElementById('d_date').value=a.date||'';document.getElementById('d_people').value=a.people||'1';document.getElementById('d_msg').value=a.msg||'';
@@ -893,8 +953,13 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.getElement
 document.getElementById('d_branch').addEventListener('change',()=>{const b=dval('d_branch');const cls=classNamesOf(b);document.getElementById('d_class').innerHTML='<option value="">선택</option>'+cls.map(n=>`<option value="${esc(n)}">${esc(clsLabelAdm(b,n))}</option>`).join('');document.getElementById('d_size').innerHTML=dVolumeOpts(b,dval('d_class'),'');document.getElementById('d_time').innerHTML=dTimeOpts(b,dval('d_date'),'');});
 document.getElementById('d_class').addEventListener('change',()=>{document.getElementById('d_size').innerHTML=dVolumeOpts(dval('d_branch'),dval('d_class'),'');});
 document.getElementById('d_date').addEventListener('change',()=>{document.getElementById('d_time').innerHTML=dTimeOpts(dval('d_branch'),dval('d_date'),document.getElementById('d_time').value);});
-document.getElementById('dSave').addEventListener('click',()=>{const l=load();const a=l.find(x=>x.id===detailId);if(!a)return;a.name=dval('d_name');a.phone=dval('d_phone');a.email=dval('d_email');a.nationality=dval('d_nat');a.facebook=dval('d_fb');a.instagram=dval('d_ig');a.branch=dval('d_branch');a.class=dval('d_class');a.size=dval('d_size');a.date=dval('d_date');a.time=dval('d_time');a.people=dval('d_people')||'1';a.msg=dval('d_msg');a.status=dval('d_status');save(l);closeDetail();renderList();renderOverview();});
-document.getElementById('dDelete').addEventListener('click',()=>{if(!detailId)return;if(confirm('이 신청을 삭제할까요?')){save(load().filter(x=>x.id!==detailId));closeDetail();renderList();renderOverview();}});
+function dApplyTo(a){a.name=dval('d_name');a.phone=dval('d_phone');a.email=dval('d_email');a.nationality=dval('d_nat');a.facebook=dval('d_fb');a.instagram=dval('d_ig');a.branch=dval('d_branch');a.class=dval('d_class');a.size=dval('d_size');a.date=dval('d_date');a.time=dval('d_time');a.people=dval('d_people')||'1';a.msg=dval('d_msg');a.status=dval('d_status');}
+document.getElementById('dSave').addEventListener('click',()=>{
+  if(typeof l2Active==='function'&&l2Active()){const a=l2Get().find(x=>x.id===detailId);if(!a)return;dApplyTo(a);l2Dirty=true;closeDetail();renderList2();return;}
+  const l=load();const a=l.find(x=>x.id===detailId);if(!a)return;dApplyTo(a);save(l);closeDetail();renderList();renderOverview();});
+document.getElementById('dDelete').addEventListener('click',()=>{if(!detailId)return;if(!confirm('이 신청을 삭제할까요?'))return;
+  if(typeof l2Active==='function'&&l2Active()){l2Data=l2Get().filter(x=>x.id!==detailId);l2Dirty=true;closeDetail();renderList2();return;}
+  save(load().filter(x=>x.id!==detailId));closeDetail();renderList();renderOverview();});
 
 /* 로그인 화면 숨김 (개발 모드) — 화면 즉시 표시 후 데이터 로드되면 렌더
  * 나중에 로그인 켜려면: 위 #gate/#app의 인라인 display 를 되돌리고 .then(showApp) 으로 변경 */
