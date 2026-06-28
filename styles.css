@@ -99,7 +99,7 @@
   .concept-figure{
     border:1px solid var(--line);position:relative;overflow:hidden;
     background:#dcdde0;display:block;line-height:0;
-    width:fit-content;max-width:100%;justify-self:start;
+    width:fit-content;max-width:100%;justify-self:center;margin:0 auto;cursor:zoom-in;
   }
   .concept-figure img{width:auto;height:auto;max-height:66vh;max-width:100%;display:block}
   .bottle{

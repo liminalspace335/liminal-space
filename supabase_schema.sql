@@ -50,8 +50,9 @@ alter table public.site_info add column if not exists biz_phone text default '';
 alter table public.site_info add column if not exists biz_email text default '';
 alter table public.site_info add column if not exists moit_url text default '';
 alter table public.site_info add column if not exists moit_logo text default '';
--- 컨셉 섹션 이미지/영상 URL
+-- 컨셉 섹션 이미지/영상 URL + 영상 자동재생 여부
 alter table public.site_info add column if not exists concept_media text default '';
+alter table public.site_info add column if not exists concept_autoplay boolean default false;
 
 -- 클래스 (지점별)
 create table if not exists public.classes (

@@ -419,9 +419,15 @@ function mediaHTML(url,alt,view){
 /* 컨셉 섹션 미디어 — 어드민에서 설정한 이미지/영상으로 교체(없으면 기존 기본 이미지 유지) */
 function renderConcept(){
   var fig=document.querySelector('.concept-figure'); if(!fig)return;
-  var url=(getSettings().site&&getSettings().site.conceptMedia)||'';
+  var st=getSettings().site||{};
+  var url=st.conceptMedia||'';
   if(!url) return;   // 미설정 시 HTML의 기본 이미지(assets/concept.jpg) 유지
-  fig.innerHTML=mediaHTML(url,'LIMINAL SPACE — Eau de Parfum');
+  if(isVideoUrl(url)){
+    var auto=st.conceptAutoplay?'autoplay ':'';   // 어드민에서 자동재생 켜면 autoplay, 끄면 호버 시 재생
+    fig.innerHTML='<video src="'+esc(url)+'" '+auto+'muted loop playsinline preload="metadata" tabindex="0"></video>';
+  } else {
+    fig.innerHTML='<img src="'+esc(url)+'" alt="LIMINAL SPACE — Eau de Parfum" loading="lazy">';
+  }
 }
 function initSpaceCarousel(){
   const track=document.getElementById('spaceTrack'); if(!track)return;
@@ -890,7 +896,7 @@ function initEffects(){
       var im2=hit.querySelector('img,video'); return {list:[{src:mediaSrc(im2),cap:''}], idx:0};
     }
     document.addEventListener('click',function(e){
-      var hit=e.target.closest('#galleryGrid .gitem, #spaceGrid .gitem, .mcard .mc-img'); if(!hit)return;
+      var hit=e.target.closest('#galleryGrid .gitem, #spaceGrid .gitem, .mcard .mc-img, .concept-figure'); if(!hit)return;
       if(hit.tagName==='A') return;                 // 링크가 걸린 항목은 링크 우선
       var media=hit.querySelector('img,video'); if(!media)return;
       e.preventDefault(); var r=buildList(hit); lbList=r.list; lbShow(r.idx); lb.classList.add('open'); document.body.style.overflow='hidden';
