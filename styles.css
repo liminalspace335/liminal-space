@@ -99,9 +99,9 @@
   .concept-figure{
     border:1px solid var(--line);position:relative;overflow:hidden;
     background:#dcdde0;display:block;line-height:0;
-    width:fit-content;max-width:100%;justify-self:start;align-self:end;cursor:zoom-in;
+    width:fit-content;max-width:100%;justify-self:center;margin:0 auto;cursor:zoom-in;
   }
-  .concept-figure img{width:auto;height:auto;max-height:82vh;max-width:100%;display:block}
+  .concept-figure img{width:auto;height:auto;max-height:66vh;max-width:100%;display:block}
   .bottle{
     width:36%;aspect-ratio:1/2.2;border-radius:10px 10px 6px 6px;
     background:linear-gradient(100deg,rgba(255,255,255,.55),rgba(255,255,255,.12) 40%,rgba(255,255,255,.5));
@@ -418,14 +418,15 @@ section[id], footer[id]{scroll-margin-top:63px}  /* 고정 네비 높이에 딱 
 /* ===== 영상(video) — 이미지와 동일하게 표시 ===== */
 .gitem video{width:100%;height:100%;object-fit:cover;display:block;filter:grayscale(.25)}
 .mcard .mc-img video{width:100%;height:100%;object-fit:cover;display:block;filter:grayscale(.2)}
-.concept-figure video{width:auto;height:auto;max-height:82vh;max-width:100%;display:block}
+.concept-figure video{width:auto;height:auto;max-height:66vh;max-width:100%;display:block}
 .lightbox video.lb-vid{max-width:92vw;max-height:84vh;object-fit:contain;box-shadow:0 10px 60px rgba(0,0,0,.5);background:#000}
 /* 컨셉 순차 재생(페이드 전환) */
 .concept-figure .concept-seq{line-height:0;transition:opacity .6s ease;opacity:1}
-.concept-figure .concept-seq img,.concept-figure .concept-seq video{width:auto;height:auto;max-height:82vh;max-width:100%;display:block}
+.concept-figure .concept-seq img,.concept-figure .concept-seq video{width:auto;height:auto;max-height:66vh;max-width:100%;display:block}
 /* 히어로 로고 이미지(텍스트 대체) */
 .hero h1.has-logo{line-height:0}
-.hero h1 .hero-logo{display:block;width:auto;height:auto;max-width:min(72%,560px);max-height:46vh}
+/* 로고 이미지: 텍스트 워드마크와 동일한 좌측·바닥 위치, 크기도 두 줄 텍스트 높이에 맞춤 */
+.hero h1 .hero-logo{display:block;width:auto;height:auto;max-width:min(80%,560px);max-height:clamp(110px,22vw,300px)}
 /* CONNECT (SNS 카드) */
 .connect-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
 .connect-card{display:flex;align-items:center;gap:16px;background:var(--bg);border:1px solid var(--line);padding:24px 26px;transition:border-color .2s,transform .2s;color:var(--ink)}
