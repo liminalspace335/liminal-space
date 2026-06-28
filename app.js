@@ -412,7 +412,7 @@ function mediaHTML(url,alt,view){
   var u=esc(url||'');
   if(isVideoUrl(url)){
     return view ? '<video src="'+u+'" controls playsinline preload="metadata"></video>'
-                : '<video src="'+u+'" autoplay muted loop playsinline preload="metadata"></video>';
+                : '<video src="'+u+'" muted loop playsinline preload="metadata" tabindex="0"></video>';   // 카드: 음소거·호버 시 재생
   }
   return '<img src="'+u+'" alt="'+esc(alt||'LIMINAL SPACE')+'" loading="lazy">';
 }
@@ -872,7 +872,7 @@ function initEffects(){
       return v; }
     function lbShow(i){ if(!lbList.length)return; lbIdx=(i+lbList.length)%lbList.length; var it=lbList[lbIdx];
       var v=lbVidEl();
-      if(isVideoUrl(it.src)){ lbImg.style.display='none'; lbImg.removeAttribute('src'); v.style.display=''; v.src=it.src; try{v.play();}catch(e){} }
+      if(isVideoUrl(it.src)){ lbImg.style.display='none'; lbImg.removeAttribute('src'); v.style.display=''; v.src=it.src; v.muted=false; try{v.play();}catch(e){} }   // 라이트박스: 소리 켜기 가능
       else { v.pause&&v.pause(); v.removeAttribute('src'); v.style.display='none'; lbImg.style.display=''; lbImg.src=it.src; }
       lbCap.textContent=it.cap||''; }
     function lbClose(){lb.classList.remove('open');document.body.style.overflow='';lbImg.removeAttribute('src');var v=lb.querySelector('video.lb-vid');if(v){v.pause();v.removeAttribute('src');v.style.display='none';}lbList=[];}
@@ -907,6 +907,10 @@ function initEffects(){
       else if(e.key==='ArrowRight')lbShow(lbIdx+1);
     });
   }
+  // 3-1) 카드 영상: 호버 시 재생 / 벗어나면 정지(라이트박스 영상은 제외)
+  var CARD_VID='#galleryGrid video, #spaceGrid video, #spaceMarquee video, .concept-figure video';
+  document.addEventListener('mouseover',function(e){var v=e.target.closest&&e.target.closest(CARD_VID);if(v){v.muted=true;try{v.play();}catch(_){}}});
+  document.addEventListener('mouseout',function(e){var v=e.target.closest&&e.target.closest(CARD_VID);if(v){try{v.pause();}catch(_){}}});
   // 4) 히어로 패럴랙스(스크롤 시 천천히 위로 + 페이드)
   var hero=document.querySelector('.hero .hero-inner');
   if(hero){
