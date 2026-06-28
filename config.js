@@ -4,6 +4,6 @@
  * 비워두면(로컬에서) 자동으로 localStorage 모드로 동작합니다.
  */
 window.SUPA_CONFIG = {
-  url: "https://fkzmtycqxyjvkkhrjrus.supabase.co",
-  anonKey: "sb_publishable_l6B90IEhYTpytpNzWtHvrQ_RBAZSlLs"
+  url: "https://euhuiktqoslmndozqpsr.supabase.co",
+  anonKey: "sb_publishable_FrEHlpTzQpDmBh8Z8_2o_w_CKQomC2A"
 };
