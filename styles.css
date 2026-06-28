@@ -414,3 +414,9 @@ section[id], footer[id]{scroll-margin-top:63px}  /* 고정 네비 높이에 딱 
 @media(max-width:680px){.foot-biz{padding:16px 18px 0}.foot-biz .fb-sep{margin:0 5px}}
 /* 신청 모달 결제 예상 금액 */
 .amtnote{margin-top:10px;padding:11px 14px;background:var(--paper);border:1px solid var(--ink);font-size:14px;font-weight:700;color:var(--ink);letter-spacing:.01em}
+
+/* ===== 영상(video) — 이미지와 동일하게 표시 ===== */
+.gitem video{width:100%;height:100%;object-fit:cover;display:block;filter:grayscale(.25)}
+.mcard .mc-img video{width:100%;height:100%;object-fit:cover;display:block;filter:grayscale(.2)}
+.concept-figure video{width:auto;height:auto;max-height:66vh;max-width:100%;display:block}
+.lightbox video.lb-vid{max-width:92vw;max-height:84vh;object-fit:contain;box-shadow:0 10px 60px rgba(0,0,0,.5);background:#000}
