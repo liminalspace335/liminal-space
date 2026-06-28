@@ -60,8 +60,11 @@
     (t.schedule_days||[]).forEach(function(d){ var bn=branchById[d.branch_id]||''; if(!bn)return;
       settings.schedule[bn]=settings.schedule[bn]||{}; if(!settings.schedule[bn][d.sched_date]) settings.schedule[bn][d.sched_date]=[]; });
     (t.schedule_slots||[]).forEach(function(s){ var bn=branchById[s.branch_id]||''; if(!bn)return;
-      settings.schedule[bn]=settings.schedule[bn]||{}; (settings.schedule[bn][s.sched_date]=settings.schedule[bn][s.sched_date]||[])
-        .push({ cls:(s.class_id?(classById[s.class_id]||{}).nameKo||'':''), time:s.time||'', cap:s.cap||0 }); });
+      settings.schedule[bn]=settings.schedule[bn]||{};
+      var arr=(settings.schedule[bn][s.sched_date]=settings.schedule[bn][s.sched_date]||[]);
+      var cls=(s.class_id?(classById[s.class_id]||{}).nameKo||'':''), tm=s.time||'';
+      if(arr.some(function(x){return x.time===tm && x.cls===cls;}))return;   // 같은 날짜·시간·클래스 중복 제외
+      arr.push({ cls:cls, time:tm, cap:s.cap||0 }); });
     var apps=(t.applications||[]).map(function(a){ var cm=classById[a.class_id]||{};
       return { id:Number(a.id), createdAt:a.created_at, branch:branchById[a.branch_id]||'', 'class':cm.nameKo||'',
         size:a.size||'', date:a.want_date||'', time:a.want_time||'', people:a.people||'1',

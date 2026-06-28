@@ -234,8 +234,9 @@ function expectedAmountStr(){var d=selectedDetail();if(!d)return '';var di=discI
 function slotsFor(dateStr){
   if(!dateStr||!data.branch) return [];
   const s=getSettings();const sc=(s.schedule||{})[data.branch]||{};
-  const slots=sc[dateStr]||[];   // 개별 설정(저장)된 날짜만 오픈, 미설정일은 휴무
-  return slots.filter(sl=>!sl.cls || sl.cls===data.class);
+  const slots=(sc[dateStr]||[]).filter(sl=>!sl.cls || sl.cls===data.class);   // 개별 설정일만 오픈
+  var seen={};   // 같은 시간·클래스 중복 제거
+  return slots.filter(function(sl){var k=(sl.time||'')+'|'+(sl.cls||'');if(seen[k])return false;seen[k]=1;return true;});
 }
 function bindOptList(list){
   list.querySelectorAll('.opt').forEach(o=>o.addEventListener('click',()=>{
