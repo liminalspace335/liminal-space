@@ -951,6 +951,11 @@ function initEffects(){
         cards.forEach(function(c){var im=c.querySelector('img,video');if(!im)return;var src=mediaSrc(im);if(seen[src])return;seen[src]=1;var t=c.querySelector('.mc-t')||c.querySelector('.mc-d');list.push({src:src,cap:t?t.textContent:''});});
         var idx=0; for(var k=0;k<list.length;k++){if(list[k].src===csrc){idx=k;break;}}
         return {list:list, idx:idx}; }
+      var cf=hit.closest('.concept-figure');   // 컨셉: 저장된 미디어 목록 전체를 이전/다음으로
+      if(cf){ var cl=(((getSettings().site||{}).conceptList)||[]).filter(Boolean);
+        if(cl.length>1){ var cur=mediaSrc(hit.querySelector('img,video')); var ix=0;
+          for(var z=0;z<cl.length;z++){ if(cur&&(cur===cl[z]||cur.indexOf(cl[z])>=0||cl[z].indexOf(cur)>=0)){ix=z;break;} }
+          return {list:cl.map(function(u){return {src:u,cap:''};}), idx:ix}; } }
       var im2=hit.querySelector('img,video'); return {list:[{src:mediaSrc(im2),cap:''}], idx:0};
     }
     document.addEventListener('click',function(e){
