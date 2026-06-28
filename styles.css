@@ -426,7 +426,7 @@ section[id], footer[id]{scroll-margin-top:63px}  /* 고정 네비 높이에 딱 
 /* 히어로 로고 이미지(텍스트 대체) */
 .hero h1.has-logo{line-height:0}
 /* 로고 이미지: 텍스트 워드마크와 동일한 좌측·바닥 위치, 크기도 두 줄 텍스트 높이에 맞춤 */
-.hero h1 .hero-logo{display:block;width:auto;height:auto;max-width:min(92%,820px);max-height:500px}
+.hero h1 .hero-logo{display:block;width:100%;height:auto;max-width:min(96%,1040px);max-height:72vh;margin:0}
 /* CONNECT (SNS 카드) */
 .connect-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
 .connect-card{display:flex;align-items:center;gap:16px;background:var(--bg);border:1px solid var(--line);padding:24px 26px;transition:border-color .2s,transform .2s;color:var(--ink)}
