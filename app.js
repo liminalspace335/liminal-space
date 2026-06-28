@@ -850,7 +850,7 @@ function branchLabel(name){
 function ensureSvgDefs(){
   if(document.getElementById('ls-svgdefs'))return;
   var d=document.createElement('div'); d.id='ls-svgdefs'; d.style.cssText='position:absolute;width:0;height:0;overflow:hidden';
-  d.innerHTML='<svg width="0" height="0" aria-hidden="true"><symbol id="ic-instagram" viewBox="0 0 24 24"><rect x="2.5" y="2.5" width="19" height="19" rx="5.5" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="4.2" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="17.2" cy="6.8" r="1.25" fill="currentColor"/></symbol><symbol id="ic-facebook" viewBox="0 0 24 24"><path fill="currentColor" d="M13.5 21v-7.5h2.52l.38-3h-2.9V8.55c0-.87.24-1.46 1.49-1.46h1.59V4.41c-.28-.04-1.23-.12-2.32-.12-2.3 0-3.87 1.4-3.87 3.98V10.5H8.2v3h2.66V21h2.64z"/></symbol><symbol id="ic-linktree" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" d="M10.5 13.6a3.5 3.5 0 0 0 5 0l2.3-2.3a3.5 3.5 0 0 0-5-5l-1 1M13.5 10.4a3.5 3.5 0 0 0-5 0l-2.3 2.3a3.5 3.5 0 0 0 5 5l1-1"/></symbol></svg>';
+  d.innerHTML='<svg width="0" height="0" aria-hidden="true"><symbol id="ic-instagram" viewBox="0 0 24 24"><rect x="2.5" y="2.5" width="19" height="19" rx="5.5" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="4.2" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="17.2" cy="6.8" r="1.25" fill="currentColor"/></symbol><symbol id="ic-facebook" viewBox="0 0 24 24"><path fill="currentColor" d="M13.5 21v-7.5h2.52l.38-3h-2.9V8.55c0-.87.24-1.46 1.49-1.46h1.59V4.41c-.28-.04-1.23-.12-2.32-.12-2.3 0-3.87 1.4-3.87 3.98V10.5H8.2v3h2.66V21h2.64z"/></symbol><symbol id="ic-linktree" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" d="M10.5 13.6a3.5 3.5 0 0 0 5 0l2.3-2.3a3.5 3.5 0 0 0-5-5l-1 1M13.5 10.4a3.5 3.5 0 0 0-5 0l-2.3 2.3a3.5 3.5 0 0 0 5 5l1-1"/></symbol><symbol id="ic-tiktok" viewBox="0 0 24 24"><path fill="currentColor" d="M16.6 3c.32 2.06 1.66 3.46 3.9 3.6v2.46c-1.3.13-2.43-.3-3.74-1.09v5.96c0 3.02-2.45 5.47-5.47 5.47A5.47 5.47 0 0 1 8.9 8.97v2.62a2.85 2.85 0 1 0 2 2.72V3h2.7z"/></symbol></svg>';
   document.body.appendChild(d);
 }
 /* 클래스 다음 'CONNECT' 섹션 — 인스타·페북·링크트리 카드(지점 소셜 링크) */
@@ -859,11 +859,12 @@ function renderSocialCards(){
   ensureSvgDefs();
   var brs=(getSettings().branches||[]);
   function pick(f){for(var i=0;i<brs.length;i++){if(brs[i]&&brs[i][f])return brs[i][f];}return '';}
-  function handle(u){try{var p=(u||'').split('?')[0].replace(/\/+$/,'').split('/');var h=p[p.length-1]||'';return h&&h.indexOf('.')<0?'@'+h:'';}catch(e){return '';}}
-  var ig=pick('instagram'), fb=pick('facebook'), lt=pick('linktree');
+  function handle(u){try{var p=(u||'').split('?')[0].replace(/\/+$/,'').split('/');var h=(p[p.length-1]||'').replace(/^@/,'');return h&&h.indexOf('.')<0?'@'+h:'';}catch(e){return '';}}
+  var ig=pick('instagram'), fb=pick('facebook'), lt=pick('linktree'), tk=pick('tiktok');
   var items=[];
   if(ig)items.push({c:'ig',icon:'ic-instagram',name:'Instagram',sub:handle(ig),url:ig});
   if(fb)items.push({c:'fb',icon:'ic-facebook',name:'Facebook',sub:'',url:fb});
+  if(tk)items.push({c:'tk',icon:'ic-tiktok',name:'TikTok',sub:handle(tk),url:tk});
   if(lt)items.push({c:'lt',icon:'ic-linktree',name:'Linktree',sub:'',url:lt});
   var sec=document.getElementById('connect');
   if(!items.length){ if(sec)sec.style.display='none'; return; }
@@ -878,7 +879,7 @@ function renderSocialCards(){
 function renderNavSocials(){
   var langEl=document.querySelector('header .lang'); if(!langEl)return;
   ensureSvgDefs();
-  var brs=(getSettings().branches||[]).filter(function(b){return b&&b.name&&(b.instagram||b.facebook||b.linktree);});
+  var brs=(getSettings().branches||[]).filter(function(b){return b&&b.name&&(b.instagram||b.facebook||b.linktree||b.tiktok);});
   var box=document.getElementById('navSocials');
   if(!brs.length){ if(box)box.parentNode.removeChild(box); return; }
   if(!box){ box=document.createElement('div'); box.className='socials'; box.id='navSocials'; langEl.parentNode.insertBefore(box, langEl); }
@@ -887,6 +888,7 @@ function renderNavSocials(){
     var nm=esc(b.name); var ic='';
     if(b.instagram) ic+='<a class="ig" href="'+esc(b.instagram)+'" target="_blank" rel="noopener" aria-label="'+nm+' Instagram"><svg class="ic"><use href="#ic-instagram"/></svg></a>';
     if(b.facebook)  ic+='<a class="fb" href="'+esc(b.facebook)+'" target="_blank" rel="noopener" aria-label="'+nm+' Facebook"><svg class="ic"><use href="#ic-facebook"/></svg></a>';
+    if(b.tiktok)    ic+='<a class="tk" href="'+esc(b.tiktok)+'" target="_blank" rel="noopener" aria-label="'+nm+' TikTok"><svg class="ic"><use href="#ic-tiktok"/></svg></a>';
     if(b.linktree)  ic+='<a class="lt" href="'+esc(b.linktree)+'" target="_blank" rel="noopener" aria-label="'+nm+' Linktree"><svg class="ic"><use href="#ic-linktree"/></svg></a>';
     var shortName=esc(branchLabel(b.name));
     return '<div class="soc-group" tabindex="0"><span class="soc-b">'+shortName+'</span><span class="soc-icons">'+ic+'</span></div>';

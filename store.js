@@ -29,7 +29,7 @@
       branchById[b.id]=b.name;
       settings.branches.push({ id:b.id, name:b.name, nameI18n:{ko:b.name||'',en:b.name_en||'',vi:b.name_vi||''}, contact:b.contact||'', link:b.link||'',
         location:tri(b.location_ko,b.location_en,b.location_vi), hours:tri(b.hours_ko,b.hours_en,b.hours_vi),
-        instagram:b.instagram||'', facebook:b.facebook||'', linktree:b.linktree||'' });
+        instagram:b.instagram||'', facebook:b.facebook||'', linktree:b.linktree||'', tiktok:b.tiktok||'' });
     });
     var si=(t.site_info||[])[0]; if(si){ settings.site={ brandName:si.brand_name||'', estYear:si.est_year||'', copyrightYear:si.copyright_year||'',
         bizName:si.biz_name||'', bizAddress:si.biz_address||'', bizTax:si.biz_tax||'', bizPhone:si.biz_phone||'', bizEmail:si.biz_email||'', moitUrl:si.moit_url||'', moitLogo:si.moit_logo||'', conceptMedia:si.concept_media||'', conceptAutoplay:si.concept_autoplay===true,
@@ -86,7 +86,7 @@
       return { id:id, name:b.name, name_en:(b.nameI18n?en(b.nameI18n):''), name_vi:(b.nameI18n?vi(b.nameI18n):''), contact:b.contact||'', link:b.link||'',
         location_ko:ko(b.location), location_en:en(b.location), location_vi:vi(b.location),
         hours_ko:ko(b.hours), hours_en:en(b.hours), hours_vi:vi(b.hours),
-        instagram:b.instagram||'', facebook:b.facebook||'', linktree:b.linktree||'', sort:i }; });
+        instagram:b.instagram||'', facebook:b.facebook||'', linktree:b.linktree||'', tiktok:b.tiktok||'', sort:i }; });
     var _si=s.site||{};
     var siteRow={ id:'main', brand_name:_si.brandName||'', est_year:_si.estYear||'', copyright_year:_si.copyrightYear||'',
       biz_name:_si.bizName||'', biz_address:_si.bizAddress||'', biz_tax:_si.bizTax||'', biz_phone:_si.bizPhone||'', biz_email:_si.bizEmail||'', moit_url:_si.moitUrl||'', moit_logo:_si.moitLogo||'', concept_autoplay:!!_si.conceptAutoplay,
