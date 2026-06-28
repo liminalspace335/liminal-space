@@ -420,14 +420,38 @@ function mediaHTML(url,alt,view){
 function renderConcept(){
   var fig=document.querySelector('.concept-figure'); if(!fig)return;
   var st=getSettings().site||{};
-  var url=st.conceptMedia||'';
-  if(!url) return;   // 미설정 시 HTML의 기본 이미지(assets/concept.jpg) 유지
-  if(isVideoUrl(url)){
-    var auto=st.conceptAutoplay?'autoplay ':'';   // 어드민에서 자동재생 켜면 autoplay, 끄면 호버 시 재생
-    fig.innerHTML='<video src="'+esc(url)+'" '+auto+'muted loop playsinline preload="metadata" tabindex="0"></video>';
-  } else {
-    fig.innerHTML='<img src="'+esc(url)+'" alt="LIMINAL SPACE — Eau de Parfum" loading="lazy">';
+  var list=((st.conceptList&&st.conceptList.length)?st.conceptList:(st.conceptMedia?[st.conceptMedia]:[])).filter(Boolean).slice(0,5);
+  if(!list.length) return;   // 미설정 시 HTML의 기본 이미지(assets/concept.jpg) 유지
+  if(fig._seq){ clearTimeout(fig._seq.t); fig._seq=null; }   // 이전 시퀀스 정리
+  if(list.length===1){
+    var url=list[0];
+    if(isVideoUrl(url)){ var auto=st.conceptAutoplay?'autoplay ':''; fig.innerHTML='<video src="'+esc(url)+'" '+auto+'muted loop playsinline preload="metadata" tabindex="0"></video>'; }
+    else fig.innerHTML='<img src="'+esc(url)+'" alt="LIMINAL SPACE — Eau de Parfum" loading="lazy">';
+    return;
   }
+  // 다중(2~5개): 순서대로 재생, 끝나면 다음 — 시작/끝 페이드
+  fig.innerHTML='<div class="concept-seq"></div>';
+  var box=fig.querySelector('.concept-seq');
+  var FADE=600, IMG_MS=5000, seq={i:0,t:0}; fig._seq=seq;
+  function tag(u){ return isVideoUrl(u) ? '<video src="'+esc(u)+'" muted playsinline preload="auto" tabindex="0"></video>' : '<img src="'+esc(u)+'" alt="LIMINAL SPACE — Eau de Parfum">'; }
+  function go(idx,faded){
+    clearTimeout(seq.t);
+    seq.i=((idx%list.length)+list.length)%list.length;
+    function swap(){
+      box.innerHTML=tag(list[seq.i]); var el=box.firstChild;
+      if(el && el.tagName==='VIDEO'){
+        el.muted=true;
+        el.addEventListener('ended',function(){ go(seq.i+1,true); });
+        el.addEventListener('timeupdate',function(){ if(el.duration && (el.duration-el.currentTime)<(FADE/1000+0.05)) box.style.opacity='0'; });   // 끝 페이드아웃
+        try{ el.play(); }catch(e){}
+      } else {   // 이미지: IMG_MS 후 다음
+        seq.t=setTimeout(function(){ box.style.opacity='0'; seq.t=setTimeout(function(){ go(seq.i+1,true); },FADE); }, IMG_MS);
+      }
+      requestAnimationFrame(function(){ box.style.opacity='1'; });   // 시작 페이드인
+    }
+    if(faded){ swap(); } else { box.style.opacity='0'; seq.t=setTimeout(swap,FADE); }
+  }
+  go(0,true);
 }
 function initSpaceCarousel(){
   const track=document.getElementById('spaceTrack'); if(!track)return;
@@ -914,7 +938,7 @@ function initEffects(){
     });
   }
   // 3-1) 카드 영상: 호버 시 재생 / 벗어나면 정지(라이트박스 영상은 제외)
-  var CARD_VID='#galleryGrid video, #spaceGrid video, #spaceMarquee video, .concept-figure video';
+  var CARD_VID='#galleryGrid video, #spaceGrid video, #spaceMarquee video, .concept-figure > video';
   document.addEventListener('mouseover',function(e){var v=e.target.closest&&e.target.closest(CARD_VID);if(v){v.muted=true;try{v.play();}catch(_){}}});
   document.addEventListener('mouseout',function(e){var v=e.target.closest&&e.target.closest(CARD_VID);if(v){try{v.pause();}catch(_){}}});
   // 4) 히어로 패럴랙스(스크롤 시 천천히 위로 + 페이드)

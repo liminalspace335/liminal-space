@@ -32,7 +32,8 @@
         instagram:b.instagram||'', facebook:b.facebook||'', linktree:b.linktree||'' });
     });
     var si=(t.site_info||[])[0]; if(si){ settings.site={ brandName:si.brand_name||'', estYear:si.est_year||'', copyrightYear:si.copyright_year||'',
-        bizName:si.biz_name||'', bizAddress:si.biz_address||'', bizTax:si.biz_tax||'', bizPhone:si.biz_phone||'', bizEmail:si.biz_email||'', moitUrl:si.moit_url||'', moitLogo:si.moit_logo||'', conceptMedia:si.concept_media||'', conceptAutoplay:si.concept_autoplay===true };
+        bizName:si.biz_name||'', bizAddress:si.biz_address||'', bizTax:si.biz_tax||'', bizPhone:si.biz_phone||'', bizEmail:si.biz_email||'', moitUrl:si.moit_url||'', moitLogo:si.moit_logo||'', conceptMedia:si.concept_media||'', conceptAutoplay:si.concept_autoplay===true,
+        conceptList:(function(){var a=[];try{a=JSON.parse(si.concept_json||'[]')||[];}catch(e){a=[];} if(!a.length&&si.concept_media)a=[si.concept_media]; return a.filter(Boolean).slice(0,5);})() };
       try{ settings.gallery=JSON.parse(si.gallery_json||'[]')||[]; }catch(e){ settings.gallery=[]; }
       try{ settings.partners=JSON.parse(si.partners_json||'[]')||[]; }catch(e){ settings.partners=[]; }
       try{ settings.galleryFolders=JSON.parse(si.galleryfolders_json||'[]')||[]; }catch(e){ settings.galleryFolders=[]; }
@@ -84,7 +85,9 @@
         instagram:b.instagram||'', facebook:b.facebook||'', linktree:b.linktree||'', sort:i }; });
     var _si=s.site||{};
     var siteRow={ id:'main', brand_name:_si.brandName||'', est_year:_si.estYear||'', copyright_year:_si.copyrightYear||'',
-      biz_name:_si.bizName||'', biz_address:_si.bizAddress||'', biz_tax:_si.bizTax||'', biz_phone:_si.bizPhone||'', biz_email:_si.bizEmail||'', moit_url:_si.moitUrl||'', moit_logo:_si.moitLogo||'', concept_media:_si.conceptMedia||'', concept_autoplay:!!_si.conceptAutoplay,
+      biz_name:_si.bizName||'', biz_address:_si.bizAddress||'', biz_tax:_si.bizTax||'', biz_phone:_si.bizPhone||'', biz_email:_si.bizEmail||'', moit_url:_si.moitUrl||'', moit_logo:_si.moitLogo||'', concept_autoplay:!!_si.conceptAutoplay,
+      concept_json:JSON.stringify((_si.conceptList||[]).filter(Boolean).slice(0,5)),
+      concept_media:((_si.conceptList&&_si.conceptList.filter(Boolean)[0])||_si.conceptMedia||''),
       gallery_json:JSON.stringify(s.gallery||[]), partners_json:JSON.stringify(s.partners||[]), galleryfolders_json:JSON.stringify(s.galleryFolders||[]),
       space_json:JSON.stringify(s.space||[]), spacefolders_json:JSON.stringify(s.spaceFolders||[]) };
     var classRows=(s.branchClasses||[]).map(function(c,i){ var k=classKey(c.branch,ko(c.name)); var id=classIdByKey[k]||rid('cl'); clKeyToId[k]=id;

@@ -266,8 +266,17 @@
             <div class="field-row"><label>브랜드명</label><input id="inBrand" placeholder="LIMINAL SPACE" /></div>
             <div class="field-row" style="max-width:240px"><label>EST 연도</label><input id="inEst" placeholder="2026" /></div>
             <div class="field-row" style="max-width:240px"><label>© 저작권 연도</label><input id="inCopy" placeholder="2026" /></div>
-            <div class="field-row"><label>컨셉 이미지/영상</label><div class="upwrap"><input id="inConcept" placeholder="URL 또는 업로드 → (이미지·영상)" /><label class="upbtn" title="이미지/영상 업로드">⬆<input type="file" id="conceptFile" accept="image/*,video/*" hidden /></label></div></div>
-            <div class="field-row"><label>컨셉 영상 자동재생</label><label style="display:inline-flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="inConceptAuto" /> <span style="font-size:13px;color:var(--ink-soft)">켜면 자동재생, 끄면 마우스 올렸을 때만 재생 (이미지엔 영향 없음)</span></label></div>
+            <div class="field-row"><label>컨셉 이미지/영상 (최대 5개 · 순차 재생)</label>
+              <div id="conceptList">
+                <div class="upwrap" style="margin-bottom:6px"><input class="cm-url" placeholder="① URL 또는 업로드 →" /><label class="upbtn" title="업로드">⬆<input type="file" class="cm-file" accept="image/*,video/*" hidden /></label></div>
+                <div class="upwrap" style="margin-bottom:6px"><input class="cm-url" placeholder="② URL 또는 업로드 →" /><label class="upbtn" title="업로드">⬆<input type="file" class="cm-file" accept="image/*,video/*" hidden /></label></div>
+                <div class="upwrap" style="margin-bottom:6px"><input class="cm-url" placeholder="③ URL 또는 업로드 →" /><label class="upbtn" title="업로드">⬆<input type="file" class="cm-file" accept="image/*,video/*" hidden /></label></div>
+                <div class="upwrap" style="margin-bottom:6px"><input class="cm-url" placeholder="④ URL 또는 업로드 →" /><label class="upbtn" title="업로드">⬆<input type="file" class="cm-file" accept="image/*,video/*" hidden /></label></div>
+                <div class="upwrap" style="margin-bottom:6px"><input class="cm-url" placeholder="⑤ URL 또는 업로드 →" /><label class="upbtn" title="업로드">⬆<input type="file" class="cm-file" accept="image/*,video/*" hidden /></label></div>
+              </div>
+              <p class="desc" style="margin-top:4px">영상은 등록한 순서대로 재생되고, 끝나면 다음 영상으로 페이드 전환됩니다. 1개만 등록하면 아래 자동재생 설정을 따릅니다.</p>
+            </div>
+            <div class="field-row"><label>컨셉 영상 자동재생 (1개일 때)</label><label style="display:inline-flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="inConceptAuto" /> <span style="font-size:13px;color:var(--ink-soft)">켜면 자동재생, 끄면 마우스 올렸을 때만 재생 (이미지·다중영상엔 영향 없음)</span></label></div>
             <h3 style="margin-top:22px">사업자 정보 (베트남 푸터)</h3><p class="desc">베트남 전자상거래법(Decree 52/2013·85/2021)에 따라 푸터에 표시됩니다. 비워두면 해당 줄은 표시되지 않습니다.</p>
             <div class="field-row"><label>상호 (Tên)</label><input id="inBizName" placeholder="예: ONE DAY ECO Co., Ltd / Hộ kinh doanh ..." /></div>
             <div class="field-row"><label>주소 (Địa chỉ)</label><input id="inBizAddr" placeholder="등록 주소" /></div>
@@ -848,19 +857,22 @@ function renderBranches(){const s=loadSettings();
   document.getElementById('inBizEmail').value=(s.site&&s.site.bizEmail)||'';
   document.getElementById('inMoitUrl').value=(s.site&&s.site.moitUrl)||'';
   document.getElementById('inMoitLogo').value=(s.site&&s.site.moitLogo)||'';
-  document.getElementById('inConcept').value=(s.site&&s.site.conceptMedia)||'';
+  (function(){var cl=(s.site&&s.site.conceptList)||[];document.querySelectorAll('#conceptList .cm-url').forEach(function(inp,i){inp.value=cl[i]||'';});})();
   document.getElementById('inConceptAuto').checked=!!(s.site&&s.site.conceptAutoplay);
 }
-document.getElementById('siteSave').addEventListener('click',()=>{const s=loadSettings();s.site={brandName:document.getElementById('inBrand').value.trim(),estYear:document.getElementById('inEst').value.trim(),copyrightYear:document.getElementById('inCopy').value.trim(),bizName:document.getElementById('inBizName').value.trim(),bizAddress:document.getElementById('inBizAddr').value.trim(),bizTax:document.getElementById('inBizTax').value.trim(),bizPhone:document.getElementById('inBizPhone').value.trim(),bizEmail:document.getElementById('inBizEmail').value.trim(),moitUrl:document.getElementById('inMoitUrl').value.trim(),moitLogo:document.getElementById('inMoitLogo').value.trim(),conceptMedia:document.getElementById('inConcept').value.trim(),conceptAutoplay:document.getElementById('inConceptAuto').checked};saveSettings(s);toast('siteSaved');});
-/* 컨셉 이미지/영상 업로드 */
-document.getElementById('conceptFile').addEventListener('change',async function(e){
-  const f=e.target.files&&e.target.files[0]; if(!f)return;
-  const txt=e.target.parentNode.childNodes[0]; if(txt)txt.textContent='…';
-  let r={error:'사용 불가'};
-  try{ r=await (window.LS&&LS.uploadImage?LS.uploadImage(f,'concept'):Promise.resolve({error:'Supabase 필요'})); }catch(err){ r={error:String(err)}; }
-  if(txt)txt.textContent='⬆';
-  if(r&&r.url){ document.getElementById('inConcept').value=r.url; } else { alert('업로드 실패: '+((r&&r.error)||'알 수 없음')); }
-  e.target.value='';
+document.getElementById('siteSave').addEventListener('click',()=>{const s=loadSettings();s.site={brandName:document.getElementById('inBrand').value.trim(),estYear:document.getElementById('inEst').value.trim(),copyrightYear:document.getElementById('inCopy').value.trim(),bizName:document.getElementById('inBizName').value.trim(),bizAddress:document.getElementById('inBizAddr').value.trim(),bizTax:document.getElementById('inBizTax').value.trim(),bizPhone:document.getElementById('inBizPhone').value.trim(),bizEmail:document.getElementById('inBizEmail').value.trim(),moitUrl:document.getElementById('inMoitUrl').value.trim(),moitLogo:document.getElementById('inMoitLogo').value.trim(),conceptList:[...document.querySelectorAll('#conceptList .cm-url')].map(i=>i.value.trim()).filter(Boolean).slice(0,5),conceptAutoplay:document.getElementById('inConceptAuto').checked};saveSettings(s);toast('siteSaved');});
+/* 컨셉 이미지/영상 업로드 (5개 행) */
+document.querySelectorAll('#conceptList .cm-file').forEach(function(inp){
+  inp.addEventListener('change',async function(e){
+    const f=e.target.files&&e.target.files[0]; if(!f)return;
+    const url=e.target.closest('.upwrap').querySelector('.cm-url');
+    const txt=e.target.parentNode.childNodes[0]; if(txt)txt.textContent='…';
+    let r={error:'사용 불가'};
+    try{ r=await (window.LS&&LS.uploadImage?LS.uploadImage(f,'concept'):Promise.resolve({error:'Supabase 필요'})); }catch(err){ r={error:String(err)}; }
+    if(txt)txt.textContent='⬆';
+    if(r&&r.url){ url.value=r.url; } else { alert('업로드 실패: '+((r&&r.error)||'알 수 없음')); }
+    e.target.value='';
+  });
 });
 document.getElementById('brAdd').addEventListener('click',()=>{const s=loadSettings();s.branches.push({id:Date.now(),name:'',contact:'',link:'',location:'',instagram:'',facebook:''});saveSettings(s);renderSettings();});
 document.getElementById('brSave').addEventListener('click',()=>{

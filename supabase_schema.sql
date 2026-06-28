@@ -53,6 +53,8 @@ alter table public.site_info add column if not exists moit_logo text default '';
 -- 컨셉 섹션 이미지/영상 URL + 영상 자동재생 여부
 alter table public.site_info add column if not exists concept_media text default '';
 alter table public.site_info add column if not exists concept_autoplay boolean default false;
+-- 컨셉 미디어 목록(최대 5개, 순차 재생) — URL 배열 JSON
+alter table public.site_info add column if not exists concept_json text default '[]';
 
 -- 클래스 (지점별)
 create table if not exists public.classes (
