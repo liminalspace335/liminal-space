@@ -442,4 +442,5 @@ section[id], footer[id]{scroll-margin-top:63px}  /* 고정 네비 높이에 딱 
 .connect-card.fb:hover .cc-ic{color:#1877f2;border-color:#1877f2}
 .connect-card.lt:hover .cc-ic{color:#1ebe5d;border-color:#1ebe5d}
 .connect-card.tk:hover .cc-ic{color:#ee1d52;border-color:#ee1d52}
+.connect-card.gm:hover .cc-ic{color:#ea4335;border-color:#ea4335}
 @media(max-width:760px){.connect-grid{grid-template-columns:1fr}}
