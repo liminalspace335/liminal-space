@@ -397,9 +397,9 @@ section[id], footer[id]{scroll-margin-top:63px}  /* 고정 네비 높이에 딱 
 .soc-group a.tk:hover{color:#ee1d52}
 .soc-group .ic{width:16px;height:16px;display:block}
 @media(max-width:980px){.socials{display:none}}
-/* 지점 1곳: 호버 없이 아이콘 항상 노출 */
-.socials.show-all .soc-icons{max-width:none;opacity:1;margin-left:9px}
-.socials.show-all .soc-b{color:var(--ink)}
+/* 지점 1곳: 호버 없이 아이콘 항상 노출 + 지점명 라벨 숨김 */
+.socials.show-all .soc-icons{max-width:none;opacity:1;margin-left:0}
+.socials.show-all .soc-b{display:none}
 
 /* ===== 푸터 사업자 정보(베트남 전자상거래법) + 신고 뱃지 ===== */
 .foot-biz{max-width:var(--maxw,1280px);margin:26px auto 0;padding:18px 32px 0;border-top:1px solid rgba(255,255,255,.12);
