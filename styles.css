@@ -412,3 +412,5 @@ section[id], footer[id]{scroll-margin-top:63px}  /* 고정 네비 높이에 딱 
   border-radius:6px;padding:5px 12px;font-size:11px;letter-spacing:.02em}
 .foot-biz .fb-badge:hover .fb-badge-txt{border-color:rgba(120,170,255,.85);color:#cfe0ff}
 @media(max-width:680px){.foot-biz{padding:16px 18px 0}.foot-biz .fb-sep{margin:0 5px}}
+/* 신청 모달 결제 예상 금액 */
+.amtnote{margin-top:10px;padding:11px 14px;background:var(--paper);border:1px solid var(--ink);font-size:14px;font-weight:700;color:var(--ink);letter-spacing:.01em}

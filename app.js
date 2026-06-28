@@ -546,7 +546,16 @@ function populateTimes(){
   sel.value=data.time;
 }
 /* 잔여 인원 안내 */
+function updateAmtNote(){
+  const el=document.getElementById('amtNote'); if(!el)return;
+  const amt=isInquiry()?'':expectedAmountStr();
+  if(!amt){el.textContent='';el.style.display='none';return;}
+  const L=curLang();
+  const label=L==='en'?'Estimated payment':(L==='vi'?'Số tiền dự kiến':'결제 예상 금액');
+  el.textContent=label+' : '+amt; el.style.display='';
+}
 function updateCapNote(){
+  updateAmtNote();
   const note=document.getElementById('capNote'); if(!note)return;
   const vi=document.documentElement.lang==='vi';
   note.classList.remove('full');
