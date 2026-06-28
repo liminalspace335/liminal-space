@@ -55,6 +55,8 @@ alter table public.site_info add column if not exists concept_media text default
 alter table public.site_info add column if not exists concept_autoplay boolean default false;
 -- 컨셉 미디어 목록(최대 5개, 순차 재생) — URL 배열 JSON
 alter table public.site_info add column if not exists concept_json text default '[]';
+-- 히어로 로고 이미지 URL (있으면 히어로 텍스트 대신 이미지)
+alter table public.site_info add column if not exists hero_logo text default '';
 
 -- 클래스 (지점별)
 create table if not exists public.classes (

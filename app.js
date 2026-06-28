@@ -15,7 +15,7 @@
 const I18N = {
   ko: { "ph.nat":"검색 또는 선택","ph.phone":"전화번호","ph.fb":"아이디 또는 링크","ph.ig":"아이디" }, // 기본값은 HTML에 그대로 둠 (data-i18n 키만 매핑) + placeholder(ph.*)
   en: {
-    "nav.concept":"Brand","nav.home":"About","nav.space":"Space","nav.classes":"Classes","nav.apply":"Apply","nav.gallery":"Gallery","nav.location":"Location","nav.contact":"Apply · Contact","space.title":"The Space","space.more":"More about the space →","contact.title":"Contact","contact.note":"Inquiries for classes, companies/groups and collaborations are welcome.",
+    "nav.concept":"Brand","nav.home":"About","nav.space":"Space","nav.classes":"Classes","nav.apply":"Apply","nav.gallery":"Gallery","nav.location":"Location","nav.contact":"Apply · Contact","space.title":"The Space","space.more":"More about the space →","contact.title":"Contact","contact.note":"Inquiries for classes, companies/groups and collaborations are welcome.","connect.title":"Follow us",
     "cta.lead":"Complete your own scent, together with a scent designer.","cta.sub":"A premium perfume workshop where you smell 100+ notes, blend, and take home your own bottle.","cta.btn":"Book a class",
     "gallery.title":"Gallery","gallery.featured":"Featured with","gallery.more":"View full gallery →",
     "hero.eyebrow":"Perfume Workshop","hero.sub":"The scent of moments between boundaries. A workshop where you blend and bottle a perfume of your own.",
@@ -95,7 +95,7 @@ const I18N = {
     "proc.s5.t":"Đóng gói","proc.s5.d":"Chúng tôi đóng gói tỉ mỉ trong bao bì riêng của LIMINAL SPACE.",
     "proc.philosophy":"LIMINAL SPACE không phải là DIY chỉ trộn hương. Chúng tôi diễn giải mối quan hệ giữa hương thơm với con người, tính cách, thời tiết và hoàn cảnh, tổ chức workshop để bạn tạo nên mùi hương mình thực sự mong muốn.",
     "proc.close":"Hãy tạo nên kỷ niệm đặc biệt trong không gian độc nhất của LIMINAL SPACE.",
-    "form.name":"Họ tên","form.phone":"Số điện thoại","form.email":"Email","form.class":"Lớp học","form.date":"Ngày mong muốn","form.people":"Số người","form.msg":"Lời nhắn (tùy chọn)","form.nationality":"Quốc tịch","form.fb":"Facebook (tùy chọn)","form.ig":"Instagram (tùy chọn)",
+    "form.name":"Họ tên","form.phone":"Số điện thoại","form.email":"Email","form.class":"Lớp học","form.date":"Ngày mong muốn","form.people":"Số người","form.msg":"Lời nhắn (tùy chọn)","form.nationality":"Quốc tịch","form.fb":"Facebook (tùy chọn)","form.ig":"Instagram (tùy chọn)","connect.title":"Theo dõi chúng tôi",
     "ph.nat":"Tìm hoặc chọn","ph.phone":"Số điện thoại","ph.fb":"ID hoặc liên kết","ph.ig":"ID",
     "modal.confirmlabel":"XÁC NHẬN","modal.confirmq":"Vui lòng kiểm tra thông tin của bạn.","modal.confirmnote":"Nếu thông tin nhập sai, đăng ký có thể không được tiếp nhận đúng cách. Vui lòng kiểm tra lại thông tin trước khi nhấn Hoàn tất đăng ký.",
     "form.opt1":"Pha chế Signature","form.opt2":"Cặp đôi · Nhóm","form.opt3":"Atelier nâng cao",
@@ -416,6 +416,14 @@ function mediaHTML(url,alt,view){
   }
   return '<img src="'+u+'" alt="'+esc(alt||'LIMINAL SPACE')+'" loading="lazy">';
 }
+/* 히어로 로고 — 어드민에서 이미지 설정 시 텍스트 대신 이미지(좌측정렬 유지) */
+function renderHero(){
+  var h1=document.querySelector('.hero h1'); if(!h1)return;
+  var url=(getSettings().site&&getSettings().site.heroLogo)||'';
+  if(!url) return;   // 미설정 시 텍스트 유지
+  h1.innerHTML='<img class="hero-logo" src="'+esc(url)+'" alt="LIMINAL SPACE">';
+  h1.classList.add('has-logo');
+}
 /* 컨셉 섹션 미디어 — 어드민에서 설정한 이미지/영상으로 교체(없으면 기존 기본 이미지 유지) */
 function renderConcept(){
   var fig=document.querySelector('.concept-figure'); if(!fig)return;
@@ -425,7 +433,7 @@ function renderConcept(){
   if(fig._seq){ clearTimeout(fig._seq.t); fig._seq=null; }   // 이전 시퀀스 정리
   if(list.length===1){
     var url=list[0];
-    if(isVideoUrl(url)){ var auto=st.conceptAutoplay?'autoplay ':''; fig.innerHTML='<video src="'+esc(url)+'" '+auto+'muted loop playsinline preload="metadata" tabindex="0"></video>'; }
+    if(isVideoUrl(url)){ var auto=!!st.conceptAutoplay; fig.innerHTML='<video src="'+esc(url)+'" '+(auto?'autoplay ':'')+'muted loop playsinline preload="metadata" tabindex="0" data-hover="'+(auto?'pause':'play')+'"></video>'; }
     else fig.innerHTML='<img src="'+esc(url)+'" alt="LIMINAL SPACE — Eau de Parfum" loading="lazy">';
     return;
   }
@@ -433,7 +441,7 @@ function renderConcept(){
   fig.innerHTML='<div class="concept-seq"></div>';
   var box=fig.querySelector('.concept-seq');
   var FADE=600, IMG_MS=5000, seq={i:0,t:0}; fig._seq=seq;
-  function tag(u){ return isVideoUrl(u) ? '<video src="'+esc(u)+'" muted playsinline preload="auto" tabindex="0"></video>' : '<img src="'+esc(u)+'" alt="LIMINAL SPACE — Eau de Parfum">'; }
+  function tag(u){ return isVideoUrl(u) ? '<video src="'+esc(u)+'" muted playsinline preload="auto" tabindex="0" data-hover="pause"></video>' : '<img src="'+esc(u)+'" alt="LIMINAL SPACE — Eau de Parfum">'; }
   function go(idx,faded){
     clearTimeout(seq.t);
     seq.i=((idx%list.length)+list.length)%list.length;
@@ -838,13 +846,37 @@ function branchLabel(name){
   return name||'';
 }
 /* 상단 네비 지점별 소셜 버튼(호버 펼침) — 어드민 지점설정의 인스타·페북·링크트리 링크 사용 */
+function ensureSvgDefs(){
+  if(document.getElementById('ls-svgdefs'))return;
+  var d=document.createElement('div'); d.id='ls-svgdefs'; d.style.cssText='position:absolute;width:0;height:0;overflow:hidden';
+  d.innerHTML='<svg width="0" height="0" aria-hidden="true"><symbol id="ic-instagram" viewBox="0 0 24 24"><rect x="2.5" y="2.5" width="19" height="19" rx="5.5" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="4.2" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="17.2" cy="6.8" r="1.25" fill="currentColor"/></symbol><symbol id="ic-facebook" viewBox="0 0 24 24"><path fill="currentColor" d="M13.5 21v-7.5h2.52l.38-3h-2.9V8.55c0-.87.24-1.46 1.49-1.46h1.59V4.41c-.28-.04-1.23-.12-2.32-.12-2.3 0-3.87 1.4-3.87 3.98V10.5H8.2v3h2.66V21h2.64z"/></symbol><symbol id="ic-linktree" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" d="M10.5 13.6a3.5 3.5 0 0 0 5 0l2.3-2.3a3.5 3.5 0 0 0-5-5l-1 1M13.5 10.4a3.5 3.5 0 0 0-5 0l-2.3 2.3a3.5 3.5 0 0 0 5 5l1-1"/></symbol></svg>';
+  document.body.appendChild(d);
+}
+/* 클래스 다음 'CONNECT' 섹션 — 인스타·페북·링크트리 카드(지점 소셜 링크) */
+function renderSocialCards(){
+  var box=document.getElementById('socialCards'); if(!box)return;
+  ensureSvgDefs();
+  var brs=(getSettings().branches||[]);
+  function pick(f){for(var i=0;i<brs.length;i++){if(brs[i]&&brs[i][f])return brs[i][f];}return '';}
+  function handle(u){try{var p=(u||'').split('?')[0].replace(/\/+$/,'').split('/');var h=p[p.length-1]||'';return h&&h.indexOf('.')<0?'@'+h:'';}catch(e){return '';}}
+  var ig=pick('instagram'), fb=pick('facebook'), lt=pick('linktree');
+  var items=[];
+  if(ig)items.push({c:'ig',icon:'ic-instagram',name:'Instagram',sub:handle(ig),url:ig});
+  if(fb)items.push({c:'fb',icon:'ic-facebook',name:'Facebook',sub:'',url:fb});
+  if(lt)items.push({c:'lt',icon:'ic-linktree',name:'Linktree',sub:'',url:lt});
+  var sec=document.getElementById('connect');
+  if(!items.length){ if(sec)sec.style.display='none'; return; }
+  if(sec)sec.style.display='';
+  box.innerHTML=items.map(function(it){
+    return '<a class="connect-card '+it.c+'" href="'+esc(it.url)+'" target="_blank" rel="noopener">'
+      +'<span class="cc-ic"><svg class="ic"><use href="#'+it.icon+'"/></svg></span>'
+      +'<span class="cc-tx"><span class="cc-t">'+it.name+'</span>'+(it.sub?'<span class="cc-s">'+esc(it.sub)+'</span>':'')+'</span>'
+      +'<span class="cc-go">↗</span></a>';
+  }).join('');
+}
 function renderNavSocials(){
   var langEl=document.querySelector('header .lang'); if(!langEl)return;
-  if(!document.getElementById('ls-svgdefs')){
-    var d=document.createElement('div'); d.id='ls-svgdefs'; d.style.cssText='position:absolute;width:0;height:0;overflow:hidden';
-    d.innerHTML='<svg width="0" height="0" aria-hidden="true"><symbol id="ic-instagram" viewBox="0 0 24 24"><rect x="2.5" y="2.5" width="19" height="19" rx="5.5" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="4.2" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="17.2" cy="6.8" r="1.25" fill="currentColor"/></symbol><symbol id="ic-facebook" viewBox="0 0 24 24"><path fill="currentColor" d="M13.5 21v-7.5h2.52l.38-3h-2.9V8.55c0-.87.24-1.46 1.49-1.46h1.59V4.41c-.28-.04-1.23-.12-2.32-.12-2.3 0-3.87 1.4-3.87 3.98V10.5H8.2v3h2.66V21h2.64z"/></symbol><symbol id="ic-linktree" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" d="M10.5 13.6a3.5 3.5 0 0 0 5 0l2.3-2.3a3.5 3.5 0 0 0-5-5l-1 1M13.5 10.4a3.5 3.5 0 0 0-5 0l-2.3 2.3a3.5 3.5 0 0 0 5 5l1-1"/></symbol></svg>';
-    document.body.appendChild(d);
-  }
+  ensureSvgDefs();
   var brs=(getSettings().branches||[]).filter(function(b){return b&&b.name&&(b.instagram||b.facebook||b.linktree);});
   var box=document.getElementById('navSocials');
   if(!brs.length){ if(box)box.parentNode.removeChild(box); return; }
@@ -867,7 +899,9 @@ function renderNavSocials(){
   renderMap();
   renderFooterSocial();
   renderSiteInfo();
+  renderHero();
   renderConcept();
+  renderSocialCards();
   renderSpaceFolderChips();
   initSpaceCarousel();
   renderSpaceGrid();
@@ -937,10 +971,19 @@ function initEffects(){
       else if(e.key==='ArrowRight')lbShow(lbIdx+1);
     });
   }
-  // 3-1) 카드 영상: 호버 시 재생 / 벗어나면 정지(라이트박스 영상은 제외)
-  var CARD_VID='#galleryGrid video, #spaceGrid video, #spaceMarquee video, .concept-figure > video';
-  document.addEventListener('mouseover',function(e){var v=e.target.closest&&e.target.closest(CARD_VID);if(v){v.muted=true;try{v.play();}catch(_){}}});
-  document.addEventListener('mouseout',function(e){var v=e.target.closest&&e.target.closest(CARD_VID);if(v){try{v.pause();}catch(_){}}});
+  // 3-1) 영상 호버 동작 (라이트박스 영상은 제외)
+  //   PLAY_ON_HOVER: 카드(갤러리·공간·마퀴) + 컨셉 단일영상(자동재생 off) → 호버 시 재생 / 벗어나면 정지
+  //   PAUSE_ON_HOVER: 컨셉 자동재생/순차영상 → 호버 시 정지 / 벗어나면 재생
+  var PLAY_ON_HOVER='#galleryGrid video, #spaceGrid video, #spaceMarquee video, .concept-figure video[data-hover="play"]';
+  var PAUSE_ON_HOVER='.concept-figure video[data-hover="pause"]';
+  document.addEventListener('mouseover',function(e){
+    var p=e.target.closest&&e.target.closest(PLAY_ON_HOVER); if(p){p.muted=true;try{p.play();}catch(_){}}
+    var q=e.target.closest&&e.target.closest(PAUSE_ON_HOVER); if(q){try{q.pause();}catch(_){}}
+  });
+  document.addEventListener('mouseout',function(e){
+    var p=e.target.closest&&e.target.closest(PLAY_ON_HOVER); if(p){try{p.pause();}catch(_){}}
+    var q=e.target.closest&&e.target.closest(PAUSE_ON_HOVER); if(q){try{q.play();}catch(_){}}
+  });
   // 4) 히어로 패럴랙스(스크롤 시 천천히 위로 + 페이드)
   var hero=document.querySelector('.hero .hero-inner');
   if(hero){
