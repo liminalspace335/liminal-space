@@ -422,11 +422,23 @@ function renderHero(){
   var h1=document.querySelector('.hero h1'); if(!h1)return;
   var url=(getSettings().site&&getSettings().site.heroLogo)||'';
   var coord=document.querySelector('.hero-coord');
-  if(!url){ if(coord)coord.style.display=''; return; }   // 미설정 시 텍스트 워드마크+좌표 유지
+  if(!url){ if(coord)coord.style.display=''; fitHeroCoord(); return; }   // 미설정 시 텍스트 워드마크+좌표 유지
   h1.innerHTML='<img class="hero-logo" src="'+esc(url)+'" alt="LIMINAL SPACE">';
   h1.classList.add('has-logo');
   if(coord)coord.style.display='none';   // 로고 이미지에 좌표가 포함되므로 텍스트 좌표 숨김
 }
+/* 좌표를 'LIMINAL SPACE' 폭에 맞춰 글자마다 동일 간격으로 분배 */
+function fitHeroCoord(){
+  var h1=document.querySelector('.hero h1'); var c=document.querySelector('.hero-coord');
+  if(!h1||!c||c.style.display==='none'||h1.classList.contains('has-logo'))return;
+  c.style.letterSpacing='0px';
+  var target=h1.getBoundingClientRect().width;
+  var natural=c.scrollWidth;
+  var n=(c.textContent||'').length;
+  if(n>1 && target>natural){ c.style.letterSpacing=((target-natural)/n)+'px'; }
+}
+window.addEventListener('resize',function(){ if(typeof fitHeroCoord==='function') fitHeroCoord(); });
+window.addEventListener('load',function(){ if(typeof fitHeroCoord==='function') fitHeroCoord(); });
 /* 컨셉 섹션 미디어 — 어드민에서 설정한 이미지/영상으로 교체(없으면 기존 기본 이미지 유지) */
 function renderConcept(){
   var fig=document.querySelector('.concept-figure'); if(!fig)return;
