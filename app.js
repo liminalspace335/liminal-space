@@ -439,6 +439,7 @@ function fitHeroCoord(){
 }
 window.addEventListener('resize',function(){ if(typeof fitHeroCoord==='function') fitHeroCoord(); });
 window.addEventListener('load',function(){ if(typeof fitHeroCoord==='function') fitHeroCoord(); });
+try{ if(document.fonts&&document.fonts.ready) document.fonts.ready.then(function(){ if(typeof fitHeroCoord==='function') fitHeroCoord(); }); }catch(e){}
 /* 컨셉 섹션 미디어 — 어드민에서 설정한 이미지/영상으로 교체(없으면 기존 기본 이미지 유지) */
 function renderConcept(){
   var fig=document.querySelector('.concept-figure'); if(!fig)return;
