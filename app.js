@@ -421,9 +421,11 @@ function mediaHTML(url,alt,view){
 function renderHero(){
   var h1=document.querySelector('.hero h1'); if(!h1)return;
   var url=(getSettings().site&&getSettings().site.heroLogo)||'';
-  if(!url) return;   // 미설정 시 텍스트 유지
+  var coord=document.querySelector('.hero-coord');
+  if(!url){ if(coord)coord.style.display=''; return; }   // 미설정 시 텍스트 워드마크+좌표 유지
   h1.innerHTML='<img class="hero-logo" src="'+esc(url)+'" alt="LIMINAL SPACE">';
   h1.classList.add('has-logo');
+  if(coord)coord.style.display='none';   // 로고 이미지에 좌표가 포함되므로 텍스트 좌표 숨김
 }
 /* 컨셉 섹션 미디어 — 어드민에서 설정한 이미지/영상으로 교체(없으면 기존 기본 이미지 유지) */
 function renderConcept(){
@@ -534,10 +536,10 @@ function renderFolderChips(){
   var lang=curLang();
   var folders=(getSettings().galleryFolders||[]).slice().sort(function(a,b){return (Number(a.order)||999)-(Number(b.order)||999);});
   if(!folders.length){ box.innerHTML=''; box.style.display='none'; galleryFolder=''; return; }
+  if(!galleryFolder || !folders.some(function(f){return f.id===galleryFolder;})) galleryFolder=folders[0].id;   // '전체' 제거 → 첫 폴더 기본 선택
   box.style.display='';
-  var allLabel=lang==='en'?'All':(lang==='vi'?'Tất cả':'전체');
   function chip(fid,name,cover){return '<button class="folder-chip '+(galleryFolder===fid?'active':'')+'" data-fid="'+esc(fid)+'"><span class="fc-thumb" style="background-image:url(\''+esc(cover)+'\')"></span><span class="fc-name">'+esc(name)+'</span></button>';}
-  var html=chip('',allLabel,(sortGal(galItems())[0]||{}).img||'');   // 전체 = 모든 사진 중 첫 번째(대표 우선)
+  var html='';
   folders.forEach(function(f){ html+=chip(f.id,Lval(f.name,lang),folderCover(f.id)); });
   box.innerHTML=html;
   box.querySelectorAll('.folder-chip').forEach(function(b){b.addEventListener('click',function(){galleryFolder=b.dataset.fid||'';renderFolderChips();renderGallery();});});
@@ -556,16 +558,8 @@ function renderGallery(){
   }).join('');
 }
 function renderPartners(){
-  const wrap=document.getElementById('logoStripWrap'), strip=document.getElementById('logoStrip'); if(!strip)return;
-  let items=(getSettings().partners||[]).filter(p=>p&&p.logo);
-  if(!items.length) items=PARTNER_PLACEHOLDER;
-  items=sortGal(items);   // 대표 먼저 + 순서
-  if(!items.length){ if(wrap)wrap.style.display='none'; return; }
-  if(wrap)wrap.style.display='';
-  strip.innerHTML=items.map(p=>{
-    const img=`<img src="${esc(p.logo)}" alt="${esc(p.name||'')}" loading="lazy">`;
-    return p.link?`<a href="${esc(p.link)}" target="_blank" rel="noopener">${img}</a>`:img;
-  }).join('');
+  /* 협업 브랜드 로고 스트립 — 추후 사용 예정, 현재 숨김 */
+  const wrap=document.getElementById('logoStripWrap'); if(wrap)wrap.style.display='none';
 }
 function bookedOn(dateStr,time){
   return getApps().filter(a=>a.date===dateStr && a.time===time && a.status!=='cancel')
