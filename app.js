@@ -415,7 +415,7 @@ function mediaHTML(url,alt,view){
     return view ? '<video src="'+u+'" controls playsinline preload="metadata"></video>'
                 : '<video src="'+u+'" muted loop playsinline preload="metadata" tabindex="0"></video>';   // 카드: 음소거·호버 시 재생
   }
-  return '<img src="'+u+'" alt="'+esc(alt||'LIMINAL SPACE')+'" loading="lazy">';
+  return '<img src="'+u+'" alt="'+esc(alt||'LIMINAL SPACE')+'" loading="lazy" decoding="async">';
 }
 /* 히어로 로고 — 어드민에서 이미지 설정 시 텍스트 대신 이미지(좌측정렬 유지) */
 function renderHero(){
@@ -444,7 +444,7 @@ function renderConcept(){
   fig.innerHTML='<div class="concept-seq"></div>';
   var box=fig.querySelector('.concept-seq');
   var FADE=600, IMG_MS=5000, seq={i:0,t:0}; fig._seq=seq;
-  function tag(u){ return isVideoUrl(u) ? '<video src="'+esc(u)+'" muted playsinline preload="auto" tabindex="0" data-hover="pause"></video>' : '<img src="'+esc(u)+'" alt="LIMINAL SPACE — Eau de Parfum">'; }
+  function tag(u){ return isVideoUrl(u) ? '<video src="'+esc(u)+'" muted playsinline preload="metadata" tabindex="0" data-hover="pause"></video>' : '<img src="'+esc(u)+'" alt="LIMINAL SPACE — Eau de Parfum" loading="lazy" decoding="async">'; }
   function go(idx,faded){
     clearTimeout(seq.t);
     seq.i=((idx%list.length)+list.length)%list.length;
