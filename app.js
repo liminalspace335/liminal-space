@@ -427,15 +427,13 @@ function renderHero(){
   h1.classList.add('has-logo');
   if(coord)coord.style.display='none';   // 로고 이미지에 좌표가 포함되므로 텍스트 좌표 숨김
 }
-/* 좌표를 'LIMINAL SPACE' 폭에 맞춰 글자마다 동일 간격으로 분배 */
+/* 좌표를 'LIMINAL SPACE' 폭에 꽉 차게 글자마다 동일 간격으로 분배(flex space-between) */
 function fitHeroCoord(){
-  var h1=document.querySelector('.hero h1'); var c=document.querySelector('.hero-coord');
-  if(!h1||!c||c.style.display==='none'||h1.classList.contains('has-logo'))return;
-  c.style.letterSpacing='0px';
-  var target=h1.getBoundingClientRect().width;
-  var natural=c.scrollWidth;
-  var n=(c.textContent||'').length;
-  if(n>1 && target>natural){ c.style.letterSpacing=((target-natural)/n)+'px'; }
+  var c=document.querySelector('.hero-coord');
+  if(!c||c.style.display==='none'||c.getAttribute('data-spread'))return;
+  var t=c.textContent;
+  c.innerHTML=t.split('').map(function(ch){return ch===' '?'<span>&nbsp;</span>':'<span>'+esc(ch)+'</span>';}).join('');
+  c.setAttribute('data-spread','1');
 }
 window.addEventListener('resize',function(){ if(typeof fitHeroCoord==='function') fitHeroCoord(); });
 window.addEventListener('load',function(){ if(typeof fitHeroCoord==='function') fitHeroCoord(); });

@@ -72,7 +72,8 @@
     font-size:clamp(34px,7.4vw,104px);line-height:.95;font-weight:700;letter-spacing:-.02em;white-space:nowrap;
   }
   .hero-mark{display:block;width:fit-content;max-width:100%}
-  .hero-coord{font-size:clamp(18px,3vw,40px);color:#2c2d31;margin-top:8px;white-space:nowrap}
+  .hero-coord{font-size:clamp(18px,3vw,40px);color:#2c2d31;margin-top:8px;display:flex;flex-wrap:nowrap;justify-content:space-between;width:100%}
+  .hero-coord span{display:inline-block}
   .hero .sub{
     margin-top:22px;max-width:520px;font-size:15px;color:#2c2d31;
   }
