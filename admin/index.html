@@ -16,6 +16,7 @@
   .sb-brand{padding:24px 22px;border-bottom:1px solid #2c2d31}
   .sb-brand .t{color:#fff;font-weight:700;letter-spacing:.16em;font-size:15px}
   .sb-brand .s{font-size:10px;letter-spacing:.22em;color:#75777d;margin-top:5px}
+  .sb-brand .ver-badge{display:inline-block;margin-left:8px;font-size:10px;letter-spacing:.04em;color:#9a9ca1;border:1px solid #3a3b40;border-radius:999px;padding:2px 7px;vertical-align:middle;font-weight:500}
   .sb-nav{padding:14px 0;flex:1}
   .sb-item{display:flex;align-items:center;gap:12px;width:100%;background:none;border:0;color:#9a9ca1;padding:13px 22px;cursor:pointer;font-size:14px;text-align:left;border-left:3px solid transparent}
   .sb-item:hover{color:#fff;background:#202125}.sb-item.active{color:#fff;background:#202125;border-left-color:#fff}
@@ -500,9 +501,9 @@ document.getElementById('pw').addEventListener('keydown',e=>{if(e.key==='Enter')
 function boot(){ if(sessionStorage.getItem('liminal_admin')==='1'){showApp();} else {document.getElementById('gate').style.display='flex';const u=document.getElementById('uid');if(u)u.focus();} }
 document.getElementById('logout').addEventListener('click',e=>{e.preventDefault();sessionStorage.removeItem('liminal_admin');location.reload();});
 function showApp(){document.getElementById('gate').style.display='none';document.getElementById('app').style.display='flex';renderAll();}
-/* 좌측 상단 로고 5번 연속 클릭(3초 내) → 버전 표시 */
-(function(){var b=document.querySelector('.sb-brand'); if(!b)return; var n=0,t=0;
-  b.addEventListener('click',function(){ var now=Date.now(); if(now-t>3000)n=0; t=now; n++; if(n>=5){ n=0; alert('LIMINAL SPACE — Admin  '+(window.LS_VERSION||'')); } });})();
+/* 로고 오른쪽에 버전 배지 표시 */
+(function(){var t=document.querySelector('.sb-brand .t'); var v=window.LS_VERSION||''; if(!t||!v)return;
+  var s=document.createElement('span'); s.className='ver-badge'; s.textContent=v; t.appendChild(s);})();
 
 /* tabs */
 const TITLES={overview:'소개',list:'신청관리(캘린더)',list2:'신청관리(리스트)',booking:'클래스설정',settings:'환경설정'};
