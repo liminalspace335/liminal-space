@@ -710,6 +710,7 @@ function goto(n){
     if(tw)tw.style.display=inq?'none':'';
     if(pw)pw.style.display=inq?'none':'';
     var cap=document.getElementById('capNote'); if(cap)cap.style.display=inq?'none':'';
+    var amt=document.getElementById('amtNote'); if(amt&&inq){amt.textContent='';amt.style.display='none';}
     if(!inq){populateTimes();updateCapNote();}
   }
   if(n===5 && isInquiry()){

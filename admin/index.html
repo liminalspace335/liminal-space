@@ -13,7 +13,12 @@
   button{font:inherit}
   .layout{display:flex;min-height:100vh}
   .sidebar{width:230px;background:var(--accent);color:#c9cacd;display:flex;flex-direction:column;position:sticky;top:0;height:100vh;flex-shrink:0}
-  .sb-brand{padding:24px 22px;border-bottom:1px solid #2c2d31}
+  .sb-brand{padding:24px 22px;border-bottom:1px solid #2c2d31;display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .sb-burger{display:none;flex-direction:column;justify-content:center;gap:5px;width:42px;height:38px;background:none;border:1px solid #3a3b40;border-radius:4px;cursor:pointer;padding:0 10px;flex:0 0 auto}
+  .sb-burger span{display:block;height:2px;background:#c9cacd;border-radius:2px;transition:.2s}
+  .sb-burger[aria-expanded="true"] span:nth-child(1){transform:translateY(7px) rotate(45deg)}
+  .sb-burger[aria-expanded="true"] span:nth-child(2){opacity:0}
+  .sb-burger[aria-expanded="true"] span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
   .sb-brand .t{color:#fff;font-weight:700;letter-spacing:.16em;font-size:15px}
   .sb-brand .s{font-size:10px;letter-spacing:.22em;color:#75777d;margin-top:5px}
   .sb-brand .ver-badge{display:inline-block;margin-left:8px;font-size:10px;letter-spacing:.04em;color:#9a9ca1;border:1px solid #3a3b40;border-radius:999px;padding:2px 7px;vertical-align:middle;font-weight:500}
@@ -75,6 +80,7 @@
   .slot-head,.slot-row{display:grid;grid-template-columns:minmax(0,1fr) 130px 70px 70px 58px;gap:8px;align-items:center;margin-bottom:8px}
   .slot-head{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--coord)}
   .slot-row input,.slot-row select{background:#fff;border:1px solid var(--line);padding:8px 9px;font-size:13px;border-radius:2px;width:100%}
+  .slot-row.bk .sc{display:contents}  /* 데스크톱: 라벨 래퍼는 그리드에 영향 없음 (모바일에서만 카드 라벨로 표시) */
   .cnt-cell{font-size:13px;font-weight:700;text-align:center}.cnt-cell.has{color:var(--confirmed)}
   .editor .hint{font-size:12px;color:var(--coord);margin:6px 0 0}
   .copybar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}.clip{font-size:12px;color:var(--ink-soft)}
@@ -110,6 +116,12 @@
   .am-sh .am-time{font-weight:700}
   .am-sh .am-cap{color:var(--coord)}
   .am-empty{padding:8px 12px;font-size:12px;color:var(--coord)}
+  .am-emptywrap{border-top:1px solid var(--line)}
+  .am-toggle{width:100%;text-align:left;background:#f7f7f8;border:0;padding:9px 12px;font-size:12px;color:var(--coord);cursor:pointer;letter-spacing:.02em}
+  .am-toggle:hover{color:var(--ink)}
+  .am-elist{display:flex;flex-wrap:wrap;gap:6px;padding:11px 12px;border-top:1px solid var(--line);background:#fff}
+  .am-etime{font-size:12px;color:var(--ink-soft);border:1px solid var(--line);border-radius:999px;padding:3px 10px}
+  .am-etime em{color:var(--coord);font-style:normal}
   /* settings */
   .subtabs{display:flex;gap:6px;border-bottom:1px solid var(--line);margin-bottom:22px;flex-wrap:wrap}
   .subtab{background:none;border:0;border-bottom:2px solid transparent;padding:11px 16px;cursor:pointer;font-size:14px;color:var(--ink-soft)}
@@ -161,7 +173,19 @@
   .gate-card{background:var(--paper);border:1px solid var(--line);padding:40px;width:340px;max-width:90vw}
   .gate-card h2{font-size:18px;letter-spacing:.12em;text-transform:uppercase;margin-bottom:6px}.gate-card p{font-size:12px;color:var(--ink-soft);margin-bottom:22px}
   .gate-card input{width:100%;background:#fff;border:1px solid var(--line);padding:12px;margin-bottom:14px;border-radius:2px;font:inherit}.gate-card .btn{width:100%}.gate-card .hint{font-size:11px;color:var(--coord);margin-top:12px;text-align:center}
-  @media(max-width:900px){.layout{flex-direction:column}.sidebar{width:100%;height:auto;position:static;flex-direction:row;flex-wrap:wrap}.sb-brand{border-bottom:0;padding:16px 18px}.sb-nav{display:flex;padding:0}.sb-foot{display:none}.sb-item{border-left:0;border-bottom:3px solid transparent;padding:14px}.sb-item.active{border-left:0;border-bottom-color:#fff}.stats{grid-template-columns:repeat(2,1fr)}.two-col,.bk-grid{grid-template-columns:1fr}}
+  @media(max-width:900px){
+    .layout{flex-direction:column}
+    .sidebar{width:100%;height:auto;position:sticky;top:0;z-index:50;flex-direction:column}
+    .sb-brand{padding:14px 18px}
+    .sb-burger{display:flex}
+    .sb-nav{display:none;padding:6px 0;flex-direction:column;border-top:1px solid #2c2d31}
+    .sb-nav.open{display:flex}
+    .sb-item{border-left:0;border-bottom:0;padding:15px 20px}
+    .sb-item.active{border-left:3px solid #fff;border-bottom:0}
+    .sb-foot{display:none}
+    .stats{grid-template-columns:repeat(2,1fr)}
+    .two-col,.bk-grid{grid-template-columns:1fr}
+  }
   /* ===== 모바일 편집 최적화 ===== */
   @media(max-width:760px){
     .main{padding:18px 14px}
@@ -172,14 +196,31 @@
     .gen-row{min-width:600px}
     .br-row{min-width:920px}.cd-row{min-width:860px}.bc-row{min-width:600px}
     .slot-row,.slot-head{min-width:460px}
+    /* 클래스설정(예약) 시간대: 가로 스크롤 대신 카드형으로 화면 안에 수납 */
+    #bkEditor{overflow:visible}
+    .slot-head.bk{display:none}
+    .slot-row.bk{min-width:0;display:grid;grid-template-columns:1fr 1fr;gap:10px;border:1px solid var(--line);border-radius:6px;padding:12px;background:#fff;margin-bottom:10px;align-items:end}
+    .slot-row.bk .sc{display:flex;flex-direction:column;gap:4px;min-width:0}
+    .slot-row.bk .sc[data-l]::before{content:attr(data-l);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--coord)}
+    .slot-row.bk .sc:first-child{grid-column:1/-1}
+    .slot-row.bk .cnt-cell{align-self:center;text-align:left}
+    .slot-row.bk .cnt-cell[data-l]::before{content:attr(data-l) " ";font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--coord);font-weight:400}
+    .slot-row.bk .e-del{align-self:center;justify-self:end}
     /* 입력 글자 16px (iOS 자동 확대 방지) */
-    .field-row input,.gen-row input,.gen-row select,.dbox input,.dbox select,.dbox textarea,.toolbar input,.toolbar select{font-size:16px}
+    .field-row input,.gen-row input,.gen-row select,.dbox input,.dbox select,.dbox textarea,.toolbar input,.toolbar select,.slot-row.bk input,.slot-row.bk select{font-size:16px}
     /* 상세 모달 1열 */
     .dgrid{grid-template-columns:1fr}
     .dbox{width:96vw}
     /* 리스트 표는 기존 가로 스크롤 유지 */
     .l2-table{font-size:12px}
   }
+  /* ===== 드롭다운·시간/숫자 입력 디자인 통일 (iOS 기본 파란 틴트 제거) ===== */
+  .gen-row select,.slot-row select,.branch-picker select,.toolbar select,.df select,#amBranch,#amStatus{
+    -webkit-appearance:none;appearance:none;color:var(--ink);
+    background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%235a5c61' stroke-width='1.3'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;background-position:right 10px center;padding-right:26px}
+  .slot-row input[type=time],.slot-row input[type=number],.gen-row input[type=time],.gen-row input[type=number],.df input[type=time],.df input[type=number]{color:var(--ink)}
+  input[type=time]::-webkit-calendar-picker-indicator{opacity:.55;cursor:pointer}
 </style>
 </head>
 <body>
@@ -194,7 +235,7 @@
 
 <div class="layout" id="app" style="display:none">
   <aside class="sidebar">
-    <div class="sb-brand"><div class="t">LIMINAL SPACE</div><div class="s">ADMIN CONSOLE</div></div>
+    <div class="sb-brand"><div class="sb-brand-txt"><div class="t">LIMINAL SPACE</div><div class="s">ADMIN CONSOLE</div></div><button class="sb-burger" id="sbBurger" aria-label="메뉴" aria-expanded="false"><span></span><span></span><span></span></button></div>
     <nav class="sb-nav">
       <button class="sb-item active" data-tab="overview"><span class="ic">◧</span> 소개</button>
       <button class="sb-item" data-tab="list"><span class="ic">▤</span> 신청관리(캘린더)</button>
@@ -507,10 +548,17 @@ function showApp(){document.getElementById('gate').style.display='none';document
 (function(){var t=document.querySelector('.sb-brand .t'); var v=window.LS_VERSION||''; if(!t||!v)return;
   var s=document.createElement('span'); s.className='ver-badge'; s.textContent=v; t.appendChild(s);})();
 
+/* 모바일 햄버거 메뉴 토글 */
+(function(){var burger=document.getElementById('sbBurger'),nav=document.querySelector('.sb-nav');
+  if(!burger||!nav)return;
+  burger.addEventListener('click',function(){var open=nav.classList.toggle('open');burger.setAttribute('aria-expanded',open?'true':'false');});})();
+
 /* tabs */
 const TITLES={overview:'소개',list:'신청관리(캘린더)',list2:'신청관리(리스트)',booking:'클래스설정',settings:'환경설정'};
 document.querySelectorAll('.sb-item').forEach(b=>b.addEventListener('click',()=>{
   const tab=b.dataset.tab;
+  var _nav=document.querySelector('.sb-nav'),_bg=document.getElementById('sbBurger');
+  if(_nav){_nav.classList.remove('open');if(_bg)_bg.setAttribute('aria-expanded','false');}
   document.querySelectorAll('.sb-item').forEach(x=>x.classList.toggle('active',x===b));
   document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('active',p.id==='panel-'+tab));
   document.getElementById('pageTitle').textContent=TITLES[tab];
@@ -582,14 +630,16 @@ function renderAmView(){
     else{
       const byCls={};slots.forEach(s=>{const k=s.cls||'전체';(byCls[k]=byCls[k]||[]).push(s);});
       html+=Object.entries(byCls).map(([cls,arr])=>{
-        const rows=arr.map(s=>{
+        let filled='';const emptySlots=[];
+        arr.forEach(s=>{
           let apps=load().filter(a=>a.date===amSelected&&a.branch===br&&a.time===s.time&&a.status!=='cancel'&&(!s.cls||a.class===s.cls)&&(!fs||a.status===fs));
           apps.forEach(a=>matched.add(a.id));
+          if(!apps.length){emptySlots.push(s);return;}   // 신청 없는 시간대는 접어둠
           const ppl=apps.reduce((t,a)=>t+(parseInt(a.people)||1),0);
-          const body=apps.length?apps.map(amItemHtml).join(''):'<div class="am-empty">신청 0명</div>';
-          return `<div class="am-slot"><div class="am-sh"><span class="am-time mono">${esc(s.time)}</span><span class="am-cap mono">${ppl}/${s.cap}명</span></div>${body}</div>`;
-        }).join('');
-        return `<div class="am-group"><div class="am-gh"><span>${esc(cls==='전체'?cls:clsLabelAdm(br,cls))}</span></div>${rows}</div>`;
+          filled+=`<div class="am-slot"><div class="am-sh"><span class="am-time mono">${esc(s.time)}</span><span class="am-cap mono">${ppl}/${s.cap}명</span></div>${apps.map(amItemHtml).join('')}</div>`;
+        });
+        const emptyBlock=emptySlots.length?`<div class="am-emptywrap"><button type="button" class="am-toggle" aria-expanded="false">빈 시간대 ${emptySlots.length}개 ▾</button><div class="am-elist" hidden>${emptySlots.map(s=>`<span class="am-etime mono">${esc(s.time)} <em>0/${s.cap}</em></span>`).join('')}</div></div>`:'';
+        return `<div class="am-group"><div class="am-gh"><span>${esc(cls==='전체'?cls:clsLabelAdm(br,cls))}</span>${filled?'':'<span class="am-cnt">신청 없음</span>'}</div>${filled}${emptyBlock}</div>`;
       }).join('');
     }
     // 편성 외(시간대 미일치) 신청
@@ -598,6 +648,11 @@ function renderAmView(){
   });
   v.innerHTML=html;
   v.querySelectorAll('.am-item').forEach(it=>it.addEventListener('click',()=>openDetail(+it.dataset.id)));
+  v.querySelectorAll('.am-toggle').forEach(b=>b.addEventListener('click',()=>{
+    const l=b.nextElementSibling;const open=l.hidden;l.hidden=!open;
+    b.setAttribute('aria-expanded',open?'true':'false');
+    b.textContent='빈 시간대 '+l.children.length+'개 '+(open?'▴':'▾');
+  }));
 }
 ['amBranch','amStatus'].forEach(id=>document.getElementById(id).addEventListener('change',renderList));
 function exportCSV(list){if(!list||!list.length){alert('내보낼 신청이 없습니다.');return;}
@@ -747,7 +802,7 @@ function renderEditor(){
     <p class="when">${isOverride?'이 날짜에 개별 설정이 적용되어 있습니다.':'미설정 (휴무) — "기본값 적용" 또는 시간대 추가 후 "이 날짜 저장"을 하면 클래스가 열립니다.'}</p>
     <div class="slot-head bk"><div>클래스</div><div>시간</div><div>정원</div><div>신청</div><div></div></div>
     <div id="edSlots">${slots.map((sl,i)=>{const cnt=bookedAt(bkBranch,bkSelected,sl.time);return `<div class="slot-row bk" data-i="${i}">
-      <select class="e-cls">${clsOptsFor(bkBranch,sl.cls)}</select><input type="time" class="e-time" value="${sl.time||''}" /><input type="number" min="0" class="e-cap" value="${sl.cap??0}" /><div class="cnt-cell ${cnt>0?'has':''}">${cnt}명</div><button class="icon-btn e-del" ${cnt>0?'disabled title="신청 인원이 있어 삭제 불가"':''}>삭제</button></div>`;}).join('')||'<div class="hint">시간대 없음 (휴무)</div>'}</div>
+      <label class="sc" data-l="클래스"><select class="e-cls">${clsOptsFor(bkBranch,sl.cls)}</select></label><label class="sc" data-l="시간"><input type="time" class="e-time" value="${sl.time||''}" /></label><label class="sc" data-l="정원"><input type="number" min="0" class="e-cap" value="${sl.cap??0}" /></label><div class="cnt-cell ${cnt>0?'has':''}" data-l="신청">${cnt}명</div><button class="icon-btn e-del" ${cnt>0?'disabled title="신청 인원이 있어 삭제 불가"':''}>삭제</button></div>`;}).join('')||'<div class="hint">시간대 없음 (휴무)</div>'}</div>
     <div class="save-row"><button class="btn ghost sm" id="edAdd">+ 시간대 추가</button><button class="btn ghost sm" id="edDefault">기본값 적용</button><button class="btn sm" id="edSave">이 날짜 저장</button><button class="btn danger sm" id="edClosed">휴무일 지정</button>${isOverride?'<button class="btn ghost sm" id="edReset">개별설정 해제</button>':''}<span class="saved" id="edSaved">저장됨 ✓</span></div>
     <div class="copybar"><button class="btn ${copyMode?'':'ghost'} sm" id="edCopy">${copyMode?'복사 취소':'이 날짜 복사'}</button><button class="btn ghost sm" id="edPaste" ${(copyMode&&clipboard)?'':'disabled'}>여기에 붙여넣기</button><span class="clip">${copyMode?`복사됨 ${clipboard?clipboard.length:0}개 · 선택 ${bkSel.size}일`:'기본은 1일 선택'}</span></div>
     <div class="hint">${copyMode?'캘린더에서 드래그·클릭으로 적용할 날짜를 선택한 뒤 "여기에 붙여넣기"를 누르세요.':'"이 날짜 복사"를 누르면 이 날짜의 시간대 설정을 다른 날짜로 복사할 수 있습니다.'}</div>`;
