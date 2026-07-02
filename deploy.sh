@@ -14,6 +14,11 @@ next=$((cur + 1))
 # config.js 의 버전 문자열을 v(next) 로 교체 (macOS/BSD sed)
 sed -i '' -E 's/(LS_VERSION *= *"v)[0-9]+(")/\1'"$next"'\2/' config.js
 
+# 모든 HTML 의 자산 캐시버스터(?v=N) 를 새 버전으로 교체 → 브라우저가 새 config/app/styles 를 즉시 받음
+for f in index.html brand.html classes.html gallery.html location.html space.html admin/index.html; do
+  [ -f "$f" ] && sed -i '' -E "s/(styles\.css|config\.js|store\.js|app\.js)\?v=[0-9]+/\1?v=$next/g" "$f"
+done
+
 msg="${1:-deploy}"
 git add -u                      # 추적 중인 코드 파일만 (큰 미디어 제외)
 git add config.js               # 버전 변경 포함

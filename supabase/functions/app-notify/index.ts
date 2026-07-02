@@ -42,6 +42,14 @@ async function classInfo(id: string | null): Promise<{ name: string; inquiry: bo
 function looksLikeInquiry(msg: unknown): boolean {
   return /^\s*\[(문의\s*내용|Inquiry|Liên hệ)\]/.test(String(msg ?? ""));
 }
+// 신청시각을 yyyy-mm-dd hh:mm:ss (베트남 시간 UTC+7)로 포맷
+function fmtWhen(iso: unknown): string {
+  const d = new Date(String(iso ?? ""));
+  if (isNaN(d.getTime())) return String(iso ?? "");
+  const t = new Date(d.getTime() + 7 * 3600 * 1000);
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${t.getUTCFullYear()}-${p(t.getUTCMonth()+1)}-${p(t.getUTCDate())} ${p(t.getUTCHours())}:${p(t.getUTCMinutes())}:${p(t.getUTCSeconds())}`;
+}
 function esc(s: unknown){ return String(s ?? "").replace(/[&<>]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]!)); }
 function row(k: string, v: unknown){ return v ? `<tr><td style="padding:6px 12px;color:#888;white-space:nowrap;vertical-align:top">${k}</td><td style="padding:6px 12px;font-weight:600">${esc(v)}</td></tr>` : ""; }
 // 메모 등 줄바꿈 보존(HTML 이메일에서 \n 이 무시되는 문제 해결)
@@ -74,7 +82,7 @@ Deno.serve(async (req) => {
   <div style="font-family:Helvetica,Arial,sans-serif;max-width:560px;margin:auto">
     <h2 style="letter-spacing:.08em">LIMINAL SPACE — 새 ${kind}</h2>
     <table style="border-collapse:collapse;font-size:14px;border:1px solid #eee;width:100%">
-      ${row("구분", inq ? "문의 (예약 아님)" : "클래스 신청")}
+      ${row("구분", inq ? "문의" : "클래스 신청")}
       ${row("희망일", a.want_date)}${inq ? "" : row("시간", a.want_time)}
       ${row("이름", a.name)}${row("연락처", a.phone)}
       ${row("지점", branch)}${row("클래스", cls)}
@@ -83,7 +91,7 @@ Deno.serve(async (req) => {
       ${row("Facebook", a.sns_facebook)}${row("Instagram", a.sns_instagram)}
       ${rowMulti(inq ? "문의 내용" : "메모", a.msg)}
       ${row("상태", STATUS_KO[a.status] || a.status)}
-      ${row("신청시각", a.created_at)}
+      ${row("신청시각", fmtWhen(a.created_at))}
     </table>
     <p style="color:#aaa;font-size:12px;margin-top:14px">이 메일은 ${kind} 접수 시 자동 발송됩니다.</p>
   </div>`;
