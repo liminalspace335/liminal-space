@@ -787,11 +787,12 @@ function renderConfirm(){
     rows.map(([k,v])=>`<div class="sr"><span class="k">${L[k]}</span><span class="v"${k==='msg'?' style="white-space:pre-line;text-align:right"':''}>${esc(v)}</span></div>`).join('');
 }
 function submitApplication(){
+  const inq=isInquiry();
   const entry={id:Date.now(),createdAt:new Date().toISOString(),
     branch:data.branch,name:data.name,phone:(data.dialcode?data.dialcode+' ':'')+(data.phone||''),email:data.email,nationality:data.nationality,
     facebook:data.facebook||'',instagram:data.instagram||'',class:data.class,
-    size:data.size,date:data.date,time:data.time,people:data.people||'1',
-    amount:expectedAmountStr(),deposit:'',
+    size:inq?'':data.size,date:data.date,time:inq?'':data.time,people:inq?'':(data.people||'1'),
+    amount:inq?'':expectedAmountStr(),deposit:'',
     msg:data.msg,status:'new'};
   try{const list=(window.LS?LS.getApps():[]).slice();list.push(entry);LS.setApps(list);}catch(err){console.warn('저장 실패',err);}
   goto(7);
