@@ -284,6 +284,8 @@
             <h3>사이트 정보</h3><p class="desc">랜딩 푸터·히어로에 표시되는 브랜드명/연도입니다.</p>
             <div class="field-row"><label>브랜드명</label><input id="inBrand" placeholder="LIMINAL SPACE" /></div>
             <div class="field-row"><label>히어로 로고 이미지</label><div class="upwrap"><input id="inHeroLogo" placeholder="URL 또는 업로드 → (히어로 텍스트 대신 표시)" /><label class="upbtn" title="로고 업로드">⬆<input type="file" id="heroLogoFile" accept="image/*" hidden /></label></div></div>
+            <div class="field-row"><label>신청 알림 이메일</label><input id="inNotifyEmail" placeholder="신청 접수 시 알림 받을 이메일 (여러 개는 콤마로)" /></div>
+            <div class="field-row"><label>이메일 알림 사용</label><label style="display:inline-flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="inNotifyOn" /> <span style="font-size:13px;color:var(--ink-soft)">켜면 신청이 들어올 때 위 이메일로 알림 발송 (Edge Function·Resend 연동 필요)</span></label></div>
             <div class="field-row" style="max-width:240px"><label>EST 연도</label><input id="inEst" placeholder="2026" /></div>
             <div class="field-row" style="max-width:240px"><label>© 저작권 연도</label><input id="inCopy" placeholder="2026" /></div>
             <div class="field-row"><label>컨셉 이미지/영상 (최대 5개 · 순차 재생)</label>
@@ -881,10 +883,12 @@ function renderBranches(){const s=loadSettings();
   document.getElementById('inMoitUrl').value=(s.site&&s.site.moitUrl)||'';
   document.getElementById('inMoitLogo').value=(s.site&&s.site.moitLogo)||'';
   document.getElementById('inHeroLogo').value=(s.site&&s.site.heroLogo)||'';
+  document.getElementById('inNotifyEmail').value=(s.site&&s.site.notifyEmail)||'';
+  document.getElementById('inNotifyOn').checked=!(s.site&&s.site.notifyOn===false);
   (function(){var cl=(s.site&&s.site.conceptList)||[];document.querySelectorAll('#conceptList .cm-url').forEach(function(inp,i){inp.value=cl[i]||'';});})();
   document.getElementById('inConceptAuto').checked=!!(s.site&&s.site.conceptAutoplay);
 }
-document.getElementById('siteSave').addEventListener('click',()=>{const s=loadSettings();s.site={brandName:document.getElementById('inBrand').value.trim(),heroLogo:document.getElementById('inHeroLogo').value.trim(),estYear:document.getElementById('inEst').value.trim(),copyrightYear:document.getElementById('inCopy').value.trim(),bizName:document.getElementById('inBizName').value.trim(),bizAddress:document.getElementById('inBizAddr').value.trim(),bizTax:document.getElementById('inBizTax').value.trim(),bizPhone:document.getElementById('inBizPhone').value.trim(),bizEmail:document.getElementById('inBizEmail').value.trim(),moitUrl:document.getElementById('inMoitUrl').value.trim(),moitLogo:document.getElementById('inMoitLogo').value.trim(),conceptList:[...document.querySelectorAll('#conceptList .cm-url')].map(i=>i.value.trim()).filter(Boolean).slice(0,5),conceptAutoplay:document.getElementById('inConceptAuto').checked};saveSettings(s);toast('siteSaved');});
+document.getElementById('siteSave').addEventListener('click',()=>{const s=loadSettings();s.site={brandName:document.getElementById('inBrand').value.trim(),heroLogo:document.getElementById('inHeroLogo').value.trim(),notifyEmail:document.getElementById('inNotifyEmail').value.trim(),notifyOn:document.getElementById('inNotifyOn').checked,estYear:document.getElementById('inEst').value.trim(),copyrightYear:document.getElementById('inCopy').value.trim(),bizName:document.getElementById('inBizName').value.trim(),bizAddress:document.getElementById('inBizAddr').value.trim(),bizTax:document.getElementById('inBizTax').value.trim(),bizPhone:document.getElementById('inBizPhone').value.trim(),bizEmail:document.getElementById('inBizEmail').value.trim(),moitUrl:document.getElementById('inMoitUrl').value.trim(),moitLogo:document.getElementById('inMoitLogo').value.trim(),conceptList:[...document.querySelectorAll('#conceptList .cm-url')].map(i=>i.value.trim()).filter(Boolean).slice(0,5),conceptAutoplay:document.getElementById('inConceptAuto').checked};saveSettings(s);toast('siteSaved');});
 /* 히어로 로고 업로드 */
 document.getElementById('heroLogoFile').addEventListener('change',async function(e){
   const f=e.target.files&&e.target.files[0]; if(!f)return;
