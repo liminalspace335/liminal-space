@@ -7,3 +7,5 @@ window.SUPA_CONFIG = {
   url: "https://euhuiktqoslmndozqpsr.supabase.co",
   anonKey: "sb_publishable_FrEHlpTzQpDmBh8Z8_2o_w_CKQomC2A"
 };
+/* 사이트 버전 — deploy.sh 실행 시 자동으로 +1 됨 (좌측 상단 로고 5번 클릭 시 표시) */
+window.LS_VERSION = "v1";

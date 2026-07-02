@@ -161,6 +161,24 @@
   .gate-card h2{font-size:18px;letter-spacing:.12em;text-transform:uppercase;margin-bottom:6px}.gate-card p{font-size:12px;color:var(--ink-soft);margin-bottom:22px}
   .gate-card input{width:100%;background:#fff;border:1px solid var(--line);padding:12px;margin-bottom:14px;border-radius:2px;font:inherit}.gate-card .btn{width:100%}.gate-card .hint{font-size:11px;color:var(--coord);margin-top:12px;text-align:center}
   @media(max-width:900px){.layout{flex-direction:column}.sidebar{width:100%;height:auto;position:static;flex-direction:row;flex-wrap:wrap}.sb-brand{border-bottom:0;padding:16px 18px}.sb-nav{display:flex;padding:0}.sb-foot{display:none}.sb-item{border-left:0;border-bottom:3px solid transparent;padding:14px}.sb-item.active{border-left:0;border-bottom-color:#fff}.stats{grid-template-columns:repeat(2,1fr)}.two-col,.bk-grid{grid-template-columns:1fr}}
+  /* ===== 모바일 편집 최적화 ===== */
+  @media(max-width:760px){
+    .main{padding:18px 14px}
+    /* 조밀한 편집 행: 박스를 가로 스크롤 컨테이너로 → 헤더+입력행이 함께 스크롤(컬럼 안 뭉개짐) */
+    .box{padding:16px 14px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+    .subtabs{overflow-x:auto;flex-wrap:nowrap;-webkit-overflow-scrolling:touch}
+    .subtab{white-space:nowrap}
+    .gen-row{min-width:600px}
+    .br-row{min-width:920px}.cd-row{min-width:860px}.bc-row{min-width:600px}
+    .slot-row,.slot-head{min-width:460px}
+    /* 입력 글자 16px (iOS 자동 확대 방지) */
+    .field-row input,.gen-row input,.gen-row select,.dbox input,.dbox select,.dbox textarea,.toolbar input,.toolbar select{font-size:16px}
+    /* 상세 모달 1열 */
+    .dgrid{grid-template-columns:1fr}
+    .dbox{width:96vw}
+    /* 리스트 표는 기존 가로 스크롤 유지 */
+    .l2-table{font-size:12px}
+  }
 </style>
 </head>
 <body>
@@ -482,6 +500,9 @@ document.getElementById('pw').addEventListener('keydown',e=>{if(e.key==='Enter')
 function boot(){ if(sessionStorage.getItem('liminal_admin')==='1'){showApp();} else {document.getElementById('gate').style.display='flex';const u=document.getElementById('uid');if(u)u.focus();} }
 document.getElementById('logout').addEventListener('click',e=>{e.preventDefault();sessionStorage.removeItem('liminal_admin');location.reload();});
 function showApp(){document.getElementById('gate').style.display='none';document.getElementById('app').style.display='flex';renderAll();}
+/* 좌측 상단 로고 5번 연속 클릭(3초 내) → 버전 표시 */
+(function(){var b=document.querySelector('.sb-brand'); if(!b)return; var n=0,t=0;
+  b.addEventListener('click',function(){ var now=Date.now(); if(now-t>3000)n=0; t=now; n++; if(n>=5){ n=0; alert('LIMINAL SPACE — Admin  '+(window.LS_VERSION||'')); } });})();
 
 /* tabs */
 const TITLES={overview:'소개',list:'신청관리(캘린더)',list2:'신청관리(리스트)',booking:'클래스설정',settings:'환경설정'};

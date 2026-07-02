@@ -1018,5 +1018,8 @@ function initEffects(){
   }
 }
 initEffects();
+/* 좌측 상단 로고 5번 연속 클릭(3초 내) → 버전 표시 */
+(function(){var b=document.querySelector('header .brand'); if(!b)return; var n=0,t=0;
+  b.addEventListener('click',function(){ var now=Date.now(); if(now-t>3000)n=0; t=now; n++; if(n>=5){ n=0; alert('LIMINAL SPACE  '+(window.LS_VERSION||'')); } });})();
 setLang('vi');   // 기본 언어: 베트남어 (모든 정의 이후 호출 — TDZ 회피)
 
