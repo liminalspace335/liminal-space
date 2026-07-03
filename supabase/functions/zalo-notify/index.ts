@@ -69,11 +69,21 @@ async function getAccessToken(): Promise<string> {
   return j.access_token;
 }
 
-// ---- 이름 조회(클래스/지점) ----
+// ---- 지점명 조회 (branches 테이블은 name 컬럼) ----
 async function lookupName(table: string, id: string | null): Promise<string> {
   if (!id) return "";
   const { data } = await db.from(table).select("name").eq("id", id).single();
   return data?.name || "";
+}
+// ---- 클래스명 + 문의전용 여부 (classes 테이블은 name_ko/name_en/name_vi + inquiry_only) ----
+async function classInfo(id: string | null): Promise<{ name: string; inquiry: boolean }> {
+  if (!id) return { name: "", inquiry: false };
+  const { data } = await db.from("classes").select("name_ko,name_en,name_vi,inquiry_only").eq("id", id).single();
+  return { name: data?.name_ko || data?.name_en || data?.name_vi || "", inquiry: data?.inquiry_only === true };
+}
+// 메모가 문의 템플릿으로 시작하면 문의로 간주(클래스 매칭 실패 대비)
+function looksLikeInquiry(msg: unknown): boolean {
+  return /^\s*\[(문의\s*내용|Inquiry|Liên hệ)\]/.test(String(msg ?? ""));
 }
 
 async function log(app_id: number, phone: string, ok: boolean, detail: string) {
@@ -97,8 +107,15 @@ Deno.serve(async (req) => {
     const phone = normVNPhone(rec.phone || "");
     if (phone.length < 9) { await log(rec.id, phone, false, "전화번호 없음/형식 오류"); return new Response("no phone", { status: 200 }); }
 
-    const className  = await lookupName("classes", rec.class_id);
+    const ci = await classInfo(rec.class_id);
+    const className  = ci.name;
     const branchName = await lookupName("branches", rec.branch_id);
+
+    // 문의(예약 아님)는 예약확인 ZNS 대상이 아니므로 발송 스킵
+    if (ci.inquiry || looksLikeInquiry(rec.msg)) {
+      await log(rec.id, phone, false, "문의(예약아님) — ZNS 스킵");
+      return new Response(JSON.stringify({ skipped: "inquiry" }), { status: 200, headers: { "Content-Type": "application/json" } });
+    }
 
     const token = await getAccessToken();
 
