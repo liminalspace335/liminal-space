@@ -357,6 +357,7 @@
           <button class="subtab" data-sub="cls">클래스 설정</button>
           <button class="subtab" data-sub="detail">상세설정</button>
           <button class="subtab" data-sub="default">신청관리 기본값</button>
+          <button class="subtab" data-sub="notify">알림관리</button>
           <button class="subtab" data-sub="media">갤러리·협업</button>
           <button class="subtab" data-sub="spacephotos">공간</button>
         </div>
@@ -372,8 +373,6 @@
             <h3>사이트 정보</h3><p class="desc">랜딩 푸터·히어로에 표시되는 브랜드명/연도입니다.</p>
             <div class="field-row"><label>브랜드명</label><input id="inBrand" placeholder="LIMINAL SPACE" /></div>
             <div class="field-row"><label>히어로 로고 이미지</label><div class="upwrap"><input id="inHeroLogo" placeholder="URL 또는 업로드 → (히어로 텍스트 대신 표시)" /><label class="upbtn" title="로고 업로드">⬆<input type="file" id="heroLogoFile" accept="image/*" hidden /></label></div></div>
-            <div class="field-row"><label>신청 알림 이메일</label><input id="inNotifyEmail" placeholder="신청 접수 시 알림 받을 이메일 (여러 개는 콤마로)" /></div>
-            <div class="field-row"><label>이메일 알림 사용</label><label style="display:inline-flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="inNotifyOn" /> <span style="font-size:13px;color:var(--ink-soft)">켜면 신청이 들어올 때 위 이메일로 알림 발송 (Edge Function·Resend 연동 필요)</span></label></div>
             <div class="field-row" style="max-width:240px"><label>EST 연도</label><input id="inEst" placeholder="2026" /></div>
             <div class="field-row" style="max-width:240px"><label>© 저작권 연도</label><input id="inCopy" placeholder="2026" /></div>
             <div class="field-row"><label>컨셉 이미지/영상 (최대 5개 · 순차 재생)</label>
@@ -425,6 +424,21 @@
             <div class="slot-head" style="grid-template-columns:minmax(0,1fr) 130px 70px 58px"><div>클래스</div><div>시간</div><div>정원</div><div></div></div>
             <div id="defWrap"></div>
             <div class="save-row"><button class="btn ghost sm" id="defAdd">+ 시간대 추가</button><button class="btn sm" id="defSave">저장</button><span class="saved" id="defSaved">저장됨 ✓</span></div>
+          </div>
+        </div>
+
+        <div class="subpanel" id="sub-notify">
+          <div class="box" style="max-width:620px">
+            <h3>알림 관리</h3><p class="desc">신청이 접수될 때 보낼 알림을 채널별로 켜고 끕니다. (각 채널은 Edge Function·연동 설정이 완료돼야 실제로 발송됩니다)</p>
+
+            <h3 style="margin-top:6px;font-size:14px">이메일 알림 (Resend)</h3>
+            <div class="field-row"><label>이메일 알림 사용</label><label style="display:inline-flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="inNotifyOn" /> <span style="font-size:13px;color:var(--ink-soft)">켜면 신청 접수 시 아래 이메일로 알림 발송</span></label></div>
+            <div class="field-row"><label>신청 알림 이메일</label><input id="inNotifyEmail" placeholder="신청 접수 시 알림 받을 이메일 (여러 개는 콤마로)" /></div>
+
+            <h3 style="margin-top:18px;font-size:14px">잘로 알림 (Zalo ZNS · 고객에게 예약확인)</h3>
+            <div class="field-row"><label>잘로 알림 사용</label><label style="display:inline-flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="inZaloOn" /> <span style="font-size:13px;color:var(--ink-soft)">켜면 신청 접수 시 고객 전화번호로 예약확인 잘로 메시지 발송 (템플릿 승인·잔액 필요)</span></label></div>
+
+            <div class="save-row"><button class="btn sm" id="notifySave">저장</button><span class="saved" id="notifySaved">저장됨 ✓</span></div>
           </div>
         </div>
 
@@ -506,8 +520,8 @@
 </div></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="../config.js?v=11"></script>
-<script src="../store.js?v=11"></script>
+<script src="../config.js?v=12"></script>
+<script src="../store.js?v=12"></script>
 <script>
 const STORE_KEY='liminal_applications';
 const SET_KEY='liminal_settings';
@@ -989,10 +1003,13 @@ function renderBranches(){const s=loadSettings();
   document.getElementById('inHeroLogo').value=(s.site&&s.site.heroLogo)||'';
   document.getElementById('inNotifyEmail').value=(s.site&&s.site.notifyEmail)||'';
   document.getElementById('inNotifyOn').checked=!(s.site&&s.site.notifyOn===false);
+  document.getElementById('inZaloOn').checked=!!(s.site&&s.site.zaloOn);
   (function(){var cl=(s.site&&s.site.conceptList)||[];document.querySelectorAll('#conceptList .cm-url').forEach(function(inp,i){inp.value=cl[i]||'';});})();
   document.getElementById('inConceptAuto').checked=!!(s.site&&s.site.conceptAutoplay);
 }
-document.getElementById('siteSave').addEventListener('click',()=>{const s=loadSettings();s.site={brandName:document.getElementById('inBrand').value.trim(),heroLogo:document.getElementById('inHeroLogo').value.trim(),notifyEmail:document.getElementById('inNotifyEmail').value.trim(),notifyOn:document.getElementById('inNotifyOn').checked,estYear:document.getElementById('inEst').value.trim(),copyrightYear:document.getElementById('inCopy').value.trim(),bizName:document.getElementById('inBizName').value.trim(),bizAddress:document.getElementById('inBizAddr').value.trim(),bizTax:document.getElementById('inBizTax').value.trim(),bizPhone:document.getElementById('inBizPhone').value.trim(),bizEmail:document.getElementById('inBizEmail').value.trim(),moitUrl:document.getElementById('inMoitUrl').value.trim(),moitLogo:document.getElementById('inMoitLogo').value.trim(),conceptList:[...document.querySelectorAll('#conceptList .cm-url')].map(i=>i.value.trim()).filter(Boolean).slice(0,5),conceptAutoplay:document.getElementById('inConceptAuto').checked};saveSettings(s);toast('siteSaved');});
+document.getElementById('siteSave').addEventListener('click',()=>{const s=loadSettings();s.site={brandName:document.getElementById('inBrand').value.trim(),heroLogo:document.getElementById('inHeroLogo').value.trim(),notifyEmail:document.getElementById('inNotifyEmail').value.trim(),notifyOn:document.getElementById('inNotifyOn').checked,estYear:document.getElementById('inEst').value.trim(),copyrightYear:document.getElementById('inCopy').value.trim(),bizName:document.getElementById('inBizName').value.trim(),bizAddress:document.getElementById('inBizAddr').value.trim(),bizTax:document.getElementById('inBizTax').value.trim(),bizPhone:document.getElementById('inBizPhone').value.trim(),bizEmail:document.getElementById('inBizEmail').value.trim(),moitUrl:document.getElementById('inMoitUrl').value.trim(),moitLogo:document.getElementById('inMoitLogo').value.trim(),conceptList:[...document.querySelectorAll('#conceptList .cm-url')].map(i=>i.value.trim()).filter(Boolean).slice(0,5),conceptAutoplay:document.getElementById('inConceptAuto').checked,zaloOn:document.getElementById('inZaloOn').checked};saveSettings(s);toast('siteSaved');});
+/* 알림관리 저장 (site 병합 — 다른 site 필드 보존) */
+document.getElementById('notifySave').addEventListener('click',()=>{const s=loadSettings();s.site=s.site||{};s.site.notifyOn=document.getElementById('inNotifyOn').checked;s.site.notifyEmail=document.getElementById('inNotifyEmail').value.trim();s.site.zaloOn=document.getElementById('inZaloOn').checked;saveSettings(s);toast('notifySaved');});
 /* 히어로 로고 업로드 */
 document.getElementById('heroLogoFile').addEventListener('change',async function(e){
   const f=e.target.files&&e.target.files[0]; if(!f)return;

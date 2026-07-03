@@ -103,13 +103,18 @@ Deno.serve(async (req) => {
   const rec = payload?.record;
   if (payload?.type !== "INSERT" || !rec) return new Response("ignored", { status: 200 });
 
+  // 어드민(환경설정 › 알림관리)에서 잘로 알림이 꺼져 있으면 발송 스킵
+  const { data: si } = await db.from("site_info").select("zalo_on").eq("id", "main").single();
+  if (si?.zalo_on !== true) {
+    return new Response(JSON.stringify({ skipped: "zalo_off" }), { status: 200, headers: { "Content-Type": "application/json" } });
+  }
+
   try {
     const phone = normVNPhone(rec.phone || "");
     if (phone.length < 9) { await log(rec.id, phone, false, "전화번호 없음/형식 오류"); return new Response("no phone", { status: 200 }); }
 
     const ci = await classInfo(rec.class_id);
     const className  = ci.name;
-    const branchName = await lookupName("branches", rec.branch_id);
 
     // 문의(예약 아님)는 예약확인 ZNS 대상이 아니므로 발송 스킵
     if (ci.inquiry || looksLikeInquiry(rec.msg)) {
@@ -120,11 +125,10 @@ Deno.serve(async (req) => {
     const token = await getAccessToken();
 
     // ⚠️ template_data의 key는 승인된 ZNS 템플릿의 파라미터 이름과 정확히 일치해야 합니다.
-    //    아래는 예시(name/class/date/time/people/branch). 템플릿에 맞게 조정하세요.
+    //    승인 템플릿 파라미터: name / class / date / time / people (지점 branch 제외)
     const template_data: Record<string, string> = {
       name: rec.name || "",
       class: className,
-      branch: branchName,
       date: rec.want_date || "",
       time: rec.want_time || "",
       people: String(rec.people || "1"),
