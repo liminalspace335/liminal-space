@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Zalo OAuth Callback — LIMINAL SPACE</title>
+<style>
+  body{font-family:Helvetica,Arial,"Apple SD Gothic Neo",sans-serif;background:#f4f4f5;color:#16171a;
+    display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;padding:20px}
+  .card{background:#fff;border:1px solid #c7c8cc;border-radius:8px;padding:28px 26px;max-width:560px;width:100%}
+  h1{font-size:16px;letter-spacing:.08em;margin:0 0 6px}
+  p{font-size:13px;color:#5a5c61;margin:0 0 18px}
+  label{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#7a7c82;display:block;margin:14px 0 6px}
+  .val{display:flex;gap:8px}
+  input{flex:1;min-width:0;font:inherit;font-size:14px;padding:11px 12px;border:1px solid #c7c8cc;border-radius:4px;background:#fafafa}
+  button{border:0;background:#1a1b1e;color:#fff;border-radius:4px;padding:0 16px;font-size:13px;cursor:pointer}
+  button:hover{opacity:.88}
+  .ok{color:#2f7d5b;font-size:12px;margin-top:8px;min-height:16px}
+  .err{color:#b04545}
+</style>
+</head>
+<body>
+  <div class="card">
+    <h1>Zalo OAuth Callback</h1>
+    <p>아래 <b>code</b> 값을 복사해서, 터미널에서 실행 중인 <code>zalo_get_token</code> 스크립트에 붙여넣으세요. (code는 수 분 내 만료됩니다)</p>
+
+    <label>Authorization code</label>
+    <div class="val"><input id="code" readonly /><button onclick="copyv('code')">복사</button></div>
+
+    <label>OA ID</label>
+    <div class="val"><input id="oaid" readonly /><button onclick="copyv('oaid')">복사</button></div>
+
+    <div class="ok" id="msg"></div>
+  </div>
+<script>
+  var q = new URLSearchParams(location.search);
+  var code = q.get('code') || '';
+  var oaid = q.get('oa_id') || q.get('oaid') || '';
+  document.getElementById('code').value = code;
+  document.getElementById('oaid').value = oaid;
+  if(!code){ document.getElementById('msg').className='ok err'; document.getElementById('msg').textContent='code 파라미터가 없습니다. 권한 허용 화면에서 다시 진행하세요.'; }
+  function copyv(id){ var el=document.getElementById(id); el.select(); document.execCommand('copy');
+    var m=document.getElementById('msg'); m.className='ok'; m.textContent=id+' 복사됨 ✓'; }
+</script>
+</body>
+</html>
