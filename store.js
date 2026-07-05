@@ -33,7 +33,7 @@
     });
     var si=(t.site_info||[])[0]; if(si){ settings.site={ brandName:si.brand_name||'', estYear:si.est_year||'', copyrightYear:si.copyright_year||'',
         bizName:si.biz_name||'', bizAddress:si.biz_address||'', bizTax:si.biz_tax||'', bizPhone:si.biz_phone||'', bizEmail:si.biz_email||'', moitUrl:si.moit_url||'', moitLogo:si.moit_logo||'', conceptMedia:si.concept_media||'', conceptAutoplay:si.concept_autoplay===true,
-        heroLogo:si.hero_logo||'', notifyEmail:si.notify_email||'', notifyOn:si.notify_on!==false, zaloOn:si.zalo_on===true,
+        heroLogo:si.hero_logo||'', notifyEmail:si.notify_email||'', notifyOn:si.notify_on!==false, zaloOn:si.zalo_on===true, confirmMailOn:si.confirm_mail_on===true,
         conceptList:(function(){var a=[];try{a=JSON.parse(si.concept_json||'[]')||[];}catch(e){a=[];} if(!a.length&&si.concept_media)a=[si.concept_media]; return a.filter(Boolean).slice(0,5);})() };
       try{ settings.gallery=JSON.parse(si.gallery_json||'[]')||[]; }catch(e){ settings.gallery=[]; }
       try{ settings.partners=JSON.parse(si.partners_json||'[]')||[]; }catch(e){ settings.partners=[]; }
@@ -68,7 +68,7 @@
     var apps=(t.applications||[]).map(function(a){ var cm=classById[a.class_id]||{};
       return { id:Number(a.id), createdAt:a.created_at, branch:branchById[a.branch_id]||'', 'class':cm.nameKo||'',
         size:a.size||'', date:a.want_date||'', time:a.want_time||'', people:a.people||'1',
-        name:a.name||'', phone:a.phone||'', email:a.email||'', nationality:a.nationality||'', facebook:a.sns_facebook||'', instagram:a.sns_instagram||'', msg:a.msg||'', amount:a.amount||'', deposit:a.deposit||'', status:a.status||'new' }; });
+        name:a.name||'', phone:a.phone||'', email:a.email||'', nationality:a.nationality||'', facebook:a.sns_facebook||'', instagram:a.sns_instagram||'', msg:a.msg||'', amount:a.amount||'', deposit:a.deposit||'', status:a.status||'new', confirmMail:a.confirm_mail||'', confirmMailAt:a.confirm_mail_at||'', confirmMailErr:a.confirm_mail_err||'' }; });
     return { settings:settings, apps:apps };
   }
 
@@ -90,7 +90,7 @@
     var _si=s.site||{};
     var siteRow={ id:'main', brand_name:_si.brandName||'', est_year:_si.estYear||'', copyright_year:_si.copyrightYear||'',
       biz_name:_si.bizName||'', biz_address:_si.bizAddress||'', biz_tax:_si.bizTax||'', biz_phone:_si.bizPhone||'', biz_email:_si.bizEmail||'', moit_url:_si.moitUrl||'', moit_logo:_si.moitLogo||'', concept_autoplay:!!_si.conceptAutoplay,
-      hero_logo:_si.heroLogo||'', notify_email:_si.notifyEmail||'', notify_on:_si.notifyOn!==false, zalo_on:_si.zaloOn===true,
+      hero_logo:_si.heroLogo||'', notify_email:_si.notifyEmail||'', notify_on:_si.notifyOn!==false, zalo_on:_si.zaloOn===true, confirm_mail_on:_si.confirmMailOn===true,
       concept_json:JSON.stringify((_si.conceptList||[]).filter(Boolean).slice(0,5)),
       concept_media:((_si.conceptList&&_si.conceptList.filter(Boolean)[0])||_si.conceptMedia||''),
       gallery_json:JSON.stringify(s.gallery||[]), partners_json:JSON.stringify(s.partners||[]), galleryfolders_json:JSON.stringify(s.galleryFolders||[]),
@@ -225,8 +225,19 @@
     }catch(e){ return { error:String(e&&e.message||e) }; }
   }
 
+  /* 확정메일 재발송: confirm_mail 컬럼을 null 로 리셋 → DB 트리거가 confirm-mail 함수 재호출 */
+  async function resendConfirm(id){
+    if(!useRemote || !client) return { error:'Supabase 연결이 필요합니다(로컬 모드 불가).' };
+    try{
+      var r=await client.from('applications').update({ confirm_mail:null, confirm_mail_at:null, confirm_mail_err:null }).eq('id', id);
+      if(r&&r.error) return { error:(r.error.message||'재발송 실패') };
+      return { ok:true };
+    }catch(e){ return { error:String(e&&e.message||e) }; }
+  }
+
   window.LS = {
     init:init, useRemote:function(){return useRemote;},
+    resendConfirm:resendConfirm,          // 확정메일 재발송
     getApps:function(){ return Array.isArray(cache.apps)?cache.apps:[]; }, setApps:setApps,
     getSettings:function(){ return (cache.settings&&typeof cache.settings==='object')?cache.settings:{}; }, setSettings:setSettings,
     onError:function(fn){ onErr=fn; },   // 저장 실패 콜백 등록

@@ -438,6 +438,9 @@
             <h3 style="margin-top:18px;font-size:14px">잘로 알림 (Zalo ZNS · 고객에게 예약확인)</h3>
             <div class="field-row"><label>잘로 알림 사용</label><label style="display:inline-flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="inZaloOn" /> <span style="font-size:13px;color:var(--ink-soft)">켜면 신청 접수 시 고객 전화번호로 예약확인 잘로 메시지 발송 (템플릿 승인·잔액 필요)</span></label></div>
 
+            <h3 style="margin-top:18px;font-size:14px">예약자 확정메일 (Resend · 고객에게)</h3>
+            <div class="field-row"><label>예약자 확정메일 발송</label><label style="display:inline-flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="inConfirmMailOn" /> <span style="font-size:13px;color:var(--ink-soft)">켜면 신청이 '확정'될 때 예약자 이메일로 예약확정 메일 발송 (⚠️ 고객 메일 발송엔 Resend 도메인 인증 필요)</span></label></div>
+
             <div class="save-row"><button class="btn sm" id="notifySave">저장</button><span class="saved" id="notifySaved">저장됨 ✓</span></div>
           </div>
         </div>
@@ -520,8 +523,8 @@
 </div></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="../config.js?v=14"></script>
-<script src="../store.js?v=14"></script>
+<script src="../config.js?v=15"></script>
+<script src="../store.js?v=15"></script>
 <script>
 const STORE_KEY='liminal_applications';
 const SET_KEY='liminal_settings';
@@ -534,6 +537,8 @@ function natCode(v){v=String(v||'').trim();if(!v)return '';if(NAT_LABEL[v])retur
     return low===lab.toLowerCase()||low===en||low===ko||low===c.toLowerCase();})||'';}
 function natName(v){var c=natCode(v);return c?NAT_LABEL[c]:String(v||'');}
 function natOptions(sel){return '<option value="">-</option>'+Object.keys(NAT_LABEL).map(function(c){return '<option value="'+c+'"'+(c===sel?' selected':'')+'>'+NAT_LABEL[c]+'</option>';}).join('');}
+/* 확정메일 발송상태 뱃지 */
+function cmBadge(v){if(v==='sent')return '<span class="badge b-confirmed">성공</span>';if(v==='failed')return '<span class="badge b-cancel">실패</span>';return '<span class="badge b-done">미발송</span>';}
 const DOW=['일','월','화','수','목','금','토'];
 const DAYKEYS=['sun','mon','tue','wed','thu','fri','sat'];
 function defaultDaySlots(){return [{cls:'',time:'11:00',cap:6},{cls:'',time:'14:00',cap:6},{cls:'',time:'17:00',cap:6}];}
@@ -807,7 +812,7 @@ function renderList2(){
   const dh=document.getElementById('l2DirtyHint'); if(dh)dh.textContent=l2Dirty?'● 미저장 변경':'';
   const rows=l2Filtered();
   document.getElementById('l2Count').textContent='총 '+rows.length+'명';
-  const cols=['희망일','시간','이름','연락처','지점','클래스','용량','인원','국적','메모','신청일시','결제금액','상태','작업'];
+  const cols=['희망일','시간','이름','연락처','이메일','지점','클래스','용량','인원','국적','메모','신청일시','결제금액','상태','확정메일','작업'];
   document.getElementById('l2Head').innerHTML='<tr><th class="l2-ck"><input type="checkbox" id="l2All"></th>'+cols.map(c=>`<th>${c}</th>`).join('')+'</tr>';
   document.getElementById('l2Body').innerHTML = rows.length ? rows.map(a=>{
     const st=STATUS[a.status]||STATUS.new;const msg=a.msg||'';
@@ -817,6 +822,7 @@ function renderList2(){
       <td class="mono nowrap">${esc(a.time)||'-'}</td>
       <td class="strong">${esc(a.name)||'-'}</td>
       <td class="mono nowrap">${esc(a.phone)||'-'}</td>
+      <td class="nowrap">${esc(a.email)||'-'}</td>
       <td class="nowrap">${esc(brLabelAdm(a.branch))||'-'}</td>
       <td>${esc(a.class?clsLabelAdm(a.branch,a.class):'-')}</td>
       <td class="nowrap">${esc(a.size)||'-'}</td>
@@ -826,10 +832,18 @@ function renderList2(){
       <td class="mono nowrap">${esc(fmt(a.createdAt))}</td>
       <td class="mono nowrap">${esc(a.amount)||'-'}</td>
       <td><span class="badge ${st.cls}">${st.label}</span></td>
-      <td><button class="btn sm l2-detail" data-id="${a.id}">상세</button></td>
+      <td class="nowrap" title="${esc(a.confirmMailErr||'')}">${cmBadge(a.confirmMail)}</td>
+      <td class="nowrap"><button class="btn sm l2-detail" data-id="${a.id}">상세</button>${a.email?` <button class="btn ghost sm l2-resend" data-id="${a.id}" title="확정 메일 재발송">재발송</button>`:''}</td>
     </tr>`;
   }).join('') : `<tr><td colspan="${cols.length+1}" class="l2-empty">신청 내역이 없습니다.</td></tr>`;
   document.querySelectorAll('#l2Body .l2-detail').forEach(b=>b.addEventListener('click',()=>openDetail(+b.dataset.id)));
+  document.querySelectorAll('#l2Body .l2-resend').forEach(b=>b.addEventListener('click',async()=>{
+    if(!confirm('이 예약자에게 확정 메일을 재발송할까요?'))return;
+    b.disabled=true;const _t=b.textContent;b.textContent='요청중…';
+    const r=await (window.LS&&LS.resendConfirm?LS.resendConfirm(+b.dataset.id):{error:'로컬 모드'});
+    if(r&&r.error){alert('재발송 실패: '+r.error);b.disabled=false;b.textContent=_t;}
+    else{b.textContent='요청됨';alert('재발송을 요청했습니다. 잠시 후 새로고침하면 발송 결과가 갱신됩니다.');}
+  }));
   document.querySelectorAll('#l2Body .l2-row').forEach(cb=>cb.addEventListener('change',()=>{const id=+cb.value;if(cb.checked)l2Sel.add(id);else l2Sel.delete(id);const allcb=document.getElementById('l2All');if(allcb)allcb.checked=[...document.querySelectorAll('#l2Body .l2-row')].every(x=>x.checked);l2UpdateSelCount();}));
   const allcb=document.getElementById('l2All');
   if(allcb){allcb.checked=rows.length>0&&rows.every(a=>l2Sel.has(a.id));
@@ -1011,12 +1025,13 @@ function renderBranches(){const s=loadSettings();
   document.getElementById('inNotifyEmail').value=(s.site&&s.site.notifyEmail)||'';
   document.getElementById('inNotifyOn').checked=!(s.site&&s.site.notifyOn===false);
   document.getElementById('inZaloOn').checked=!!(s.site&&s.site.zaloOn);
+  document.getElementById('inConfirmMailOn').checked=!!(s.site&&s.site.confirmMailOn);
   (function(){var cl=(s.site&&s.site.conceptList)||[];document.querySelectorAll('#conceptList .cm-url').forEach(function(inp,i){inp.value=cl[i]||'';});})();
   document.getElementById('inConceptAuto').checked=!!(s.site&&s.site.conceptAutoplay);
 }
-document.getElementById('siteSave').addEventListener('click',()=>{const s=loadSettings();s.site={brandName:document.getElementById('inBrand').value.trim(),heroLogo:document.getElementById('inHeroLogo').value.trim(),notifyEmail:document.getElementById('inNotifyEmail').value.trim(),notifyOn:document.getElementById('inNotifyOn').checked,estYear:document.getElementById('inEst').value.trim(),copyrightYear:document.getElementById('inCopy').value.trim(),bizName:document.getElementById('inBizName').value.trim(),bizAddress:document.getElementById('inBizAddr').value.trim(),bizTax:document.getElementById('inBizTax').value.trim(),bizPhone:document.getElementById('inBizPhone').value.trim(),bizEmail:document.getElementById('inBizEmail').value.trim(),moitUrl:document.getElementById('inMoitUrl').value.trim(),moitLogo:document.getElementById('inMoitLogo').value.trim(),conceptList:[...document.querySelectorAll('#conceptList .cm-url')].map(i=>i.value.trim()).filter(Boolean).slice(0,5),conceptAutoplay:document.getElementById('inConceptAuto').checked,zaloOn:document.getElementById('inZaloOn').checked};saveSettings(s);toast('siteSaved');});
+document.getElementById('siteSave').addEventListener('click',()=>{const s=loadSettings();s.site={brandName:document.getElementById('inBrand').value.trim(),heroLogo:document.getElementById('inHeroLogo').value.trim(),notifyEmail:document.getElementById('inNotifyEmail').value.trim(),notifyOn:document.getElementById('inNotifyOn').checked,estYear:document.getElementById('inEst').value.trim(),copyrightYear:document.getElementById('inCopy').value.trim(),bizName:document.getElementById('inBizName').value.trim(),bizAddress:document.getElementById('inBizAddr').value.trim(),bizTax:document.getElementById('inBizTax').value.trim(),bizPhone:document.getElementById('inBizPhone').value.trim(),bizEmail:document.getElementById('inBizEmail').value.trim(),moitUrl:document.getElementById('inMoitUrl').value.trim(),moitLogo:document.getElementById('inMoitLogo').value.trim(),conceptList:[...document.querySelectorAll('#conceptList .cm-url')].map(i=>i.value.trim()).filter(Boolean).slice(0,5),conceptAutoplay:document.getElementById('inConceptAuto').checked,zaloOn:document.getElementById('inZaloOn').checked,confirmMailOn:document.getElementById('inConfirmMailOn').checked};saveSettings(s);toast('siteSaved');});
 /* 알림관리 저장 (site 병합 — 다른 site 필드 보존) */
-document.getElementById('notifySave').addEventListener('click',()=>{const s=loadSettings();s.site=s.site||{};s.site.notifyOn=document.getElementById('inNotifyOn').checked;s.site.notifyEmail=document.getElementById('inNotifyEmail').value.trim();s.site.zaloOn=document.getElementById('inZaloOn').checked;saveSettings(s);toast('notifySaved');});
+document.getElementById('notifySave').addEventListener('click',()=>{const s=loadSettings();s.site=s.site||{};s.site.notifyOn=document.getElementById('inNotifyOn').checked;s.site.notifyEmail=document.getElementById('inNotifyEmail').value.trim();s.site.zaloOn=document.getElementById('inZaloOn').checked;s.site.confirmMailOn=document.getElementById('inConfirmMailOn').checked;saveSettings(s);toast('notifySaved');});
 /* 히어로 로고 업로드 */
 document.getElementById('heroLogoFile').addEventListener('change',async function(e){
   const f=e.target.files&&e.target.files[0]; if(!f)return;
