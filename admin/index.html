@@ -523,8 +523,8 @@
 </div></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="../config.js?v=15"></script>
-<script src="../store.js?v=15"></script>
+<script src="../config.js?v=16"></script>
+<script src="../store.js?v=16"></script>
 <script>
 const STORE_KEY='liminal_applications';
 const SET_KEY='liminal_settings';
@@ -538,7 +538,7 @@ function natCode(v){v=String(v||'').trim();if(!v)return '';if(NAT_LABEL[v])retur
 function natName(v){var c=natCode(v);return c?NAT_LABEL[c]:String(v||'');}
 function natOptions(sel){return '<option value="">-</option>'+Object.keys(NAT_LABEL).map(function(c){return '<option value="'+c+'"'+(c===sel?' selected':'')+'>'+NAT_LABEL[c]+'</option>';}).join('');}
 /* 확정메일 발송상태 뱃지 */
-function cmBadge(v){if(v==='sent')return '<span class="badge b-confirmed">성공</span>';if(v==='failed')return '<span class="badge b-cancel">실패</span>';return '<span class="badge b-done">미발송</span>';}
+function cmBadge(v){if(v==='sent')return '<span class="badge b-confirmed">성공</span>';if(v==='failed')return '<span class="badge b-cancel">실패</span>';if(v==='pending')return '<span class="badge b-new">발송중</span>';return '<span class="badge b-done">미발송</span>';}
 const DOW=['일','월','화','수','목','금','토'];
 const DAYKEYS=['sun','mon','tue','wed','thu','fri','sat'];
 function defaultDaySlots(){return [{cls:'',time:'11:00',cap:6},{cls:'',time:'14:00',cap:6},{cls:'',time:'17:00',cap:6}];}

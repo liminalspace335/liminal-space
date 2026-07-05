@@ -46,7 +46,7 @@ const I18N = {
     "proc.close":"Make a special memory in the one-of-a-kind space that is LIMINAL SPACE.",
     "form.name":"Name","form.phone":"Phone","form.email":"Email","form.class":"Class","form.date":"Preferred date","form.people":"People","form.msg":"Message (optional)","form.nationality":"Nationality","form.fb":"Facebook (optional)","form.ig":"Instagram (optional)",
     "ph.nat":"Search or select","ph.phone":"Phone number","ph.fb":"ID or link","ph.ig":"ID / handle",
-    "modal.confirmlabel":"CONFIRM","modal.confirmq":"Please review your details.","modal.confirmnote":"If any information is incorrect, your application may not be processed properly. Please double-check your details before tapping Confirm & apply.",
+    "modal.confirmlabel":"CONFIRM","modal.confirmq":"Please review your details.","modal.confirmnote":"Please double-check your email address. If your information is incorrect, you may not receive the booking confirmation. Review your details before tapping Submit.",
     "modal.sub":"Class application · 5 steps","modal.step1":"STEP 1 / 5","modal.q0":"Please choose a branch to visit.",
     "modal.step2":"STEP 2 / 5","modal.q1":"Which program would you like?",
     "modal.err":"Please select an option.","modal.step3":"STEP 3 / 5","modal.q2":"Choose your perfume volume.","modal.sizeinc":"Bottle + pouch included",
@@ -97,7 +97,7 @@ const I18N = {
     "proc.close":"Hãy tạo nên kỷ niệm đặc biệt trong không gian độc nhất của LIMINAL SPACE.",
     "form.name":"Họ tên","form.phone":"Số điện thoại","form.email":"Email","form.class":"Lớp học","form.date":"Ngày mong muốn","form.people":"Số người","form.msg":"Lời nhắn (tùy chọn)","form.nationality":"Quốc tịch","form.fb":"Facebook (tùy chọn)","form.ig":"Instagram (tùy chọn)","connect.title":"Theo dõi chúng tôi",
     "ph.nat":"Tìm hoặc chọn","ph.phone":"Số điện thoại","ph.fb":"ID hoặc liên kết","ph.ig":"ID",
-    "modal.confirmlabel":"XÁC NHẬN","modal.confirmq":"Vui lòng kiểm tra thông tin của bạn.","modal.confirmnote":"Nếu thông tin nhập sai, đăng ký có thể không được tiếp nhận đúng cách. Vui lòng kiểm tra lại thông tin trước khi nhấn Hoàn tất đăng ký.",
+    "modal.confirmlabel":"XÁC NHẬN","modal.confirmq":"Vui lòng kiểm tra thông tin của bạn.","modal.confirmnote":"Vui lòng kiểm tra lại địa chỉ email của bạn. Nếu thông tin sai, bạn có thể không nhận được xác nhận đặt lịch. Hãy kiểm tra kỹ trước khi nhấn Hoàn tất.",
     "form.opt1":"Pha chế Signature","form.opt2":"Cặp đôi · Nhóm","form.opt3":"Atelier nâng cao",
     "form.submit":"Gửi đăng ký","form.note":"* Đây là bản nháp. Việc gửi thực sẽ hoạt động sau khi tích hợp.","form.ok":"Đã nhận đăng ký. Chúng tôi sẽ liên hệ với bạn.",
     "classes.select":"Đăng ký lớp này",
@@ -755,7 +755,7 @@ function goto(n){
   steps.forEach(s=>s.classList.toggle('active',+s.dataset.step===n));
   dots.forEach((d,i)=>d.classList.toggle('active',i<Math.min(n,TOTAL)));
   // 버튼 상태
-  if(n===7){ btnBack.style.display='none'; btnNext.dataset.mode='close'; }       // 접수완료
+  if(n===7){ btnBack.style.display='none'; btnNext.dataset.mode='close'; renderDone(); }  // 완료(확정/문의별 문구)
   else if(n===6){ btnBack.style.display=''; btnNext.dataset.mode='finish'; renderConfirm(); }  // 확인
   else { btnBack.style.display=(n===1?'none':''); btnNext.dataset.mode=(n===TOTAL?'review':'next'); }
   applyBtnLabels();
@@ -846,6 +846,25 @@ function renderConfirm(){
   if(data.msg) rows.push(['msg',data.msg]);
   document.getElementById('confirmSummary').innerHTML=
     rows.map(([k,v])=>`<div class="sr"><span class="k">${L[k]}</span><span class="v"${k==='msg'?' style="white-space:pre-line;text-align:right"':''}>${esc(v)}</span></div>`).join('');
+}
+/* 완료 화면: 문의는 '접수완료', 클래스 신청(결제없음→확정)은 '확정완료' + 이메일/잘로 안내 + 문의 연락처 */
+var CONTACT_TEL='0818880504';
+function renderDone(){
+  var inq=isInquiry(); var l=curLang();
+  var box=modal.querySelector('.modal-step[data-step="7"] .modal-done');
+  var h=box&&box.querySelector('h3'); var p=box&&box.querySelector('p');
+  if(!h||!p)return;
+  if(inq){
+    h.textContent = l==='en'?'Your inquiry has been received':(l==='vi'?'Đã nhận liên hệ của bạn':'문의가 접수되었습니다');
+    p.textContent = l==='en'?'We will get back to you after review.':(l==='vi'?'Chúng tôi sẽ liên hệ lại với bạn sau khi xem xét.':'확인 후 입력하신 연락처로 안내드리겠습니다.');
+  } else {
+    h.textContent = l==='en'?'Your booking is confirmed':(l==='vi'?'Đặt lịch của bạn đã được xác nhận':'예약이 확정되었습니다');
+    p.innerHTML = l==='en'
+      ? 'Please check the confirmation sent to your <b>email</b> or <b>Zalo</b>.<br>If you have not received it, please contact us at <b>'+CONTACT_TEL+'</b>.'
+      : l==='vi'
+      ? 'Vui lòng kiểm tra xác nhận được gửi qua <b>email</b> hoặc <b>Zalo</b>.<br>Nếu bạn chưa nhận được, vui lòng liên hệ <b>'+CONTACT_TEL+'</b>.'
+      : '<b>이메일</b> 또는 <b>잘로(Zalo)</b>로 보내드린 확정 안내를 확인해 주세요.<br>안내가 오지 않으면 아래로 문의해 주세요: <b>'+CONTACT_TEL+'</b>';
+  }
 }
 function submitApplication(){
   const inq=isInquiry();

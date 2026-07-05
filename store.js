@@ -229,7 +229,7 @@
   async function resendConfirm(id){
     if(!useRemote || !client) return { error:'Supabase 연결이 필요합니다(로컬 모드 불가).' };
     try{
-      var r=await client.from('applications').update({ confirm_mail:null, confirm_mail_at:null, confirm_mail_err:null }).eq('id', id);
+      var r=await client.from('applications').update({ confirm_mail:'pending', confirm_mail_at:null, confirm_mail_err:null }).eq('id', id);
       if(r&&r.error) return { error:(r.error.message||'재발송 실패') };
       return { ok:true };
     }catch(e){ return { error:String(e&&e.message||e) }; }
