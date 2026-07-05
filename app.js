@@ -150,6 +150,7 @@ function setLang(lang){
   if(typeof renderSpaceGrid==='function') renderSpaceGrid();       // 공간 그리드(space.html) 캡션 언어 재적용
   if(typeof renderSiteInfo==='function') renderSiteInfo();         // 푸터 사업자정보 라벨 언어 재적용
   if(typeof renderNavSocials==='function') renderNavSocials();     // 네비 지점 라벨 언어 재적용
+  if(typeof renderNatList==='function') renderNatList();           // 국적 목록 언어 재적용
 }
 document.querySelectorAll('.lang button').forEach(b=>{
   b.addEventListener('click',()=>setLang(b.dataset.lang));
@@ -637,11 +638,53 @@ const btnNext=document.getElementById('btnNext');
 const TOTAL=5; // 입력 단계 수 (6번째는 완료화면)
 let cur=1;
 const data={branch:'',class:'',size:'',date:'',time:'',people:'1',name:'',phone:'',dialcode:'',email:'',nationality:'',facebook:'',instagram:'',msg:''};
-/* 국적 → 국가번호 (선택 시 자동 입력, 수정 불가) */
-const DIAL={'대한민국 (Korea)':'+82','베트남 (Vietnam)':'+84','일본 (Japan)':'+81','중국 (China)':'+86','대만 (Taiwan)':'+886','홍콩 (Hong Kong)':'+852','싱가포르 (Singapore)':'+65','말레이시아 (Malaysia)':'+60','태국 (Thailand)':'+66','인도네시아 (Indonesia)':'+62','필리핀 (Philippines)':'+63','인도 (India)':'+91','미국 (USA)':'+1','캐나다 (Canada)':'+1','영국 (UK)':'+44','프랑스 (France)':'+33','독일 (Germany)':'+49','이탈리아 (Italy)':'+39','스페인 (Spain)':'+34','네덜란드 (Netherlands)':'+31','스위스 (Switzerland)':'+41','스웨덴 (Sweden)':'+46','러시아 (Russia)':'+7','호주 (Australia)':'+61','뉴질랜드 (New Zealand)':'+64','브라질 (Brazil)':'+55','멕시코 (Mexico)':'+52','아랍에미리트 (UAE)':'+971','사우디아라비아 (Saudi Arabia)':'+966','튀르키예 (Türkiye)':'+90','기타 (Other)':''};
-/* 국적 목록 (검색 가능한 datalist) */
-const COUNTRIES=['대한민국 (Korea)','베트남 (Vietnam)','일본 (Japan)','중국 (China)','대만 (Taiwan)','홍콩 (Hong Kong)','싱가포르 (Singapore)','말레이시아 (Malaysia)','태국 (Thailand)','인도네시아 (Indonesia)','필리핀 (Philippines)','인도 (India)','미국 (USA)','캐나다 (Canada)','영국 (UK)','프랑스 (France)','독일 (Germany)','이탈리아 (Italy)','스페인 (Spain)','네덜란드 (Netherlands)','스위스 (Switzerland)','스웨덴 (Sweden)','러시아 (Russia)','호주 (Australia)','뉴질랜드 (New Zealand)','브라질 (Brazil)','멕시코 (Mexico)','아랍에미리트 (UAE)','사우디아라비아 (Saudi Arabia)','튀르키예 (Türkiye)','기타 (Other)'];
-(function(){const dl=document.getElementById('natList');if(dl)dl.innerHTML=COUNTRIES.map(c=>`<option value="${c}"></option>`).join('');})();
+/* 국가 목록: 코드+국가번호+언어별 라벨. 표시는 현재 언어, 저장은 영문 표준값(co.en)으로 통일 */
+const COUNTRY_LIST=[
+ {c:'VN',d:'+84',ko:'베트남',en:'Vietnam',vi:'Việt Nam'},
+ {c:'KR',d:'+82',ko:'대한민국',en:'Korea',vi:'Hàn Quốc'},
+ {c:'JP',d:'+81',ko:'일본',en:'Japan',vi:'Nhật Bản'},
+ {c:'CN',d:'+86',ko:'중국',en:'China',vi:'Trung Quốc'},
+ {c:'TW',d:'+886',ko:'대만',en:'Taiwan',vi:'Đài Loan'},
+ {c:'HK',d:'+852',ko:'홍콩',en:'Hong Kong',vi:'Hồng Kông'},
+ {c:'SG',d:'+65',ko:'싱가포르',en:'Singapore',vi:'Singapore'},
+ {c:'MY',d:'+60',ko:'말레이시아',en:'Malaysia',vi:'Malaysia'},
+ {c:'TH',d:'+66',ko:'태국',en:'Thailand',vi:'Thái Lan'},
+ {c:'ID',d:'+62',ko:'인도네시아',en:'Indonesia',vi:'Indonesia'},
+ {c:'PH',d:'+63',ko:'필리핀',en:'Philippines',vi:'Philippines'},
+ {c:'IN',d:'+91',ko:'인도',en:'India',vi:'Ấn Độ'},
+ {c:'US',d:'+1',ko:'미국',en:'USA',vi:'Mỹ'},
+ {c:'CA',d:'+1',ko:'캐나다',en:'Canada',vi:'Canada'},
+ {c:'GB',d:'+44',ko:'영국',en:'UK',vi:'Anh'},
+ {c:'FR',d:'+33',ko:'프랑스',en:'France',vi:'Pháp'},
+ {c:'DE',d:'+49',ko:'독일',en:'Germany',vi:'Đức'},
+ {c:'IT',d:'+39',ko:'이탈리아',en:'Italy',vi:'Ý'},
+ {c:'ES',d:'+34',ko:'스페인',en:'Spain',vi:'Tây Ban Nha'},
+ {c:'NL',d:'+31',ko:'네덜란드',en:'Netherlands',vi:'Hà Lan'},
+ {c:'CH',d:'+41',ko:'스위스',en:'Switzerland',vi:'Thụy Sĩ'},
+ {c:'SE',d:'+46',ko:'스웨덴',en:'Sweden',vi:'Thụy Điển'},
+ {c:'RU',d:'+7',ko:'러시아',en:'Russia',vi:'Nga'},
+ {c:'AU',d:'+61',ko:'호주',en:'Australia',vi:'Úc'},
+ {c:'NZ',d:'+64',ko:'뉴질랜드',en:'New Zealand',vi:'New Zealand'},
+ {c:'BR',d:'+55',ko:'브라질',en:'Brazil',vi:'Brazil'},
+ {c:'MX',d:'+52',ko:'멕시코',en:'Mexico',vi:'Mexico'},
+ {c:'AE',d:'+971',ko:'아랍에미리트',en:'UAE',vi:'UAE'},
+ {c:'SA',d:'+966',ko:'사우디아라비아',en:'Saudi Arabia',vi:'Ả Rập Xê Út'},
+ {c:'TR',d:'+90',ko:'튀르키예',en:'Türkiye',vi:'Thổ Nhĩ Kỳ'},
+ {c:'OTHER',d:'',ko:'기타',en:'Other',vi:'Khác'}
+];
+function natLabel(co,lang){lang=lang||curLang();var base=co[lang]||co.en;return base===co.en?co.en:(base+' ('+co.en+')');}
+function findCountry(v){v=String(v||'').trim().toLowerCase();if(!v)return null;
+  return COUNTRY_LIST.find(function(co){
+    if(v===co.en.toLowerCase()||v===co.ko.toLowerCase()||v===co.vi.toLowerCase()||v===co.c.toLowerCase())return true;
+    return ['ko','en','vi'].some(function(l){return v===natLabel(co,l).toLowerCase();});
+  })||null;
+}
+/* 저장/표시 표준화: 어떤 언어로 입력해도 영문 국가명 + 국가번호로 통일 */
+function normNat(v){var co=findCountry(v);return co?co.en:String(v||'').trim();}
+function dialOf(v){var co=findCountry(v);return co?co.d:'';}
+function renderNatList(){var dl=document.getElementById('natList');if(!dl)return;var lang=curLang();
+  dl.innerHTML=COUNTRY_LIST.map(function(co){return '<option value="'+esc(natLabel(co,lang))+'"></option>';}).join('');}
+renderNatList();
 
 function classObjOf(){return branchClassesOf(data.branch).find(c=>keyOf(c.name)===data.class);}
 function isInquiry(){const c=classObjOf();return !!(c&&c.inquiry);}
@@ -780,7 +823,8 @@ function renderConfirm(){
   rows.push(['date',data.date||'-']);
   if(!inq) rows.push(['time',data.time||'-'],['people',(data.people||'1')+(lang==='ko'?'명':'')]);
   if(!inq){var _amt=expectedAmountStr();if(_amt)rows.push(['amount',_amt]);}
-  rows.push(['name',data.name],['phone',(data.dialcode?data.dialcode+' ':'')+data.phone],['email',data.email],['nat',data.nationality]);
+  var _rdial=dialOf(data.nationality)||data.dialcode||'';
+  rows.push(['name',data.name],['phone',(_rdial?_rdial+' ':'')+data.phone],['email',data.email],['nat',normNat(data.nationality)]);
   if(data.facebook) rows.push(['fb',data.facebook]);
   if(data.instagram) rows.push(['ig',data.instagram]);
   if(data.msg) rows.push(['msg',data.msg]);
@@ -789,12 +833,13 @@ function renderConfirm(){
 }
 function submitApplication(){
   const inq=isInquiry();
+  const _nat=normNat(data.nationality); const _dial=dialOf(data.nationality)||data.dialcode||'';
   const entry={id:Date.now(),createdAt:new Date().toISOString(),
-    branch:data.branch,name:data.name,phone:(data.dialcode?data.dialcode+' ':'')+(data.phone||''),email:data.email,nationality:data.nationality,
+    branch:data.branch,name:data.name,phone:(_dial?_dial+' ':'')+(data.phone||''),email:data.email,nationality:_nat,
     facebook:data.facebook||'',instagram:data.instagram||'',class:data.class,
     size:inq?'':data.size,date:data.date,time:inq?'':data.time,people:inq?'':(data.people||'1'),
     amount:inq?'':expectedAmountStr(),deposit:'',
-    msg:data.msg,status:'new'};
+    msg:data.msg,status:inq?'new':'confirmed'};   // 결제 없음 → 클래스 신청은 접수 즉시 '확정'(문의는 '신규' 유지)
   try{const list=(window.LS?LS.getApps():[]).slice();list.push(entry);LS.setApps(list);}catch(err){console.warn('저장 실패',err);}
   goto(7);
 }
@@ -812,7 +857,7 @@ modal.querySelectorAll('.opt-list').forEach(bindOptList);
   // 국적 선택 → 국가번호 자동 입력(수정 불가)
   const natInp=modal.querySelector('[data-field="nationality"]');
   const dcInp=modal.querySelector('[data-field="dialcode"]');
-  if(natInp&&dcInp)natInp.addEventListener('input',()=>{dcInp.value=DIAL[natInp.value.trim()]||'';data.dialcode=dcInp.value;hideErrors();});
+  if(natInp&&dcInp)natInp.addEventListener('input',()=>{dcInp.value=dialOf(natInp.value);data.dialcode=dcInp.value;hideErrors();});
 })();
 /* nav */
 btnNext.addEventListener('click',()=>{
