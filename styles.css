@@ -319,6 +319,9 @@
   .mfield label{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-soft)}
   .mfield input,.mfield textarea,.mfield select{border:1px solid var(--line);background:#fff;padding:12px 13px;font:inherit;font-size:14px;border-radius:2px}
   .mfield input:focus,.mfield textarea:focus,.mfield select:focus{outline:none;border-color:var(--accent)}
+  .email-row{display:flex;gap:6px;align-items:stretch}
+  .email-row input{flex:1 1 auto;min-width:0}
+  .email-domain{flex:0 0 auto;max-width:46%;color:var(--ink)}
   .summary{border:1px solid var(--line);background:#fff}
   .summary .sr{display:flex;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--line);font-size:14px;gap:12px}
   .summary .sr:last-child{border-bottom:0}

@@ -151,6 +151,7 @@ function setLang(lang){
   if(typeof renderSiteInfo==='function') renderSiteInfo();         // 푸터 사업자정보 라벨 언어 재적용
   if(typeof renderNavSocials==='function') renderNavSocials();     // 네비 지점 라벨 언어 재적용
   if(typeof renderNatList==='function') renderNatList();           // 국적 목록 언어 재적용
+  if(typeof renderEmailDomains==='function') renderEmailDomains(); // 이메일 도메인 '직접 입력' 라벨 언어 재적용
 }
 document.querySelectorAll('.lang button').forEach(b=>{
   b.addEventListener('click',()=>setLang(b.dataset.lang));
@@ -702,6 +703,32 @@ function renderNatList(){
 }
 renderNatList();
 
+/* 이메일 도메인 빠른선택: 입력칸 옆 드롭다운(기본 '직접 입력' → 고르면 @도메인 자동완성) */
+var EMAIL_DOMAINS=['gmail.com','yahoo.com','outlook.com','hotmail.com','icloud.com','naver.com','daum.net','hanmail.net','kakao.com'];
+function ensureEmailDomains(){
+  var inp=document.querySelector('[data-field="email"]');
+  if(!inp || inp.dataset.domwrapped) return;
+  inp.dataset.domwrapped='1';
+  var wrap=document.createElement('div'); wrap.className='email-row';
+  inp.parentNode.insertBefore(wrap, inp); wrap.appendChild(inp);
+  var sel=document.createElement('select'); sel.className='email-domain'; wrap.appendChild(sel);
+  sel.addEventListener('change', function(){
+    var d=sel.value; sel.value='';
+    if(!d) return;
+    var v=(inp.value||'').split('@')[0];
+    inp.value=v+'@'+d;
+    inp.dispatchEvent(new Event('input',{bubbles:true}));
+    inp.focus(); try{ inp.setSelectionRange(v.length, v.length); }catch(e){}
+  });
+  renderEmailDomains();
+}
+function renderEmailDomains(){
+  var sel=document.querySelector('.email-domain'); if(!sel)return;
+  var l=curLang(); var manual=l==='en'?'Enter manually':(l==='vi'?'Nhập thủ công':'직접 입력');
+  sel.innerHTML='<option value="">'+esc(manual)+'</option>'+EMAIL_DOMAINS.map(function(d){return '<option value="'+d+'">@'+d+'</option>';}).join('');
+}
+ensureEmailDomains();
+
 function classObjOf(){return branchClassesOf(data.branch).find(c=>keyOf(c.name)===data.class);}
 function isInquiry(){const c=classObjOf();return !!(c&&c.inquiry);}
 function inquiryTemplate(){var l=curLang();
@@ -874,7 +901,8 @@ function submitApplication(){
     facebook:data.facebook||'',instagram:data.instagram||'',class:data.class,
     size:inq?'':data.size,date:data.date,time:inq?'':data.time,people:inq?'':(data.people||'1'),
     amount:inq?'':expectedAmountStr(),deposit:'',
-    msg:data.msg,status:inq?'new':'confirmed'};   // 결제 없음 → 클래스 신청은 접수 즉시 '확정'(문의는 '신규' 유지)
+    msg:data.msg,status:inq?'new':'confirmed',   // 결제 없음 → 클래스 신청은 접수 즉시 '확정'(문의는 '신규' 유지)
+    lang:curLang()};                              // 신청 당시 언어(확정메일 언어 결정)
   try{const list=(window.LS?LS.getApps():[]).slice();list.push(entry);LS.setApps(list);}catch(err){console.warn('저장 실패',err);}
   goto(7);
 }
