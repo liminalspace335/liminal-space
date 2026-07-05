@@ -680,10 +680,26 @@ function findCountry(v){v=String(v||'').trim().toLowerCase();if(!v)return null;
   })||null;
 }
 /* 저장/표시 표준화: 어떤 언어로 입력해도 영문 국가명 + 국가번호로 통일 */
-function normNat(v){var co=findCountry(v);return co?co.en:String(v||'').trim();}
-function dialOf(v){var co=findCountry(v);return co?co.d:'';}
-function renderNatList(){var dl=document.getElementById('natList');if(!dl)return;var lang=curLang();
-  dl.innerHTML=COUNTRY_LIST.map(function(co){return '<option value="'+esc(natLabel(co,lang))+'"></option>';}).join('');}
+function normNat(v){var co=findCountry(v);return co?co.en:String(v||'').trim();}   // 영문 표준명
+function codeOf(v){var co=findCountry(v);return co?co.c:'';}                          // 국가 코드(VN 등)
+function dialOf(v){var co=findCountry(v);return co?co.d:'';}                          // 국가번호(+84 등)
+function natName(v,lang){var co=findCountry(v);return co?(co[lang||curLang()]||co.en):String(v||'');}  // 표시용 국가명(현재 언어)
+/* 국적 입력을 '필수 선택' 드롭다운(select)으로 변환 — 값은 코드, 표시는 현재 언어 국가명 */
+function ensureNatSelect(){
+  var el=document.querySelector('[data-field="nationality"]');
+  if(!el||el.tagName==='SELECT')return el;
+  var sel=document.createElement('select');
+  sel.setAttribute('data-field','nationality'); sel.className=el.className; sel.setAttribute('required','');
+  el.parentNode.replaceChild(sel,el);
+  return sel;
+}
+function renderNatList(){
+  var sel=ensureNatSelect(); if(!sel)return;
+  var lang=curLang(); var prev=sel.value||'';
+  var ph=lang==='en'?'Select nationality':(lang==='vi'?'Chọn quốc tịch':'국적 선택');
+  sel.innerHTML='<option value="">'+esc(ph)+'</option>'+COUNTRY_LIST.map(function(co){return '<option value="'+co.c+'">'+esc(natLabel(co,lang))+'</option>';}).join('');
+  sel.value=prev;
+}
 renderNatList();
 
 function classObjOf(){return branchClassesOf(data.branch).find(c=>keyOf(c.name)===data.class);}
@@ -731,7 +747,7 @@ function syncSelections(){
     list.querySelectorAll('.opt').forEach(o=>o.classList.toggle('sel',o.dataset.val===data[field]));
   });
   modal.querySelectorAll('[data-field]').forEach(inp=>{
-    if(inp.tagName==='INPUT'||inp.tagName==='TEXTAREA'){if(data[inp.dataset.field]!==undefined)inp.value=data[inp.dataset.field];}
+    if(inp.tagName==='INPUT'||inp.tagName==='TEXTAREA'||inp.tagName==='SELECT'){if(data[inp.dataset.field]!==undefined)inp.value=data[inp.dataset.field];}
   });
 }
 function goto(n){
@@ -824,7 +840,7 @@ function renderConfirm(){
   if(!inq) rows.push(['time',data.time||'-'],['people',(data.people||'1')+(lang==='ko'?'명':'')]);
   if(!inq){var _amt=expectedAmountStr();if(_amt)rows.push(['amount',_amt]);}
   var _rdial=dialOf(data.nationality)||data.dialcode||'';
-  rows.push(['name',data.name],['phone',(_rdial?_rdial+' ':'')+data.phone],['email',data.email],['nat',normNat(data.nationality)]);
+  rows.push(['name',data.name],['phone',(_rdial?_rdial+' ':'')+data.phone],['email',data.email],['nat',natName(data.nationality)]);
   if(data.facebook) rows.push(['fb',data.facebook]);
   if(data.instagram) rows.push(['ig',data.instagram]);
   if(data.msg) rows.push(['msg',data.msg]);
@@ -833,7 +849,7 @@ function renderConfirm(){
 }
 function submitApplication(){
   const inq=isInquiry();
-  const _nat=normNat(data.nationality); const _dial=dialOf(data.nationality)||data.dialcode||'';
+  const _nat=codeOf(data.nationality)||data.nationality; const _dial=dialOf(data.nationality)||data.dialcode||'';
   const entry={id:Date.now(),createdAt:new Date().toISOString(),
     branch:data.branch,name:data.name,phone:(_dial?_dial+' ':'')+(data.phone||''),email:data.email,nationality:_nat,
     facebook:data.facebook||'',instagram:data.instagram||'',class:data.class,
@@ -857,7 +873,7 @@ modal.querySelectorAll('.opt-list').forEach(bindOptList);
   // 국적 선택 → 국가번호 자동 입력(수정 불가)
   const natInp=modal.querySelector('[data-field="nationality"]');
   const dcInp=modal.querySelector('[data-field="dialcode"]');
-  if(natInp&&dcInp)natInp.addEventListener('input',()=>{dcInp.value=dialOf(natInp.value);data.dialcode=dcInp.value;hideErrors();});
+  if(natInp&&dcInp)natInp.addEventListener('change',()=>{dcInp.value=dialOf(natInp.value);data.dialcode=dcInp.value;hideErrors();});
 })();
 /* nav */
 btnNext.addEventListener('click',()=>{

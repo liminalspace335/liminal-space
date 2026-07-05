@@ -26,6 +26,15 @@ const db = createClient(SUPABASE_URL, SERVICE_KEY, { auth: { persistSession: fal
 const STATUS_KO: Record<string,string> = {
   new:"신규", confirmed:"확정", done:"완료", cancel:"취소", refund:"환불", refund_deposit:"환불(예약금)"
 };
+// 국적 코드 → 표시명 (신청폼은 코드로 저장)
+const NAT_NAMES: Record<string,string> = {
+  VN:"Vietnam", KR:"Korea", JP:"Japan", CN:"China", TW:"Taiwan", HK:"Hong Kong", SG:"Singapore",
+  MY:"Malaysia", TH:"Thailand", ID:"Indonesia", PH:"Philippines", IN:"India", US:"USA", CA:"Canada",
+  GB:"UK", FR:"France", DE:"Germany", IT:"Italy", ES:"Spain", NL:"Netherlands", CH:"Switzerland",
+  SE:"Sweden", RU:"Russia", AU:"Australia", NZ:"New Zealand", BR:"Brazil", MX:"Mexico", AE:"UAE",
+  SA:"Saudi Arabia", TR:"Türkiye", OTHER:"Other"
+};
+function natName(v: unknown){ const s = String(v ?? "").trim(); return NAT_NAMES[s] || s; }
 
 async function branchName(id: string | null): Promise<string> {
   if (!id) return "";
@@ -86,7 +95,7 @@ Deno.serve(async (req) => {
       ${row("희망일", a.want_date)}${inq ? "" : row("시간", a.want_time)}
       ${row("이름", a.name)}${row("연락처", a.phone)}
       ${row("지점", branch)}${row("클래스", cls)}
-      ${inq ? "" : row("용량", a.size)}${inq ? "" : row("인원", a.people)}${row("국적", a.nationality)}
+      ${inq ? "" : row("용량", a.size)}${inq ? "" : row("인원", a.people)}${row("국적", natName(a.nationality))}
       ${inq ? "" : row("결제예정", a.amount)}${row("이메일", a.email)}
       ${row("Facebook", a.sns_facebook)}${row("Instagram", a.sns_instagram)}
       ${rowMulti(inq ? "문의 내용" : "메모", a.msg)}

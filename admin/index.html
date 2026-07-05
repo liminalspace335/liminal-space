@@ -490,7 +490,7 @@
     <div class="df"><label>이름</label><input id="d_name" /></div>
     <div class="df"><label>연락처</label><input id="d_phone" /></div>
     <div class="df"><label>이메일</label><input id="d_email" /></div>
-    <div class="df"><label>국적</label><input id="d_nat" /></div>
+    <div class="df"><label>국적</label><select id="d_nat"></select></div>
     <div class="df"><label>Facebook</label><input id="d_fb" /></div>
     <div class="df"><label>Instagram</label><input id="d_ig" /></div>
     <div class="df"><label>지점</label><select id="d_branch"></select></div>
@@ -520,13 +520,20 @@
 </div></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="../config.js?v=13"></script>
-<script src="../store.js?v=13"></script>
+<script src="../config.js?v=14"></script>
+<script src="../store.js?v=14"></script>
 <script>
 const STORE_KEY='liminal_applications';
 const SET_KEY='liminal_settings';
 const UID='admin', PW='allied0629!';
 const STATUS={new:{label:'신규',cls:'b-new'},confirmed:{label:'확정',cls:'b-confirmed'},done:{label:'완료',cls:'b-done'},cancel:{label:'취소',cls:'b-cancel'},refund:{label:'환불',cls:'b-refund'},refund_deposit:{label:'환불(예)',cls:'b-refunddep'}};
+/* 국적 코드 ↔ 표시명 (신청폼은 코드로 저장) */
+const NAT_LABEL={VN:'베트남 (Vietnam)',KR:'대한민국 (Korea)',JP:'일본 (Japan)',CN:'중국 (China)',TW:'대만 (Taiwan)',HK:'홍콩 (Hong Kong)',SG:'싱가포르 (Singapore)',MY:'말레이시아 (Malaysia)',TH:'태국 (Thailand)',ID:'인도네시아 (Indonesia)',PH:'필리핀 (Philippines)',IN:'인도 (India)',US:'미국 (USA)',CA:'캐나다 (Canada)',GB:'영국 (UK)',FR:'프랑스 (France)',DE:'독일 (Germany)',IT:'이탈리아 (Italy)',ES:'스페인 (Spain)',NL:'네덜란드 (Netherlands)',CH:'스위스 (Switzerland)',SE:'스웨덴 (Sweden)',RU:'러시아 (Russia)',AU:'호주 (Australia)',NZ:'뉴질랜드 (New Zealand)',BR:'브라질 (Brazil)',MX:'멕시코 (Mexico)',AE:'아랍에미리트 (UAE)',SA:'사우디아라비아 (Saudi Arabia)',TR:'튀르키예 (Türkiye)',OTHER:'기타 (Other)'};
+function natCode(v){v=String(v||'').trim();if(!v)return '';if(NAT_LABEL[v])return v;var low=v.toLowerCase();
+  return Object.keys(NAT_LABEL).find(function(c){var lab=NAT_LABEL[c];var en=((lab.match(/\(([^)]+)\)/)||[])[1]||'').toLowerCase();var ko=lab.split(' (')[0].toLowerCase();
+    return low===lab.toLowerCase()||low===en||low===ko||low===c.toLowerCase();})||'';}
+function natName(v){var c=natCode(v);return c?NAT_LABEL[c]:String(v||'');}
+function natOptions(sel){return '<option value="">-</option>'+Object.keys(NAT_LABEL).map(function(c){return '<option value="'+c+'"'+(c===sel?' selected':'')+'>'+NAT_LABEL[c]+'</option>';}).join('');}
 const DOW=['일','월','화','수','목','금','토'];
 const DAYKEYS=['sun','mon','tue','wed','thu','fri','sat'];
 function defaultDaySlots(){return [{cls:'',time:'11:00',cap:6},{cls:'',time:'14:00',cap:6},{cls:'',time:'17:00',cap:6}];}
@@ -718,7 +725,7 @@ function renderAmView(){
 ['amBranch','amStatus'].forEach(id=>document.getElementById(id).addEventListener('change',renderList));
 function exportCSV(list){if(!list||!list.length){alert('내보낼 신청이 없습니다.');return;}
   const head=['신청일시','결제금액','지점','이름','연락처','이메일','국적','Facebook','Instagram','클래스','용량','희망일','희망시간','인원','메모','상태'];
-  const lines=[head.join(',')].concat(list.map(x=>[fmt(x.createdAt),x.amount||'',x.branch||'',x.name,x.phone,x.email,x.nationality||'',x.facebook||'',x.instagram||'',x.class,x.size||'',x.date,x.time||'',x.people,(x.msg||'').replace(/\n/g,' '),(STATUS[x.status]||{}).label||x.status].map(v=>`"${String(v??'').replace(/"/g,'""')}"`).join(',')));
+  const lines=[head.join(',')].concat(list.map(x=>[fmt(x.createdAt),x.amount||'',x.branch||'',x.name,x.phone,x.email,natName(x.nationality)||'',x.facebook||'',x.instagram||'',x.class,x.size||'',x.date,x.time||'',x.people,(x.msg||'').replace(/\n/g,' '),(STATUS[x.status]||{}).label||x.status].map(v=>`"${String(v??'').replace(/"/g,'""')}"`).join(',')));
   const blob=new Blob(['﻿'+lines.join('\n')],{type:'text/csv;charset=utf-8'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='liminal_applications_'+new Date().toISOString().slice(0,10)+'.csv';a.click();}
 document.getElementById('exportBtn').addEventListener('click',()=>exportCSV(load()));
 
@@ -814,7 +821,7 @@ function renderList2(){
       <td>${esc(a.class?clsLabelAdm(a.branch,a.class):'-')}</td>
       <td class="nowrap">${esc(a.size)||'-'}</td>
       <td class="mono">${esc(a.people)||'1'}</td>
-      <td class="nowrap">${esc(a.nationality)||'-'}</td>
+      <td class="nowrap">${esc(natName(a.nationality))||'-'}</td>
       <td class="memo" title="${esc(msg)}">${esc(msg.slice(0,24))}${msg.length>24?'…':''}</td>
       <td class="mono nowrap">${esc(fmt(a.createdAt))}</td>
       <td class="mono nowrap">${esc(a.amount)||'-'}</td>
@@ -1135,7 +1142,9 @@ function openDetail(id){
   const src=(typeof l2Active==='function'&&l2Active())?l2Get():load();
   const a=src.find(x=>x.id===id);if(!a)return;detailId=id;
   document.getElementById('dWhen').textContent='신청일시 '+fmt(a.createdAt);
-  document.getElementById('d_name').value=a.name||'';document.getElementById('d_phone').value=a.phone||'';document.getElementById('d_email').value=a.email||'';document.getElementById('d_nat').value=a.nationality||'';document.getElementById('d_fb').value=a.facebook||'';document.getElementById('d_ig').value=a.instagram||'';
+  document.getElementById('d_name').value=a.name||'';document.getElementById('d_phone').value=a.phone||'';document.getElementById('d_email').value=a.email||'';
+  (function(){var nc=natCode(a.nationality);var opts=natOptions(nc);if(!nc&&a.nationality)opts='<option value="'+esc(a.nationality)+'" selected>'+esc(a.nationality)+' (원본)</option>'+opts;document.getElementById('d_nat').innerHTML=opts;})();
+  document.getElementById('d_fb').value=a.facebook||'';document.getElementById('d_ig').value=a.instagram||'';
   document.getElementById('d_date').value=a.date||'';document.getElementById('d_people').value=a.people||'1';document.getElementById('d_msg').value=a.msg||'';document.getElementById('d_amount').value=a.amount||'';
   const brs=branchNames();if(a.branch&&!brs.includes(a.branch))brs.push(a.branch);
   document.getElementById('d_branch').innerHTML=brs.map(n=>`<option value="${esc(n)}" ${n===a.branch?'selected':''}>${esc(brLabelAdm(n))}</option>`).join('');
