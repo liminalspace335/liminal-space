@@ -136,6 +136,7 @@ function setLang(lang){
   document.querySelectorAll('.lang button').forEach(b=>{
     b.classList.toggle('active', b.dataset.lang===lang);
   });
+  document.querySelectorAll('.lang-cur').forEach(el=>{ el.textContent=lang.toUpperCase(); }); // 모바일 드롭다운 토글 라벨 동기화
   // 모달이 열려 있으면 동적 버튼/요약 라벨도 갱신
   if(typeof modal!=='undefined' && modal.classList.contains('open')) goto(cur);
   if(typeof applyActiveStates==='function') applyActiveStates();  // 카드 준비중 재적용
@@ -156,6 +157,40 @@ function setLang(lang){
 document.querySelectorAll('.lang button').forEach(b=>{
   b.addEventListener('click',()=>setLang(b.dataset.lang));
 });
+/* 모바일 언어·SNS 드롭다운 토글(개념 유지: 클릭 열기/닫기, 바깥 클릭·다른쪽 열림 시 자동 닫힘) */
+(function(){
+  var langBox=document.querySelector('header .lang'), langBtn=document.getElementById('langToggle');
+  var snsBox=document.getElementById('snsDrop'), snsBtn=document.getElementById('snsToggle');
+  function closeAll(){
+    if(langBox){ langBox.classList.remove('open'); if(langBtn)langBtn.setAttribute('aria-expanded','false'); }
+    if(snsBox){ snsBox.classList.remove('open'); if(snsBtn)snsBtn.setAttribute('aria-expanded','false'); }
+  }
+  if(langBtn && langBox){
+    langBtn.addEventListener('click', function(e){
+      e.stopPropagation();
+      var willOpen=!langBox.classList.contains('open');
+      closeAll(); langBox.classList.toggle('open', willOpen);
+      langBtn.setAttribute('aria-expanded', willOpen?'true':'false');
+    });
+    langBox.querySelectorAll('.lang-menu button[data-lang]').forEach(function(b){
+      b.addEventListener('click', function(){ langBox.classList.remove('open'); langBtn.setAttribute('aria-expanded','false'); });
+    });
+  }
+  if(snsBtn && snsBox){
+    snsBtn.addEventListener('click', function(e){
+      e.stopPropagation();
+      var willOpen=!snsBox.classList.contains('open');
+      closeAll(); snsBox.classList.toggle('open', willOpen);
+      snsBtn.setAttribute('aria-expanded', willOpen?'true':'false');
+    });
+    snsBox.addEventListener('click', function(e){ if(e.target.closest('#navSocials a')) snsBox.classList.remove('open'); });
+  }
+  document.addEventListener('click', function(e){
+    if(langBox && !langBox.contains(e.target)){ langBox.classList.remove('open'); if(langBtn)langBtn.setAttribute('aria-expanded','false'); }
+    if(snsBox && !snsBox.contains(e.target)){ snsBox.classList.remove('open'); if(snsBtn)snsBtn.setAttribute('aria-expanded','false'); }
+  });
+  window.addEventListener('resize', function(){ if(window.innerWidth>980) closeAll(); });
+})();
 
 /* ---------- 푸터 소셜 링크 (지점별 소셜 연동 — 첫 지점 기준) ---------- */
 function renderFooterSocial(){
@@ -965,7 +1000,7 @@ function branchLabel(name){
 function ensureSvgDefs(){
   if(document.getElementById('ls-svgdefs'))return;
   var d=document.createElement('div'); d.id='ls-svgdefs'; d.style.cssText='position:absolute;width:0;height:0;overflow:hidden';
-  d.innerHTML='<svg width="0" height="0" aria-hidden="true"><symbol id="ic-instagram" viewBox="0 0 24 24"><rect x="2.5" y="2.5" width="19" height="19" rx="5.5" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="4.2" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="17.2" cy="6.8" r="1.25" fill="currentColor"/></symbol><symbol id="ic-facebook" viewBox="0 0 24 24"><path fill="currentColor" d="M13.5 21v-7.5h2.52l.38-3h-2.9V8.55c0-.87.24-1.46 1.49-1.46h1.59V4.41c-.28-.04-1.23-.12-2.32-.12-2.3 0-3.87 1.4-3.87 3.98V10.5H8.2v3h2.66V21h2.64z"/></symbol><symbol id="ic-linktree" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" d="M10.5 13.6a3.5 3.5 0 0 0 5 0l2.3-2.3a3.5 3.5 0 0 0-5-5l-1 1M13.5 10.4a3.5 3.5 0 0 0-5 0l-2.3 2.3a3.5 3.5 0 0 0 5 5l1-1"/></symbol><symbol id="ic-tiktok" viewBox="0 0 24 24"><path fill="currentColor" d="M16.6 3c.32 2.06 1.66 3.46 3.9 3.6v2.46c-1.3.13-2.43-.3-3.74-1.09v5.96c0 3.02-2.45 5.47-5.47 5.47A5.47 5.47 0 0 1 8.9 8.97v2.62a2.85 2.85 0 1 0 2 2.72V3h2.7z"/></symbol><symbol id="ic-map" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7zm0 9.6A2.6 2.6 0 1 1 12 6.4a2.6 2.6 0 0 1 0 5.2z"/></symbol></svg>';
+  d.innerHTML='<svg width="0" height="0" aria-hidden="true"><symbol id="ic-instagram" viewBox="0 0 24 24"><rect x="2.5" y="2.5" width="19" height="19" rx="5.5" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="4.2" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="17.2" cy="6.8" r="1.25" fill="currentColor"/></symbol><symbol id="ic-facebook" viewBox="0 0 24 24"><path fill="currentColor" d="M13.5 21v-7.5h2.52l.38-3h-2.9V8.55c0-.87.24-1.46 1.49-1.46h1.59V4.41c-.28-.04-1.23-.12-2.32-.12-2.3 0-3.87 1.4-3.87 3.98V10.5H8.2v3h2.66V21h2.64z"/></symbol><symbol id="ic-linktree" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" d="M10.5 13.6a3.5 3.5 0 0 0 5 0l2.3-2.3a3.5 3.5 0 0 0-5-5l-1 1M13.5 10.4a3.5 3.5 0 0 0-5 0l-2.3 2.3a3.5 3.5 0 0 0 5 5l1-1"/></symbol><symbol id="ic-tiktok" viewBox="0 0 24 24"><path fill="currentColor" d="M16.6 3c.32 2.06 1.66 3.46 3.9 3.6v2.46c-1.3.13-2.43-.3-3.74-1.09v5.96c0 3.02-2.45 5.47-5.47 5.47A5.47 5.47 0 0 1 8.9 8.97v2.62a2.85 2.85 0 1 0 2 2.72V3h2.7z"/></symbol><symbol id="ic-map" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7zm0 9.6A2.6 2.6 0 1 1 12 6.4a2.6 2.6 0 0 1 0 5.2z"/></symbol><symbol id="ic-sns" viewBox="0 0 24 24"><circle cx="6" cy="12" r="2.3" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="17.5" cy="6" r="2.3" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="17.5" cy="18" r="2.3" fill="none" stroke="currentColor" stroke-width="1.8"/><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" d="M8.1 10.8 15.4 7.2M8.1 13.2l7.3 3.6"/></symbol></svg>';
   document.body.appendChild(d);
 }
 /* 클래스 다음 'CONNECT' 섹션 — 인스타·페북·링크트리 카드(지점 소셜 링크) */
@@ -995,10 +1030,12 @@ function renderSocialCards(){
 function renderNavSocials(){
   var langEl=document.querySelector('header .lang'); if(!langEl)return;
   ensureSvgDefs();
+  var drop=document.getElementById('snsDrop');
   var brs=(getSettings().branches||[]).filter(function(b){return b&&b.name&&(b.instagram||b.facebook||b.linktree||b.tiktok);});
   var box=document.getElementById('navSocials');
-  if(!brs.length){ if(box)box.parentNode.removeChild(box); return; }
-  if(!box){ box=document.createElement('div'); box.className='socials'; box.id='navSocials'; langEl.parentNode.insertBefore(box, langEl); }
+  if(!brs.length){ if(box)box.parentNode.removeChild(box); if(drop)drop.classList.remove('has-items','open'); return; }
+  if(drop)drop.classList.add('has-items');
+  if(!box){ box=document.createElement('div'); box.className='socials'; box.id='navSocials'; if(drop){ drop.appendChild(box); } else { langEl.parentNode.insertBefore(box, langEl); } }
   box.classList.toggle('show-all', brs.length<=1); // 지점 1곳이면 호버 없이 아이콘 항상 노출
   box.innerHTML=brs.map(function(b){
     var nm=esc(b.name); var ic='';

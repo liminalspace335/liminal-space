@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>LIMINAL SPACE — 소개</title>
-<link rel="stylesheet" href="styles.css?v=18" />
+<link rel="stylesheet" href="styles.css?v=19" />
 </head>
 <body>
 <header>
@@ -19,10 +19,16 @@
       <a href="#" data-open-apply data-i18n="nav.contact">신청·문의</a>
     </nav>
     <div style="display:flex;align-items:center;gap:14px">
-      <div class="lang">
-        <button data-lang="vi" class="active">VI</button>
-        <button data-lang="en">EN</button>
-        <button data-lang="ko">KO</button>
+      <div class="sns-drop" id="snsDrop">
+        <button type="button" class="sns-toggle" id="snsToggle" aria-haspopup="true" aria-expanded="false" aria-label="SNS"><svg class="ic"><use href="#ic-sns"/></svg></button>
+      </div>
+      <div class="lang" id="langBox">
+        <button type="button" class="lang-toggle" id="langToggle" aria-haspopup="listbox" aria-expanded="false"><span class="lang-cur">VI</span><span class="lang-caret">⌄</span></button>
+        <div class="lang-menu" id="langMenu" role="listbox">
+          <button data-lang="vi" class="active">VI</button>
+          <button data-lang="en">EN</button>
+          <button data-lang="ko">KO</button>
+        </div>
       </div>
       <button class="menu-toggle" id="menuToggle" aria-label="menu">≡</button>
     </div>
@@ -177,8 +183,8 @@
 <div class="lightbox" id="lightbox" aria-hidden="true"><button class="lb-close" type="button" aria-label="close">×</button><button class="lb-prev" type="button" aria-label="prev">‹</button><img alt="" /><button class="lb-next" type="button" aria-label="next">›</button><div class="lb-cap"></div></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="config.js?v=18"></script>
-<script src="store.js?v=18"></script>
-<script src="app.js?v=18"></script>
+<script src="config.js?v=19"></script>
+<script src="store.js?v=19"></script>
+<script src="app.js?v=19"></script>
 </body>
 </html>

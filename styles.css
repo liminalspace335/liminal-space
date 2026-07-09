@@ -39,15 +39,22 @@
   .nav-links{display:flex;gap:30px;align-items:center}
   .nav-links a{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-soft)}
   .nav-links a:hover{color:var(--ink)}
-  .lang{
+  .lang{position:relative;display:flex;align-items:center}
+  .lang-toggle{display:none}
+  .lang-menu{
     display:flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;
     font-size:11px;letter-spacing:.1em;
   }
-  .lang button{
+  .lang-menu button{
     background:transparent;border:0;padding:6px 12px;cursor:pointer;color:var(--ink-soft);
     font:inherit;font-size:11px;letter-spacing:.1em;
   }
-  .lang button.active{background:var(--accent);color:#fff}
+  .lang-menu button.active{background:var(--accent);color:#fff}
+  .sns-drop{position:relative;display:flex;align-items:center}
+  .sns-toggle{display:none;align-items:center;justify-content:center;width:34px;height:34px;padding:0;
+    border:1px solid var(--line);border-radius:999px;background:transparent;color:var(--ink-soft);cursor:pointer}
+  .sns-toggle .ic{width:16px;height:16px;display:block}
+  .sns-toggle:hover{color:var(--ink);border-color:var(--ink)}
   .menu-toggle{display:none;background:none;border:0;font-size:22px;cursor:pointer}
 
   /* ---------- HERO ---------- */
@@ -409,10 +416,30 @@ section[id], footer[id]{scroll-margin-top:63px}  /* 고정 네비 높이에 딱 
 .soc-group a.lt:hover{color:#1ebe5d}
 .soc-group a.tk:hover{color:#ee1d52}
 .soc-group .ic{width:16px;height:16px;display:block}
-@media(max-width:980px){.socials{display:none}}
 /* 지점 1곳: 호버 없이 아이콘 항상 노출 + 지점명 라벨 숨김 */
 .socials.show-all .soc-icons{max-width:none;opacity:1;margin-left:0}
 .socials.show-all .soc-b{display:none}
+
+/* ===== 모바일: 언어·SNS 드롭다운(컨셉 유지 — 필/보더/페이퍼 배경 재사용) ===== */
+@media(max-width:980px){
+  .lang-toggle{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line);border-radius:999px;
+    padding:6px 12px;background:transparent;color:var(--ink-soft);font-size:11px;letter-spacing:.1em;cursor:pointer}
+  .lang-toggle .lang-caret{font-size:9px;opacity:.7}
+  .lang-menu{display:none;position:absolute;top:calc(100% + 8px);right:0;flex-direction:column;
+    border-radius:12px;overflow:hidden;min-width:88px;box-shadow:0 10px 30px rgba(0,0,0,.16);z-index:60;background:var(--paper)}
+  .lang.open .lang-menu{display:flex}
+  .lang-menu button{padding:9px 14px;text-align:left;font-size:12px}
+
+  .sns-drop.has-items .sns-toggle{display:inline-flex}
+  .sns-drop #navSocials{display:none;position:absolute;top:calc(100% + 8px);left:0;flex-direction:column;
+    align-items:stretch;gap:4px;background:var(--paper);border:1px solid var(--line);border-radius:12px;
+    padding:10px;min-width:190px;box-shadow:0 10px 30px rgba(0,0,0,.16);z-index:60}
+  .sns-drop.open #navSocials{display:flex}
+  .sns-drop #navSocials .soc-group{border-right:0;border-bottom:1px solid var(--line);flex-direction:column;
+    align-items:flex-start;gap:6px;padding:0 0 8px}
+  .sns-drop #navSocials .soc-group:last-child{border-bottom:0;padding-bottom:0}
+  .sns-drop #navSocials .soc-icons{max-width:none!important;opacity:1!important;margin-left:0!important;overflow:visible;gap:10px}
+}
 
 /* ===== 푸터 사업자 정보(베트남 전자상거래법) + 신고 뱃지 ===== */
 .foot-biz{max-width:var(--maxw,1280px);margin:26px auto 0;padding:18px 32px 0;border-top:1px solid rgba(255,255,255,.12);
@@ -458,4 +485,4 @@ section[id], footer[id]{scroll-margin-top:63px}  /* 고정 네비 높이에 딱 
 .connect-card.gm:hover .cc-ic{color:#ea4335;border-color:#ea4335}
 @media(max-width:760px){.connect-grid{grid-template-columns:1fr}}
 /* 로고 옆 버전 배지 */
-.brand .ver-badge{display:inline-block;margin-left:9px;font-size:10px;letter-spacing:.06em;color:var(--ink-soft);border:1px solid var(--line);border-radius:999px;padding:2px 8px;vertical-align:middle;font-weight:500;text-transform:none}
+.brand .ver-badge{display:none;margin-left:9px;font-size:10px;letter-spacing:.06em;color:var(--ink-soft);border:1px solid var(--line);border-radius:999px;padding:2px 8px;vertical-align:middle;font-weight:500;text-transform:none}

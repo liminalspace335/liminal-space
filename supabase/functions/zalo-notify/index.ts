@@ -79,7 +79,8 @@ async function lookupName(table: string, id: string | null): Promise<string> {
 async function classInfo(id: string | null): Promise<{ name: string; inquiry: boolean }> {
   if (!id) return { name: "", inquiry: false };
   const { data } = await db.from("classes").select("name_ko,name_en,name_vi,inquiry_only").eq("id", id).single();
-  return { name: data?.name_ko || data?.name_en || data?.name_vi || "", inquiry: data?.inquiry_only === true };
+  // 잘로 ZNS 템플릿이 베트남어이므로 클래스명도 베트남어(name_vi) 우선
+  return { name: data?.name_vi || data?.name_en || data?.name_ko || "", inquiry: data?.inquiry_only === true };
 }
 // 메모가 문의 템플릿으로 시작하면 문의로 간주(클래스 매칭 실패 대비)
 function looksLikeInquiry(msg: unknown): boolean {
@@ -128,6 +129,7 @@ Deno.serve(async (req) => {
     //    승인 템플릿 파라미터: name / class / date / time / people (지점 branch 제외)
     const template_data: Record<string, string> = {
       name: rec.name || "",
+      phone: rec.phone || "",
       class: className,
       date: rec.want_date || "",
       time: rec.want_time || "",
