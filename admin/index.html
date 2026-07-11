@@ -522,9 +522,20 @@
   <div class="dfoot"><span class="spacer"></span><button class="btn ghost sm" id="l2mCancel">취소</button><button class="btn sm" id="l2mApply">적용</button></div>
 </div></div>
 
+<!-- 재발송 채널 선택 팝업 -->
+<div class="dmodal" id="resendModal"><div class="dbox" style="width:360px">
+  <div class="dhead"><div><h3>재발송</h3><div class="dwhen" id="resendInfo"></div></div><button class="dclose" id="resendClose" aria-label="close">×</button></div>
+  <div class="dbody">
+    <div class="df full"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="resendMailCk" checked /> 메일 재발송</label></div>
+    <div class="df full"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="resendZaloCk" checked /> 잘로 재발송</label></div>
+    <p class="desc" id="resendMsg" style="margin-top:10px"></p>
+  </div>
+  <div class="dfoot"><span class="spacer"></span><button class="btn ghost sm" id="resendCancel">취소</button><button class="btn sm" id="resendApply">발송</button></div>
+</div></div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="../config.js?v=19"></script>
-<script src="../store.js?v=19"></script>
+<script src="../config.js?v=20"></script>
+<script src="../store.js?v=20"></script>
 <script>
 const STORE_KEY='liminal_applications';
 const SET_KEY='liminal_settings';
@@ -537,8 +548,9 @@ function natCode(v){v=String(v||'').trim();if(!v)return '';if(NAT_LABEL[v])retur
     return low===lab.toLowerCase()||low===en||low===ko||low===c.toLowerCase();})||'';}
 function natName(v){var c=natCode(v);return c?NAT_LABEL[c]:String(v||'');}
 function natOptions(sel){return '<option value="">-</option>'+Object.keys(NAT_LABEL).map(function(c){return '<option value="'+c+'"'+(c===sel?' selected':'')+'>'+NAT_LABEL[c]+'</option>';}).join('');}
-/* 확정메일 발송상태 뱃지 */
+/* 확정메일/잘로 발송상태 뱃지 */
 function cmBadge(v){if(v==='sent')return '<span class="badge b-confirmed">성공</span>';if(v==='failed')return '<span class="badge b-cancel">실패</span>';if(v==='pending')return '<span class="badge b-new">발송중</span>';return '<span class="badge b-done">미발송</span>';}
+function zBadge(v){return cmBadge(v);}
 const DOW=['일','월','화','수','목','금','토'];
 const DAYKEYS=['sun','mon','tue','wed','thu','fri','sat'];
 function defaultDaySlots(){return [{cls:'',time:'11:00',cap:6},{cls:'',time:'14:00',cap:6},{cls:'',time:'17:00',cap:6}];}
@@ -774,6 +786,38 @@ function l2ApplyStatusModal(){
   if(!rows.length){alert('선택한 항목 중 "'+((STATUS[from]||{}).label)+'" 상태가 없습니다.');return;}
   rows.forEach(a=>a.status=to); l2Dirty=true; l2CloseStatusModal(); renderList2();
 }
+/* 재발송(메일/잘로 선택) 팝업 */
+let resendTargetId=null;
+function openResendModal(id,name,hasMail,hasZalo){
+  resendTargetId=id;
+  const mailCk=document.getElementById('resendMailCk'), zaloCk=document.getElementById('resendZaloCk');
+  mailCk.checked=!!hasMail; mailCk.disabled=!hasMail;
+  zaloCk.checked=!!hasZalo; zaloCk.disabled=!hasZalo;
+  document.getElementById('resendInfo').textContent=name?(name+' 님'):'';
+  document.getElementById('resendMsg').textContent='';
+  const btn=document.getElementById('resendApply'); btn.disabled=false; btn.textContent='발송';
+  document.getElementById('resendModal').classList.add('open');
+}
+function closeResendModal(){ document.getElementById('resendModal').classList.remove('open'); resendTargetId=null; }
+async function applyResendModal(){
+  const id=resendTargetId; if(!id)return;
+  const wantMail=document.getElementById('resendMailCk').checked;
+  const wantZalo=document.getElementById('resendZaloCk').checked;
+  if(!wantMail && !wantZalo){ alert('메일 또는 잘로 중 하나 이상 선택하세요.'); return; }
+  const btn=document.getElementById('resendApply'); btn.disabled=true; btn.textContent='요청중…';
+  const jobs=[];
+  if(wantMail) jobs.push((window.LS&&LS.resendConfirm?LS.resendConfirm(id):Promise.resolve({error:'로컬 모드'})).then(r=>({ch:'메일',r})));
+  if(wantZalo) jobs.push((window.LS&&LS.resendZalo?LS.resendZalo(id):Promise.resolve({error:'로컬 모드'})).then(r=>({ch:'잘로',r})));
+  const results=await Promise.all(jobs);
+  const fails=results.filter(x=>x.r&&x.r.error);
+  if(fails.length){
+    document.getElementById('resendMsg').textContent=fails.map(x=>x.ch+' 실패: '+x.r.error).join(' / ');
+    btn.disabled=false; btn.textContent='발송';
+  } else {
+    document.getElementById('resendMsg').textContent='요청 완료. 잠시 후 새로고침하면 발송 결과가 갱신됩니다.';
+    setTimeout(closeResendModal,1200);
+  }
+}
 function l2AddRow(){
   const b=branchNames()[0]||'';
   const row={id:Date.now()+Math.floor(Math.random()*1000),createdAt:new Date().toISOString(),branch:b,'class':'',size:'',date:'',time:'',people:'1',name:'',phone:'',email:'',nationality:'',facebook:'',instagram:'',msg:'',status:'new'};
@@ -807,12 +851,16 @@ function renderList2(){
     document.getElementById('l2mFrom').addEventListener('change',l2mPreviewUpdate);
     document.getElementById('l2mTo').addEventListener('change',l2mPreviewUpdate);
     document.getElementById('l2Modal').addEventListener('click',e=>{if(e.target.id==='l2Modal')l2CloseStatusModal();});
+    document.getElementById('resendClose').addEventListener('click',closeResendModal);
+    document.getElementById('resendCancel').addEventListener('click',closeResendModal);
+    document.getElementById('resendApply').addEventListener('click',applyResendModal);
+    document.getElementById('resendModal').addEventListener('click',e=>{if(e.target.id==='resendModal')closeResendModal();});
   }
   document.getElementById('l2Stats').innerHTML=statsCardsHTML(l2Get());
   const dh=document.getElementById('l2DirtyHint'); if(dh)dh.textContent=l2Dirty?'● 미저장 변경':'';
   const rows=l2Filtered();
   document.getElementById('l2Count').textContent='총 '+rows.length+'명';
-  const cols=['희망일','시간','이름','연락처','이메일','지점','클래스','용량','인원','국적','메모','신청일시','결제금액','상태','확정메일','작업'];
+  const cols=['희망일','시간','이름','연락처','이메일','지점','클래스','용량','인원','국적','메모','신청일시','결제금액','상태','메일','잘로','작업'];
   document.getElementById('l2Head').innerHTML='<tr><th class="l2-ck"><input type="checkbox" id="l2All"></th>'+cols.map(c=>`<th>${c}</th>`).join('')+'</tr>';
   document.getElementById('l2Body').innerHTML = rows.length ? rows.map(a=>{
     const st=STATUS[a.status]||STATUS.new;const msg=a.msg||'';
@@ -833,16 +881,13 @@ function renderList2(){
       <td class="mono nowrap">${esc(a.amount)||'-'}</td>
       <td><span class="badge ${st.cls}">${st.label}</span></td>
       <td class="nowrap" title="${esc(a.confirmMailErr||'')}">${cmBadge(a.confirmMail)}</td>
-      <td class="nowrap"><button class="btn sm l2-detail" data-id="${a.id}">상세</button>${a.email?` <button class="btn ghost sm l2-resend" data-id="${a.id}" title="확정 메일 재발송">재발송</button>`:''}</td>
+      <td class="nowrap" title="${esc(a.zaloSendErr||'')}">${zBadge(a.zaloSend)}</td>
+      <td class="nowrap"><button class="btn sm l2-detail" data-id="${a.id}">상세</button>${(a.email||a.phone)?` <button class="btn ghost sm l2-resend" data-id="${a.id}" data-name="${esc(a.name)}" data-has-mail="${a.email?'1':''}" data-has-zalo="${a.phone?'1':''}" title="재발송">재발송</button>`:''}</td>
     </tr>`;
   }).join('') : `<tr><td colspan="${cols.length+1}" class="l2-empty">신청 내역이 없습니다.</td></tr>`;
   document.querySelectorAll('#l2Body .l2-detail').forEach(b=>b.addEventListener('click',()=>openDetail(+b.dataset.id)));
-  document.querySelectorAll('#l2Body .l2-resend').forEach(b=>b.addEventListener('click',async()=>{
-    if(!confirm('이 예약자에게 확정 메일을 재발송할까요?'))return;
-    b.disabled=true;const _t=b.textContent;b.textContent='요청중…';
-    const r=await (window.LS&&LS.resendConfirm?LS.resendConfirm(+b.dataset.id):{error:'로컬 모드'});
-    if(r&&r.error){alert('재발송 실패: '+r.error);b.disabled=false;b.textContent=_t;}
-    else{b.textContent='요청됨';alert('재발송을 요청했습니다. 잠시 후 새로고침하면 발송 결과가 갱신됩니다.');}
+  document.querySelectorAll('#l2Body .l2-resend').forEach(b=>b.addEventListener('click',()=>{
+    openResendModal(+b.dataset.id, b.dataset.name||'', !!b.dataset.hasMail, !!b.dataset.hasZalo);
   }));
   document.querySelectorAll('#l2Body .l2-row').forEach(cb=>cb.addEventListener('change',()=>{const id=+cb.value;if(cb.checked)l2Sel.add(id);else l2Sel.delete(id);const allcb=document.getElementById('l2All');if(allcb)allcb.checked=[...document.querySelectorAll('#l2Body .l2-row')].every(x=>x.checked);l2UpdateSelCount();}));
   const allcb=document.getElementById('l2All');

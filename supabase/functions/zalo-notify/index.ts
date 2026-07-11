@@ -24,6 +24,13 @@ const WEBHOOK_SECRET = Deno.env.get("WEBHOOK_SECRET") || "";
 
 const db = createClient(SUPABASE_URL, SERVICE_KEY, { auth: { persistSession: false } });
 
+// ---- 날짜 형식 변환: "YYYY-MM-DD"(HTML date input 저장값) → "DD/MM/YYYY"(잘로 ZNS DATE 파라미터 형식) ----
+function toVNDate(iso: string): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso || "").trim());
+  if (!m) return String(iso || "");
+  return `${m[3]}/${m[2]}/${m[1]}`;
+}
+
 // ---- 베트남 전화번호 정규화: "+84 0912.." / "0912.." / "912.." → "84912.." ----
 function normVNPhone(raw: string): string {
   let d = (raw || "").replace(/[^0-9]/g, "");
@@ -90,6 +97,16 @@ function looksLikeInquiry(msg: unknown): boolean {
 async function log(app_id: number, phone: string, ok: boolean, detail: string) {
   try { await db.from("zalo_log").insert({ app_id, phone, ok, detail: detail.slice(0, 500) }); } catch (_) { /* noop */ }
 }
+// 어드민 리스트의 '잘로' 컬럼(성공/실패 뱃지)용 — applications 행에 결과 기록
+async function setZaloStatus(app_id: number, status: "sent" | "failed", err: string | null) {
+  try {
+    await db.from("applications").update({
+      zalo_send: status,
+      zalo_send_at: new Date().toISOString(),
+      zalo_send_err: err ? err.slice(0, 500) : null,
+    }).eq("id", app_id);
+  } catch (_) { /* noop */ }
+}
 
 Deno.serve(async (req) => {
   // 웹훅 비밀값 검증(설정한 경우)
@@ -112,7 +129,11 @@ Deno.serve(async (req) => {
 
   try {
     const phone = normVNPhone(rec.phone || "");
-    if (phone.length < 9) { await log(rec.id, phone, false, "전화번호 없음/형식 오류"); return new Response("no phone", { status: 200 }); }
+    if (phone.length < 9) {
+      await log(rec.id, phone, false, "전화번호 없음/형식 오류");
+      await setZaloStatus(rec.id, "failed", "전화번호 없음/형식 오류");
+      return new Response("no phone", { status: 200 });
+    }
 
     const ci = await classInfo(rec.class_id);
     const className  = ci.name;
@@ -131,7 +152,7 @@ Deno.serve(async (req) => {
       name: rec.name || "",
       phone: rec.phone || "",
       class: className,
-      date: rec.want_date || "",
+      date: toVNDate(rec.want_date || ""),
       time: rec.want_time || "",
       people: String(rec.people || "1"),
     };
@@ -144,11 +165,13 @@ Deno.serve(async (req) => {
     const j = await r.json();
     const ok = j?.error === 0;
     await log(rec.id, phone, ok, JSON.stringify(j));
+    await setZaloStatus(rec.id, ok ? "sent" : "failed", ok ? null : JSON.stringify(j));
     return new Response(JSON.stringify({ ok, zalo: j }), {
       status: 200, headers: { "Content-Type": "application/json" },
     });
   } catch (e) {
     await log(rec?.id, rec?.phone || "", false, String(e));
+    if (rec?.id) await setZaloStatus(rec.id, "failed", String(e));
     return new Response(JSON.stringify({ ok: false, error: String(e) }), {
       status: 200, headers: { "Content-Type": "application/json" },
     });

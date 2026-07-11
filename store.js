@@ -68,7 +68,7 @@
     var apps=(t.applications||[]).map(function(a){ var cm=classById[a.class_id]||{};
       return { id:Number(a.id), createdAt:a.created_at, branch:branchById[a.branch_id]||'', 'class':cm.nameKo||'',
         size:a.size||'', date:a.want_date||'', time:a.want_time||'', people:a.people||'1',
-        name:a.name||'', phone:a.phone||'', email:a.email||'', nationality:a.nationality||'', facebook:a.sns_facebook||'', instagram:a.sns_instagram||'', msg:a.msg||'', amount:a.amount||'', deposit:a.deposit||'', status:a.status||'new', confirmMail:a.confirm_mail||'', confirmMailAt:a.confirm_mail_at||'', confirmMailErr:a.confirm_mail_err||'', lang:a.lang||'' }; });
+        name:a.name||'', phone:a.phone||'', email:a.email||'', nationality:a.nationality||'', facebook:a.sns_facebook||'', instagram:a.sns_instagram||'', msg:a.msg||'', amount:a.amount||'', deposit:a.deposit||'', status:a.status||'new', confirmMail:a.confirm_mail||'', confirmMailAt:a.confirm_mail_at||'', confirmMailErr:a.confirm_mail_err||'', zaloSend:a.zalo_send||'', zaloSendAt:a.zalo_send_at||'', zaloSendErr:a.zalo_send_err||'', lang:a.lang||'' }; });
     return { settings:settings, apps:apps };
   }
 
@@ -225,7 +225,7 @@
     }catch(e){ return { error:String(e&&e.message||e) }; }
   }
 
-  /* 확정메일 재발송: confirm_mail 컬럼을 null 로 리셋 → DB 트리거가 confirm-mail 함수 재호출 */
+  /* 확정메일 재발송: confirm_mail 컬럼을 pending 으로 리셋 → DB 트리거가 confirm-mail 함수 재호출 */
   async function resendConfirm(id){
     if(!useRemote || !client) return { error:'Supabase 연결이 필요합니다(로컬 모드 불가).' };
     try{
@@ -234,10 +234,20 @@
       return { ok:true };
     }catch(e){ return { error:String(e&&e.message||e) }; }
   }
+  /* 잘로 재발송: zalo_send 컬럼을 pending 으로 리셋 → DB 트리거가 zalo-notify 함수 재호출 */
+  async function resendZalo(id){
+    if(!useRemote || !client) return { error:'Supabase 연결이 필요합니다(로컬 모드 불가).' };
+    try{
+      var r=await client.from('applications').update({ zalo_send:'pending', zalo_send_at:null, zalo_send_err:null }).eq('id', id);
+      if(r&&r.error) return { error:(r.error.message||'재발송 실패') };
+      return { ok:true };
+    }catch(e){ return { error:String(e&&e.message||e) }; }
+  }
 
   window.LS = {
     init:init, useRemote:function(){return useRemote;},
     resendConfirm:resendConfirm,          // 확정메일 재발송
+    resendZalo:resendZalo,                // 잘로 재발송
     getApps:function(){ return Array.isArray(cache.apps)?cache.apps:[]; }, setApps:setApps,
     getSettings:function(){ return (cache.settings&&typeof cache.settings==='object')?cache.settings:{}; }, setSettings:setSettings,
     onError:function(fn){ onErr=fn; },   // 저장 실패 콜백 등록
