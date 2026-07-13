@@ -6,3 +6,7 @@ assets/page-*.png
 assets/thumb-*.png
 # 버전 보관 폴더 (로컬 전용 — 배포/저장소에는 올리지 않음)
 archive/
+# DB 백업 (고객 개인정보 포함 — 절대 커밋/배포하지 않음)
+backups/
+# 실제 웹훅 시크릿 값이 평문으로 들어있음 — 절대 공개 저장소에 커밋하지 않음(로컬 실행용 참고 파일)
+supabase/sql/security_hardening.sql

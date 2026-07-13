@@ -246,9 +246,12 @@
 
   window.LS = {
     init:init, useRemote:function(){return useRemote;},
+    getClient:function(){return client;}, // 어드민 로그인(Supabase Auth)용 — 데이터 호출과 같은 client 인스턴스를 공유해야 세션이 적용됨
     resendConfirm:resendConfirm,          // 확정메일 재발송
     resendZalo:resendZalo,                // 잘로 재발송
-    getApps:function(){ return Array.isArray(cache.apps)?cache.apps:[]; }, setApps:setApps,
+    // 얕은 복사본을 반환 — 호출부가 받은 객체를 직접 수정해도 pushApps의 변경감지(캐시와의 JSON 비교)가
+    // 같은 참조를 비교하는 바람에 "변경 없음"으로 오판해 저장이 누락되는 문제를 방지
+    getApps:function(){ return Array.isArray(cache.apps)?cache.apps.map(function(a){return Object.assign({},a);}):[]; }, setApps:setApps,
     getSettings:function(){ return (cache.settings&&typeof cache.settings==='object')?cache.settings:{}; }, setSettings:setSettings,
     onError:function(fn){ onErr=fn; },   // 저장 실패 콜백 등록
     uploadImage:uploadImage,             // 이미지 업로드(Storage)
