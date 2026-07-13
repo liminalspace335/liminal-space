@@ -190,6 +190,9 @@
   async function init(){
     if(useRemote){
       try{
+        // 세션 복원(로그인 유지) 완료를 먼저 기다림 — 그래야 로그인된 상태의 요청에 인증 토큰이 실제로 실림.
+        // (이걸 안 기다리면 applications처럼 authenticated 전용으로 막아둔 테이블이 로그인 중에도 빈 값으로 조회될 수 있음)
+        try{ await client.auth.getSession(); }catch(e){}
         var tables=['branches','classes','class_details','default_slots','schedule_slots','schedule_days','applications','site_info'];
         var res={};
         // 8개 테이블을 병렬로 조회(순차 → 병렬, 로딩 속도 대폭 단축)
