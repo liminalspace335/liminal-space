@@ -187,6 +187,21 @@
     return errs.filter(Boolean);
   }
 
+  function sleep(ms){ return new Promise(function(res){ setTimeout(res,ms); }); }
+  // 순간적인 네트워크/서버 지연으로 조회 실패 시 짧은 대기 후 최대 2회 더 재시도(총 3회)
+  async function fetchTableWithRetry(t){
+    var delays=[0,350,900];
+    var lastErr=null;
+    for(var i=0;i<delays.length;i++){
+      if(delays[i]) await sleep(delays[i]);
+      try{
+        var r=await client.from(t).select('*');
+        if(r && !r.error && r.data) return r;
+        lastErr=r&&r.error;
+      }catch(e){ lastErr=e; }
+    }
+    return { data:null, error:lastErr||{message:'load failed'} };
+  }
   async function init(){
     if(useRemote){
       try{
@@ -195,9 +210,12 @@
         try{ await client.auth.getSession(); }catch(e){}
         var tables=['branches','classes','class_details','default_slots','schedule_slots','schedule_days','applications','site_info'];
         var res={};
-        // 8개 테이블을 병렬로 조회(순차 → 병렬, 로딩 속도 대폭 단축)
-        var rs=await Promise.all(tables.map(function(t){ return client.from(t).select('*'); }));
-        tables.forEach(function(t,i){ res[t]=(rs[i] && !rs[i].error && rs[i].data)?rs[i].data:[]; });
+        // 8개 테이블을 병렬로 조회(순차 → 병렬, 로딩 속도 대폭 단축). 개별 테이블은 실패 시 자동 재시도.
+        var rs=await Promise.all(tables.map(fetchTableWithRetry));
+        var failed=[];
+        tables.forEach(function(t,i){ var ok=rs[i]&&!rs[i].error&&rs[i].data; res[t]=ok?rs[i].data:[]; if(!ok)failed.push(t); });
+        cache.loadError=failed.length?failed:null;   // 재시도까지 다 실패한 테이블 목록(없으면 null)
+        if(failed.length) console.warn('일부 테이블 로드 실패(재시도 후에도):', failed);
         var a=assemble(res); cache.settings=a.settings; cache.apps=a.apps;
       }catch(e){ console.warn('Supabase init failed → localStorage', e); useRemote=false; }
     }
@@ -250,6 +268,8 @@
   window.LS = {
     init:init, useRemote:function(){return useRemote;},
     getClient:function(){return client;}, // 어드민 로그인(Supabase Auth)용 — 데이터 호출과 같은 client 인스턴스를 공유해야 세션이 적용됨
+    hadLoadError:function(){return !!(cache.loadError&&cache.loadError.length);}, // 재시도까지 실패한 테이블이 있었는지
+    loadErrorTables:function(){return cache.loadError||[];},
     resendConfirm:resendConfirm,          // 확정메일 재발송
     resendZalo:resendZalo,                // 잘로 재발송
     // 얕은 복사본을 반환 — 호출부가 받은 객체를 직접 수정해도 pushApps의 변경감지(캐시와의 JSON 비교)가

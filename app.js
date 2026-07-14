@@ -285,10 +285,20 @@ function bindOptList(list){
     hideErrors();
   }));
 }
+/* 일시적 조회 실패(재시도까지 실패) 시 안내 — 실제로 등록된 항목이 없는 것과 구분 */
+function loadErrorHTML(){
+  const lang=curLang();
+  const msg=lang==='en'?'Temporarily unable to load data. Please refresh and try again.'
+    :lang==='vi'?'Tạm thời không tải được dữ liệu. Vui lòng tải lại trang và thử lại.'
+    :'일시적인 오류로 정보를 불러오지 못했습니다. 새로고침 후 다시 시도해 주세요.';
+  const btn=lang==='en'?'Refresh':(lang==='vi'?'Tải lại trang':'새로고침');
+  return `<div class="opt-loaderr">${esc(msg)}<button type="button" class="opt-loaderr-btn" onclick="location.reload()">${esc(btn)}</button></div>`;
+}
 /* 지점 옵션 (지점설정 연동) */
 function populateBranches(){
   const list=modal.querySelector('.opt-list[data-field="branch"]'); if(!list)return;
-  const brs=getSettings().branches||[]; if(!brs.length)return;
+  const brs=getSettings().branches||[];
+  if(!brs.length){ if(window.LS&&LS.hadLoadError&&LS.hadLoadError())list.innerHTML=loadErrorHTML(); return; }
   const lang=curLang();const soon=lang==='en'?'Opening soon':(lang==='vi'?'Sắp mở':'오픈 준비중');
   list.innerHTML=brs.map(b=>`<div class="opt ${b.name===data.branch?'sel':''}" data-val="${esc(b.name)}"><div><div class="ti">${esc(branchLabel(b.name))}</div>${Lval(b.location,lang)?`<div class="de">${esc(Lval(b.location,lang))}</div>`:''}</div></div>`).join('');
   bindOptList(list);
@@ -296,7 +306,8 @@ function populateBranches(){
 /* STEP2 프로그램 옵션 (지점별 클래스 설정 연동) */
 function renderPrograms(){
   const list=modal.querySelector('.opt-list[data-field="class"]'); if(!list)return;
-  const progs=programList(data.branch); if(!progs.length)return;
+  const progs=programList(data.branch);
+  if(!progs.length){ if(window.LS&&LS.hadLoadError&&LS.hadLoadError())list.innerHTML=loadErrorHTML(); return; }
   const lang=curLang();const soon=lang==='en'?' · Opening soon':(lang==='vi'?' · Sắp mở':' · 오픈 준비중');const inq=lang==='en'?'Inquire':(lang==='vi'?'Liên hệ':'문의');
   list.innerHTML=progs.map(c=>{
     const key=keyOf(c.name);const inactive=c.active===false;
