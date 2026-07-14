@@ -561,8 +561,8 @@
 </div></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="../config.js?v=25"></script>
-<script src="../store.js?v=25"></script>
+<script src="../config.js?v=26"></script>
+<script src="../store.js?v=26"></script>
 <script>
 const STORE_KEY='liminal_applications';
 const SET_KEY='liminal_settings';
@@ -1341,13 +1341,13 @@ document.getElementById('defSave').addEventListener('click',()=>{const s=loadSet
 /* ===== 계정관리 (마스터 전용 — 계정 생성/삭제/권한부여는 Edge Function 'admin-manage'가 처리) ===== */
 const PERM_MENUS=[['overview','소개'],['list','신청관리(캘린더)'],['list2','신청관리(리스트)'],['booking','클래스설정'],['settings','환경설정']];
 const PERM_ACTIONS=[['view','조회'],['create','생성'],['update','수정'],['delete','삭제']];
-function permsGridHTML(idPrefix,perms){
+function permsGridHTML(idPrefix,perms,readOnly){
   perms=perms||{};
   return '<div class="acc-permgrid">'+PERM_MENUS.map(function(m){
     var key=m[0],label=m[1]; var p=perms[key]||{};
     return '<div class="acc-permrow"><span class="acc-permlabel">'+esc(label)+'</span>'+PERM_ACTIONS.map(function(a){
       var id=idPrefix+'_'+key+'_'+a[0];
-      return '<label class="acc-permck"><input type="checkbox" id="'+id+'" '+(p[a[0]]?'checked':'')+' /> '+a[1]+'</label>';
+      return '<label class="acc-permck"><input type="checkbox" id="'+id+'" '+(p[a[0]]?'checked':'')+(readOnly?' disabled':'')+' /> '+a[1]+'</label>';
     }).join('')+'</div>';
   }).join('')+'</div>';
 }
@@ -1380,8 +1380,10 @@ async function renderAccounts(){
     return '<div class="acc-row" data-email="'+esc(a.email)+'">'
       +'<div class="acc-head"><b>'+esc(a.email)+'</b>'+(a.is_master?' <span class="badge b-confirmed">마스터</span>':'')
       +'<input class="acc-label" placeholder="이름" value="'+esc(a.label||'')+'" /></div>'
-      +permsGridHTML(pfx,a.perms)
-      +(a.is_master?'':'<div class="save-row"><button class="btn sm acc-save" data-pfx="'+pfx+'" data-email="'+esc(a.email)+'">저장</button><button class="btn danger sm acc-del" data-email="'+esc(a.email)+'">삭제</button><span class="saved acc-msg"></span></div>')
+      +permsGridHTML(pfx,a.perms,a.is_master)
+      +'<div class="save-row"><button class="btn sm acc-save" data-pfx="'+pfx+'" data-email="'+esc(a.email)+'">저장</button>'
+      +(a.is_master?'':'<button class="btn danger sm acc-del" data-email="'+esc(a.email)+'">삭제</button>')
+      +'<span class="saved acc-msg"></span></div>'
     +'</div>';
   }).join('') || '<div class="empty">등록된 계정이 없습니다.</div>';
   list.querySelectorAll('.acc-save').forEach(function(b){

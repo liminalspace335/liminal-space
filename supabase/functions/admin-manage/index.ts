@@ -66,7 +66,12 @@ Deno.serve(async (req) => {
       const email = String(body.email || "").trim();
       if (!email) return json({ error: "이메일이 필요합니다." }, 400);
       const { data: row } = await admin.from("admin_accounts").select("is_master").eq("email", email).maybeSingle();
-      if (row?.is_master) return json({ error: "마스터 계정의 권한은 여기서 바꿀 수 없습니다." }, 400);
+      if (row?.is_master) {
+        // 마스터 계정은 이름(표시용)만 변경 가능 — 권한은 항상 전체 권한으로 고정(안전장치)
+        const { error: mErr } = await admin.from("admin_accounts").update({ label: body.label ?? "" }).eq("email", email);
+        if (mErr) return json({ error: mErr.message }, 400);
+        return json({ ok: true });
+      }
       const { error } = await admin.from("admin_accounts")
         .update({ label: body.label ?? "", perms: body.perms || {} }).eq("email", email);
       if (error) return json({ error: error.message }, 400);
