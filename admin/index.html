@@ -561,8 +561,8 @@
 </div></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="../config.js?v=24"></script>
-<script src="../store.js?v=24"></script>
+<script src="../config.js?v=25"></script>
+<script src="../store.js?v=25"></script>
 <script>
 const STORE_KEY='liminal_applications';
 const SET_KEY='liminal_settings';
@@ -1358,6 +1358,17 @@ function readPermsGrid(idPrefix){
   return perms;
 }
 (function(){ var box=document.getElementById('acPermsNew'); if(box) box.innerHTML=permsGridHTML('acNew',{}); })();
+/* admin-manage 호출 공용 helper — Edge Function이 준 구체적인 에러 메시지(JSON body)를 최대한 꺼내서 반환 */
+async function invokeAdminManage(c,body){
+  const {data,error}=await c.functions.invoke('admin-manage',{body:body});
+  if(error){
+    let msg=error.message||String(error);
+    try{ if(error.context&&typeof error.context.json==='function'){ const b=await error.context.json(); if(b&&b.error)msg=b.error; } }catch(e){}
+    return {error:msg};
+  }
+  if(data&&data.error) return {error:data.error};
+  return {data:data};
+}
 async function renderAccounts(){
   const list=document.getElementById('acList'); if(!list)return;
   const c=authClient(); if(!c){ list.innerHTML=''; return; }
@@ -1379,10 +1390,10 @@ async function renderAccounts(){
       const row=b.closest('.acc-row'); const label=row.querySelector('.acc-label').value.trim();
       const perms=readPermsGrid(pfx);
       b.disabled=true;
-      const {data:res,error}=await c.functions.invoke('admin-manage',{body:{action:'updatePerms',email:email,label:label,perms:perms}});
+      const {error}=await invokeAdminManage(c,{action:'updatePerms',email:email,label:label,perms:perms});
       b.disabled=false;
       const msg=row.querySelector('.acc-msg');
-      if(error||(res&&res.error)){ alert('저장 실패: '+((res&&res.error)||error.message)); return; }
+      if(error){ alert('저장 실패: '+error); return; }
       if(msg){ msg.textContent='저장됨 ✓'; msg.classList.add('show'); setTimeout(function(){msg.classList.remove('show');},1600); }
     });
   });
@@ -1391,9 +1402,9 @@ async function renderAccounts(){
       const email=b.dataset.email;
       if(!confirm(email+' 계정을 삭제할까요? 로그인 계정 자체가 삭제되어 더 이상 로그인할 수 없게 됩니다.'))return;
       b.disabled=true;
-      const {data:res,error}=await c.functions.invoke('admin-manage',{body:{action:'remove',email:email}});
+      const {error}=await invokeAdminManage(c,{action:'remove',email:email});
       b.disabled=false;
-      if(error||(res&&res.error)){ alert('삭제 실패: '+((res&&res.error)||error.message)); return; }
+      if(error){ alert('삭제 실패: '+error); return; }
       renderAccounts();
     });
   });
@@ -1407,9 +1418,9 @@ document.getElementById('acCreate').addEventListener('click',async function(){
   const perms=readPermsGrid('acNew');
   const c=authClient(); if(!c)return;
   const btn=document.getElementById('acCreate'); btn.disabled=true; btn.textContent='생성 중…';
-  const {data:res,error}=await c.functions.invoke('admin-manage',{body:{action:'create',email:email,password:pw,label:label,perms:perms}});
+  const {error}=await invokeAdminManage(c,{action:'create',email:email,password:pw,label:label,perms:perms});
   btn.disabled=false; btn.textContent='계정 생성';
-  if(error||(res&&res.error)){ alert('생성 실패: '+((res&&res.error)||error.message)); return; }
+  if(error){ alert('생성 실패: '+error); return; }
   document.getElementById('acEmail').value=''; document.getElementById('acPw').value=''; document.getElementById('acLabel').value='';
   if(msgEl){ msgEl.textContent='생성됨 ✓'; msgEl.classList.add('show'); setTimeout(function(){msgEl.classList.remove('show');},1600); }
   renderAccounts();
