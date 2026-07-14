@@ -12,3 +12,4 @@ backups/
 supabase/sql/security_hardening.sql
 # 실제 관리자 이메일이 들어있음 — 로컬 실행용 참고 파일
 supabase/sql/admin_allowlist.sql
+supabase/sql/admin_permissions.sql
