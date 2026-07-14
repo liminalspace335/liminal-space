@@ -267,6 +267,15 @@
     background-repeat:no-repeat;background-position:right 10px center;padding-right:26px}
   .slot-row input[type=time],.slot-row input[type=number],.gen-row input[type=time],.gen-row input[type=number],.df input[type=time],.df input[type=number]{color:var(--ink)}
   input[type=time]::-webkit-calendar-picker-indicator{opacity:.55;cursor:pointer}
+  /* 계정관리 — 권한 그리드 */
+  .acc-row{border:1px solid var(--line);background:#fff;padding:16px 18px;margin-bottom:14px;border-radius:2px}
+  .acc-head{display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+  .acc-head .acc-label{background:#fff;border:1px solid var(--line);padding:6px 9px;font-size:13px;border-radius:2px;max-width:220px}
+  .acc-permgrid{display:flex;flex-direction:column;gap:6px;margin:8px 0}
+  .acc-permrow{display:flex;align-items:center;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--ink-soft)}
+  .acc-permlabel{width:130px;flex:0 0 auto;font-weight:600;color:var(--ink)}
+  .acc-permck{display:inline-flex;align-items:center;gap:4px;cursor:pointer}
+  .acc-permck input{cursor:pointer}
 </style>
 </head>
 <body>
@@ -288,6 +297,7 @@
       <button class="sb-item" data-tab="list2"><span class="ic">▦</span> 신청관리(리스트)</button>
       <button class="sb-item" data-tab="booking"><span class="ic">◷</span> 클래스설정</button>
       <button class="sb-item" data-tab="settings"><span class="ic">⚙</span> 환경설정</button>
+      <button class="sb-item" data-tab="accounts" id="sbAccounts" style="display:none"><span class="ic">👤</span> 계정관리</button>
     </nav>
     <div class="sb-foot"><a href="../index.html">← 신청 페이지로</a><a href="#" id="logout">로그아웃</a></div>
   </aside>
@@ -482,6 +492,23 @@
         </div>
       </div>
 
+      <!-- 계정관리 (마스터 계정 전용 — 로그인 계정 생성/삭제 + 메뉴별 CRUD 권한 부여) -->
+      <div class="panel" id="panel-accounts">
+        <div class="box" style="max-width:1100px">
+          <h3>새 계정 추가</h3>
+          <p class="desc">여기서 만든 계정은 실제 로그인 가능한 Supabase 계정으로 즉시 생성됩니다. 아래 권한 체크는 계정 생성과 동시에 적용됩니다.</p>
+          <div class="field-row"><label>이메일</label><input id="acEmail" type="email" placeholder="staff@example.com" /></div>
+          <div class="field-row"><label>비밀번호</label><input id="acPw" type="password" placeholder="8자 이상" /></div>
+          <div class="field-row"><label>이름(표시용)</label><input id="acLabel" placeholder="예: 직원1" /></div>
+          <div id="acPermsNew"></div>
+          <div class="save-row"><button class="btn sm" id="acCreate">계정 생성</button><span class="saved" id="acCreateMsg"></span></div>
+        </div>
+        <div class="box" style="max-width:1100px">
+          <h3>기존 계정</h3>
+          <div id="acList"></div>
+        </div>
+      </div>
+
     </div>
   </div>
 </div>
@@ -534,8 +561,8 @@
 </div></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="../config.js?v=23"></script>
-<script src="../store.js?v=23"></script>
+<script src="../config.js?v=24"></script>
+<script src="../store.js?v=24"></script>
 <script>
 const STORE_KEY='liminal_applications';
 const SET_KEY='liminal_settings';
@@ -624,23 +651,31 @@ const DEFAULT_PERMS={   // 계정 정보가 없을 때(미등록 계정)의 안�
   settings:{view:false,create:false,update:false,delete:false}
 };
 let PERMS=JSON.parse(JSON.stringify(DEFAULT_PERMS));
+let IS_MASTER=false;   // 마스터 계정 여부 — "계정관리" 메뉴 노출 + 자기 자신은 항상 전체 권한
 function can(area,type){ return !!(PERMS[area]&&PERMS[area][type]); }
 async function loadPerms(){
   PERMS=JSON.parse(JSON.stringify(DEFAULT_PERMS));
+  IS_MASTER=false;
   try{
     const c=authClient(); if(!c)return;
     const {data:sd}=await c.auth.getSession();
     const email=sd&&sd.session&&sd.session.user&&sd.session.user.email;
     if(!email)return;
-    const {data,error}=await c.from('admin_accounts').select('perms').eq('email',email).maybeSingle();
-    if(!error&&data&&data.perms){
-      Object.keys(data.perms).forEach(function(k){ PERMS[k]=Object.assign({},PERMS[k]||{},data.perms[k]); });
+    const {data,error}=await c.from('admin_accounts').select('perms,is_master').eq('email',email).maybeSingle();
+    if(!error&&data){
+      if(data.perms) Object.keys(data.perms).forEach(function(k){ PERMS[k]=Object.assign({},PERMS[k]||{},data.perms[k]); });
+      IS_MASTER=!!data.is_master;
+      // 마스터는 자기 권한 설정과 무관하게 항상 전체 메뉴·전체 CRUD (실수로 자기 권한을 잘못 줄여도 잠기지 않도록)
+      if(IS_MASTER){ Object.keys(PERMS).forEach(function(k){ Object.keys(PERMS[k]).forEach(function(t){ PERMS[k][t]=true; }); }); }
     }
   }catch(e){ console.warn('권한 조회 실패 — 기본(제한) 권한 적용', e); }
 }
 /* 사이드바 메뉴를 권한에 맞게 표시/숨김. 현재 활성 탭이 숨겨지면 보이는 첫 메뉴로 이동 */
 function applyMenuVisibility(){
-  document.querySelectorAll('.sb-item').forEach(function(b){ b.style.display=can(b.dataset.tab,'view')?'':'none'; });
+  document.querySelectorAll('.sb-item[data-tab]').forEach(function(b){
+    if(b.dataset.tab==='accounts'){ b.style.display=IS_MASTER?'':'none'; return; }
+    b.style.display=can(b.dataset.tab,'view')?'':'none';
+  });
   const activeBtn=document.querySelector('.sb-item.active');
   if(!activeBtn||activeBtn.style.display==='none'){
     const first=[...document.querySelectorAll('.sb-item')].find(function(b){return b.style.display!=='none';});
@@ -733,7 +768,7 @@ function showApp(){document.getElementById('gate').style.display='none';document
   burger.addEventListener('click',function(){var open=nav.classList.toggle('open');burger.setAttribute('aria-expanded',open?'true':'false');});})();
 
 /* tabs */
-const TITLES={overview:'소개',list:'신청관리(캘린더)',list2:'신청관리(리스트)',booking:'클래스설정',settings:'환경설정'};
+const TITLES={overview:'소개',list:'신청관리(캘린더)',list2:'신청관리(리스트)',booking:'클래스설정',settings:'환경설정',accounts:'계정관리'};
 document.querySelectorAll('.sb-item').forEach(b=>b.addEventListener('click',()=>{
   const tab=b.dataset.tab;
   var _nav=document.querySelector('.sb-nav'),_bg=document.getElementById('sbBurger');
@@ -746,6 +781,7 @@ document.querySelectorAll('.sb-item').forEach(b=>b.addEventListener('click',()=>
   if(tab==='list2'){l2Reset();renderList2();}
   if(tab==='booking')renderBooking();
   if(tab==='settings')renderSettings();
+  if(tab==='accounts')renderAccounts();
 }));
 function renderAll(){populateFilters();renderOverview();renderList();renderList2();renderBooking();renderSettings();
   document.getElementById('lastUpdate').textContent='최종 조회 '+fmt(new Date().toISOString());}
@@ -1301,6 +1337,83 @@ function defRow(sl){return `<div class="slot-row" style="grid-template-columns:m
 function bindDefRows(){document.querySelectorAll('#defWrap .d-del').forEach(b=>b.addEventListener('click',e=>e.target.closest('.slot-row').remove()));}
 document.getElementById('defAdd').addEventListener('click',()=>{const wrap=document.getElementById('defWrap');const h=wrap.querySelector('.hint');if(h)h.remove();const t=document.createElement('div');t.innerHTML=defRow({cls:'',time:'12:00',cap:6});const row=t.firstChild;row.querySelector('.d-del').addEventListener('click',e=>e.target.closest('.slot-row').remove());wrap.appendChild(row);});
 document.getElementById('defSave').addEventListener('click',()=>{const s=loadSettings();if(!s.defaultSchedule)s.defaultSchedule={};s.defaultSchedule[defBranch]=sortSlots(defBranch,[...document.querySelectorAll('#defWrap .slot-row')].map(r=>({cls:r.querySelector('.d-cls').value,time:r.querySelector('.d-time').value,cap:+r.querySelector('.d-cap').value||0})).filter(x=>x.time));saveSettings(s);toast('defSaved');renderDefaults();});
+
+/* ===== 계정관리 (마스터 전용 — 계정 생성/삭제/권한부여는 Edge Function 'admin-manage'가 처리) ===== */
+const PERM_MENUS=[['overview','소개'],['list','신청관리(캘린더)'],['list2','신청관리(리스트)'],['booking','클래스설정'],['settings','환경설정']];
+const PERM_ACTIONS=[['view','조회'],['create','생성'],['update','수정'],['delete','삭제']];
+function permsGridHTML(idPrefix,perms){
+  perms=perms||{};
+  return '<div class="acc-permgrid">'+PERM_MENUS.map(function(m){
+    var key=m[0],label=m[1]; var p=perms[key]||{};
+    return '<div class="acc-permrow"><span class="acc-permlabel">'+esc(label)+'</span>'+PERM_ACTIONS.map(function(a){
+      var id=idPrefix+'_'+key+'_'+a[0];
+      return '<label class="acc-permck"><input type="checkbox" id="'+id+'" '+(p[a[0]]?'checked':'')+' /> '+a[1]+'</label>';
+    }).join('')+'</div>';
+  }).join('')+'</div>';
+}
+function readPermsGrid(idPrefix){
+  var perms={};
+  PERM_MENUS.forEach(function(m){ var key=m[0]; perms[key]={};
+    PERM_ACTIONS.forEach(function(a){ var el=document.getElementById(idPrefix+'_'+key+'_'+a[0]); perms[key][a[0]]=!!(el&&el.checked); }); });
+  return perms;
+}
+(function(){ var box=document.getElementById('acPermsNew'); if(box) box.innerHTML=permsGridHTML('acNew',{}); })();
+async function renderAccounts(){
+  const list=document.getElementById('acList'); if(!list)return;
+  const c=authClient(); if(!c){ list.innerHTML=''; return; }
+  list.innerHTML='<div class="empty">불러오는 중…</div>';
+  const {data,error}=await c.from('admin_accounts').select('*').order('email');
+  if(error){ list.innerHTML='<div class="empty">불러오기 실패: '+esc(error.message)+'</div>'; return; }
+  list.innerHTML=(data||[]).map(function(a){
+    const pfx='ac_'+a.email.replace(/[^a-zA-Z0-9]/g,'_');
+    return '<div class="acc-row" data-email="'+esc(a.email)+'">'
+      +'<div class="acc-head"><b>'+esc(a.email)+'</b>'+(a.is_master?' <span class="badge b-confirmed">마스터</span>':'')
+      +'<input class="acc-label" placeholder="이름" value="'+esc(a.label||'')+'" /></div>'
+      +permsGridHTML(pfx,a.perms)
+      +(a.is_master?'':'<div class="save-row"><button class="btn sm acc-save" data-pfx="'+pfx+'" data-email="'+esc(a.email)+'">저장</button><button class="btn danger sm acc-del" data-email="'+esc(a.email)+'">삭제</button><span class="saved acc-msg"></span></div>')
+    +'</div>';
+  }).join('') || '<div class="empty">등록된 계정이 없습니다.</div>';
+  list.querySelectorAll('.acc-save').forEach(function(b){
+    b.addEventListener('click',async function(){
+      const email=b.dataset.email, pfx=b.dataset.pfx;
+      const row=b.closest('.acc-row'); const label=row.querySelector('.acc-label').value.trim();
+      const perms=readPermsGrid(pfx);
+      b.disabled=true;
+      const {data:res,error}=await c.functions.invoke('admin-manage',{body:{action:'updatePerms',email:email,label:label,perms:perms}});
+      b.disabled=false;
+      const msg=row.querySelector('.acc-msg');
+      if(error||(res&&res.error)){ alert('저장 실패: '+((res&&res.error)||error.message)); return; }
+      if(msg){ msg.textContent='저장됨 ✓'; msg.classList.add('show'); setTimeout(function(){msg.classList.remove('show');},1600); }
+    });
+  });
+  list.querySelectorAll('.acc-del').forEach(function(b){
+    b.addEventListener('click',async function(){
+      const email=b.dataset.email;
+      if(!confirm(email+' 계정을 삭제할까요? 로그인 계정 자체가 삭제되어 더 이상 로그인할 수 없게 됩니다.'))return;
+      b.disabled=true;
+      const {data:res,error}=await c.functions.invoke('admin-manage',{body:{action:'remove',email:email}});
+      b.disabled=false;
+      if(error||(res&&res.error)){ alert('삭제 실패: '+((res&&res.error)||error.message)); return; }
+      renderAccounts();
+    });
+  });
+}
+document.getElementById('acCreate').addEventListener('click',async function(){
+  const email=document.getElementById('acEmail').value.trim();
+  const pw=document.getElementById('acPw').value;
+  const label=document.getElementById('acLabel').value.trim();
+  const msgEl=document.getElementById('acCreateMsg'); if(msgEl)msgEl.textContent='';
+  if(!email||!pw){ alert('이메일과 비밀번호를 입력하세요.'); return; }
+  const perms=readPermsGrid('acNew');
+  const c=authClient(); if(!c)return;
+  const btn=document.getElementById('acCreate'); btn.disabled=true; btn.textContent='생성 중…';
+  const {data:res,error}=await c.functions.invoke('admin-manage',{body:{action:'create',email:email,password:pw,label:label,perms:perms}});
+  btn.disabled=false; btn.textContent='계정 생성';
+  if(error||(res&&res.error)){ alert('생성 실패: '+((res&&res.error)||error.message)); return; }
+  document.getElementById('acEmail').value=''; document.getElementById('acPw').value=''; document.getElementById('acLabel').value='';
+  if(msgEl){ msgEl.textContent='생성됨 ✓'; msgEl.classList.add('show'); setTimeout(function(){msgEl.classList.remove('show');},1600); }
+  renderAccounts();
+});
 
 /* ===== 신청 상세 모달 ===== */
 let detailId=null;
