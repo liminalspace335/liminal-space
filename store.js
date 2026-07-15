@@ -223,12 +223,18 @@
         // 세션 복원(로그인 유지) 완료를 먼저 기다림 — 그래야 로그인된 상태의 요청에 인증 토큰이 실제로 실림.
         // (이걸 안 기다리면 applications처럼 authenticated 전용으로 막아둔 테이블이 로그인 중에도 빈 값으로 조회될 수 있음)
         try{ await client.auth.getSession(); }catch(e){}
-        var tables=['branches','classes','class_details','default_slots','schedule_slots','schedule_days','applications','site_info'];
+        var isAuthed=false;
+        try{ var sr=await client.auth.getSession(); isAuthed=!!(sr&&sr.data&&sr.data.session); }catch(e){}
+        var tables=['branches','classes','class_details','default_slots','schedule_slots','schedule_days','site_info'];
+        // applications: 로그인한 관리자는 전체(개인정보 포함) 테이블을, 비로그인 공개 신청 페이지는
+        // 개인정보 없이 정원 계산용 컬럼만 노출하는 뷰(applications_public)를 대신 조회한다.
+        // (신청 페이지 자체엔 어떤 권한 체크도 없음 — 그냥 anon이 볼 수 있는 데이터 범위가 다를 뿐)
+        var appsSrc=isAuthed?'applications':'applications_public';
+        var allTables=tables.concat([appsSrc]);
         var res={};
-        // 8개 테이블을 병렬로 조회(순차 → 병렬, 로딩 속도 대폭 단축). 개별 테이블은 실패 시 자동 재시도.
-        var rs=await Promise.all(tables.map(fetchTableWithRetry));
+        var rs=await Promise.all(allTables.map(fetchTableWithRetry));
         var failed=[];
-        tables.forEach(function(t,i){ var ok=rs[i]&&!rs[i].error&&rs[i].data; res[t]=ok?rs[i].data:[]; if(!ok)failed.push(t); });
+        allTables.forEach(function(t,i){ var ok=rs[i]&&!rs[i].error&&rs[i].data; var key=(t===appsSrc)?'applications':t; res[key]=ok?rs[i].data:[]; if(!ok)failed.push(t); });
         cache.loadError=failed.length?failed:null;   // 재시도까지 다 실패한 테이블 목록(없으면 null)
         if(failed.length) console.warn('일부 테이블 로드 실패(재시도 후에도):', failed);
         var a=assemble(res); cache.settings=a.settings; cache.apps=a.apps;
