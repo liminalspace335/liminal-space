@@ -430,7 +430,8 @@ function renderMap(){
   if(!loc){ el.innerHTML=`<div class="pin">◎<br><span>${lang==='en'?'Map area':(lang==='vi'?'Khu vực bản đồ':'지도 영역')}</span></div>`; return; }
   const q=encodeURIComponent(loc);
   const embed=`https://www.google.com/maps?q=${q}&z=16&output=embed`;
-  const open=`https://www.google.com/maps/search/?api=1&query=${q}`;
+  // "지도에서 열기"는 위치설정의 "Xem/바로가기"(b.link)와 동일한 곳으로 가야 함 — 주소 텍스트 재검색(부정확할 수 있음) 대신 관리자가 지정한 정확한 링크 우선 사용
+  const open=b.link||`https://www.google.com/maps/search/?api=1&query=${q}`;
   const hint=lang==='en'?'Open in Google Maps ↗':(lang==='vi'?'Mở trong Google Maps ↗':'Google 지도에서 보기 ↗');
   el.innerHTML=`<a class="map-link" href="${open}" target="_blank" rel="noopener" aria-label="${esc(loc)}">`
     +`<iframe class="map-frame" src="${embed}" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="${esc(loc)}"></iframe>`
