@@ -428,7 +428,8 @@ function renderMap(){
   const b=brs[0];
   const loc=b?Lval(b.location,lang):'';
   if(!loc){ el.innerHTML=`<div class="pin">◎<br><span>${lang==='en'?'Map area':(lang==='vi'?'Khu vực bản đồ':'지도 영역')}</span></div>`; return; }
-  const q=encodeURIComponent(loc);
+  const brand=(getSettings().site&&getSettings().site.brandName)||'LIMINAL SPACE';
+  const q=encodeURIComponent(brand+', '+loc);   // 지도 위 핀 이름이 주소 대신 브랜드명으로 표시되도록 검색어 앞에 브랜드명을 붙임
   const embed=`https://www.google.com/maps?q=${q}&z=16&output=embed`;
   // "지도에서 열기"는 위치설정의 "Xem/바로가기"(b.link)와 동일한 곳으로 가야 함 — 주소 텍스트 재검색(부정확할 수 있음) 대신 관리자가 지정한 정확한 링크 우선 사용
   const open=b.link||`https://www.google.com/maps/search/?api=1&query=${q}`;
