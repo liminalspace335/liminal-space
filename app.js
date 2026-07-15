@@ -384,6 +384,9 @@ function renderSiteInfo(){
   var e=document.getElementById('estYear'); if(e&&est) e.textContent='EST. '+est;
   var fb=document.getElementById('footBrand'); if(fb) fb.textContent=brand+' — PERFUME WORKSHOP';
   var fc=document.getElementById('footCopy'); if(fc) fc.textContent='© '+(copy||est||'')+' '+brand;
+  // 푸터 "문의하기" 이메일 — 사업자 정보(관리자 › 지점설정)의 이메일로 실제 반영(미설정 시 기본 문구 유지)
+  var bizEmail=(si.bizEmail||'').trim();
+  var fe=document.getElementById('footEmail'); if(fe&&bizEmail){ fe.textContent=bizEmail; fe.href='mailto:'+bizEmail; }
   renderFootBiz(si);
 }
 /* 베트남 전자상거래법 푸터 사업자 정보 + Bộ Công Thương 신고 뱃지 (전 페이지 공통, app.js가 주입) */
