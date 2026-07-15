@@ -147,6 +147,16 @@
     try{ var r=await promise; if(r&&r.error){return label+': '+(r.error.message||r.error.code||JSON.stringify(r.error));} return null; }
     catch(e){ return label+': '+(e&&e.message||e); }
   }
+  // 순간적인 네트워크/서버 오류 시 짧은 대기 후 최대 2회 더 재시도(총 3회). fn은 매번 새 쿼리를 만들어 반환해야 함(재사용 불가한 빌더 특성 때문).
+  async function _ckRetry(fn,label){
+    var delays=[0,350,900], msg=null;
+    for(var i=0;i<delays.length;i++){
+      if(delays[i]) await new Promise(function(res){setTimeout(res,delays[i]);});
+      msg=await _ck(fn(),label);
+      if(!msg) return null;
+    }
+    return msg;
+  }
   // FK 순서를 지키되 독립 작업은 병렬로 — 저장 체감속도 개선
   async function pushPlan(p){
     var errs=[];
@@ -178,12 +188,17 @@
   }
   async function pushApps(newArr){
     var old=cache.apps||[], oldById={}; old.forEach(function(a){oldById[a.id]=a;});
-    var keep={}, changed=[]; newArr.forEach(function(a){ keep[a.id]=1; var o=oldById[a.id];
-      if(!o||JSON.stringify(o)!==JSON.stringify(a)) changed.push(a); });
+    // 신규 행과 기존 행 수정을 분리한다: upsert()는 내부적으로 "INSERT ... ON CONFLICT DO UPDATE"를 생성하는데,
+    // Postgres RLS는 실제 충돌이 없어도 이 구문 자체에 UPDATE 권한을 요구한다. 익명(고객) 신청은 UPDATE 권한이 없으므로
+    // 신규 신청까지 upsert로 보내면 전부 거부된다 — 신규는 반드시 순수 insert로, 기존 행 수정만 upsert로 보낸다.
+    var keep={}, newRows=[], updateRows=[];
+    newArr.forEach(function(a){ keep[a.id]=1; var o=oldById[a.id];
+      if(!o) newRows.push(a); else if(JSON.stringify(o)!==JSON.stringify(a)) updateRows.push(a); });
     var del=old.filter(function(a){return !keep[a.id];}).map(function(a){return a.id;});
     var errs=[];
-    if(changed.length) errs.push(await _ck(client.from('applications').upsert(changed.map(appToRow)),'applications'));
-    if(del.length) errs.push(await _ck(client.from('applications').delete().in('id',del),'applications(del)'));
+    if(newRows.length){ var nRows=newRows.map(appToRow); errs.push(await _ckRetry(function(){return client.from('applications').insert(nRows);},'applications')); }
+    if(updateRows.length){ var uRows=updateRows.map(appToRow); errs.push(await _ckRetry(function(){return client.from('applications').upsert(uRows);},'applications')); }
+    if(del.length) errs.push(await _ckRetry(function(){return client.from('applications').delete().in('id',del);},'applications(del)'));
     return errs.filter(Boolean);
   }
 
