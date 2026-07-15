@@ -416,8 +416,11 @@ function renderLocation(){
     const soc=[];
     if(b.instagram)soc.push(`<a href="${esc(b.instagram)}" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline">Instagram</a>`);
     if(b.facebook)soc.push(`<a href="${esc(b.facebook)}" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline">Facebook</a>`);
+    if(b.tiktok)soc.push(`<a href="${esc(b.tiktok)}" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline">TikTok</a>`);
+    if(b.linktree)soc.push(`<a href="${esc(b.linktree)}" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline">Linktree</a>`);
     var hrs=Lval(b.hours,curLang());
-    return `<dt>${esc(branchLabel(b.name))}</dt><dd>${esc(Lval(b.location,curLang()))}${b.contact?` · ${esc(b.contact)}`:''}${b.link?` · <a href="${esc(b.link)}" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline">${curLang()==='en'?'Visit':(curLang()==='vi'?'Xem':'바로가기')}</a>`:''}${hrs?'<br>'+esc(hrs):''}${soc.length?'<br>'+soc.join(' · '):''}</dd>`;
+    // 표기 순서: 주소·더보기 → 전화번호 → 영업시간 → SNS, 각각 줄바꿈
+    return `<dt>${esc(branchLabel(b.name))}</dt><dd>${esc(Lval(b.location,curLang()))}${b.link?` · <a href="${esc(b.link)}" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline">${curLang()==='en'?'Visit':(curLang()==='vi'?'Xem':'바로가기')}</a>`:''}${b.contact?'<br>'+esc(b.contact):''}${hrs?'<br>'+esc(hrs):''}${soc.length?'<br>'+soc.join(' · '):''}</dd>`;
   }).join('');
 }
 /* 찾아오는 길 지도 — 저장된 위치를 구글맵으로 표시(클릭 시 새 창) */
