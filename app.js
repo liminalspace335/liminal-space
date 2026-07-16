@@ -930,6 +930,29 @@ function renderConfirm(){
 }
 /* 완료 화면: 문의는 '접수완료', 클래스 신청(결제없음→확정)은 '확정완료' + 이메일/잘로 안내 + 문의 연락처 */
 var CONTACT_TEL='0818880504';
+/* 연락처를 tel: 링크(모바일 탭하면 바로 전화)+복사 버튼으로 렌더 */
+function telLinkHTML(tel,lang){
+  var href='tel:+84'+String(tel).replace(/^0/,'');
+  var label=lang==='en'?'Copy':(lang==='vi'?'Sao chép':'복사');
+  return '<span class="tel-wrap"><a href="'+href+'" class="tel-link">'+esc(tel)+'</a>'
+    +'<button type="button" class="tel-copy" data-tel="'+esc(tel)+'" data-label="'+esc(label)+'">'+esc(label)+'</button></span>';
+}
+function fallbackCopyText(text){
+  try{ var ta=document.createElement('textarea'); ta.value=text; ta.style.position='fixed'; ta.style.opacity='0';
+    document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); }catch(e){}
+}
+document.addEventListener('click',function(e){
+  var btn=e.target.closest&&e.target.closest('.tel-copy'); if(!btn)return;
+  e.preventDefault();
+  var tel=btn.dataset.tel, label=btn.dataset.label;
+  var showDone=function(){
+    var doneTxt=curLang()==='en'?'Copied!':(curLang()==='vi'?'Đã chép!':'복사됨!');
+    btn.textContent=doneTxt; btn.classList.add('copied');
+    setTimeout(function(){ btn.textContent=label; btn.classList.remove('copied'); },1400);
+  };
+  if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(tel).then(showDone).catch(function(){fallbackCopyText(tel);showDone();}); }
+  else { fallbackCopyText(tel); showDone(); }
+});
 function renderDone(){
   var inq=isInquiry(); var l=curLang();
   var box=modal.querySelector('.modal-step[data-step="7"] .modal-done');
@@ -949,11 +972,12 @@ function renderDone(){
       ? 'Vui lòng kiểm tra xác nhận được gửi qua <b>email</b> hoặc <b>Zalo</b>.'
       : '<b>이메일</b> 또는 <b>잘로(Zalo)</b>로 보내드린 확정 안내를 확인해 주세요.';
     note.style.display='block';
+    var tel=telLinkHTML(CONTACT_TEL,l);
     note.innerHTML = l==='en'
-      ? 'If you don\'t hear back via Zalo or email within <b>2–3 minutes</b>, please call us at <b>'+CONTACT_TEL+'</b>.'
+      ? 'If you don\'t hear back via Zalo or email within <b>2–3 minutes</b>, please call us at '+tel+'.'
       : l==='vi'
-      ? 'Nếu trong vòng <b>2–3 phút</b> bạn chưa nhận được phản hồi qua Zalo hoặc email, vui lòng gọi <b>'+CONTACT_TEL+'</b>.'
-      : '<b>2~3분 이내</b>에 잘로 또는 이메일로 회신이 오지 않으면, 아래 번호로 연락해 주세요: <b>'+CONTACT_TEL+'</b>';
+      ? 'Nếu trong vòng <b>2–3 phút</b> bạn chưa nhận được phản hồi qua Zalo hoặc email, vui lòng gọi '+tel+'.'
+      : '<b>2~3분 이내</b>에 잘로 또는 이메일로 회신이 오지 않으면, 아래 번호로 연락해 주세요: '+tel;
   }
 }
 function submitApplication(){
