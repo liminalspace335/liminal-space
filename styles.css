@@ -345,6 +345,8 @@
   .modal-done .check{font-size:40px}
   .modal-done h3{font-size:20px;margin:12px 0 8px}
   .modal-done p{font-size:14px;color:var(--ink-soft)}
+  .modal-done .done-note{display:none;margin:16px auto 0;max-width:360px;padding:12px 18px;border:1.5px solid var(--ink);border-radius:6px;background:var(--paper);font-size:13px;line-height:1.55;color:var(--ink)}
+  .modal-done .done-note b{color:var(--accent);font-weight:700}
   .err{color:#b04545;font-size:12px;margin-top:8px;display:none}
   .capnote{font-size:12px;color:var(--ink-soft);margin-top:8px;min-height:16px}
   .capnote.full{color:#b04545}

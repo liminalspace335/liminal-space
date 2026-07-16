@@ -935,16 +935,25 @@ function renderDone(){
   var box=modal.querySelector('.modal-step[data-step="7"] .modal-done');
   var h=box&&box.querySelector('h3'); var p=box&&box.querySelector('p');
   if(!h||!p)return;
+  var note=box.querySelector('.done-note');
+  if(!note){ note=document.createElement('div'); note.className='done-note'; p.insertAdjacentElement('afterend',note); }
   if(inq){
     h.textContent = l==='en'?'Your inquiry has been received':(l==='vi'?'Đã nhận liên hệ của bạn':'문의가 접수되었습니다');
     p.textContent = l==='en'?'We will get back to you after review.':(l==='vi'?'Chúng tôi sẽ liên hệ lại với bạn sau khi xem xét.':'확인 후 입력하신 연락처로 안내드리겠습니다.');
+    note.style.display='none';
   } else {
     h.textContent = l==='en'?'Your booking is confirmed':(l==='vi'?'Đặt lịch của bạn đã được xác nhận':'예약이 확정되었습니다');
     p.innerHTML = l==='en'
-      ? 'Please check the confirmation sent to your <b>email</b> or <b>Zalo</b>.<br>If you have not received it, please contact us at <b>'+CONTACT_TEL+'</b>.'
+      ? 'Please check the confirmation sent to your <b>email</b> or <b>Zalo</b>.'
       : l==='vi'
-      ? 'Vui lòng kiểm tra xác nhận được gửi qua <b>email</b> hoặc <b>Zalo</b>.<br>Nếu bạn chưa nhận được, vui lòng liên hệ <b>'+CONTACT_TEL+'</b>.'
-      : '<b>이메일</b> 또는 <b>잘로(Zalo)</b>로 보내드린 확정 안내를 확인해 주세요.<br>안내가 오지 않으면 아래로 문의해 주세요: <b>'+CONTACT_TEL+'</b>';
+      ? 'Vui lòng kiểm tra xác nhận được gửi qua <b>email</b> hoặc <b>Zalo</b>.'
+      : '<b>이메일</b> 또는 <b>잘로(Zalo)</b>로 보내드린 확정 안내를 확인해 주세요.';
+    note.style.display='block';
+    note.innerHTML = l==='en'
+      ? 'If you don\'t hear back via Zalo or email within <b>2–3 minutes</b>, please call us at <b>'+CONTACT_TEL+'</b>.'
+      : l==='vi'
+      ? 'Nếu trong vòng <b>2–3 phút</b> bạn chưa nhận được phản hồi qua Zalo hoặc email, vui lòng gọi <b>'+CONTACT_TEL+'</b>.'
+      : '<b>2~3분 이내</b>에 잘로 또는 이메일로 회신이 오지 않으면, 아래 번호로 연락해 주세요: <b>'+CONTACT_TEL+'</b>';
   }
 }
 function submitApplication(){
