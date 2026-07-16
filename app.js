@@ -154,7 +154,7 @@ function setLang(lang){
   if(typeof renderNatList==='function') renderNatList();           // 국적 목록 언어 재적용
   if(typeof renderEmailDomains==='function') renderEmailDomains(); // 이메일 도메인 '직접 입력' 라벨 언어 재적용
 }
-document.querySelectorAll('.lang button').forEach(b=>{
+document.querySelectorAll('.lang button[data-lang]').forEach(b=>{   // data-lang 있는 실제 언어 버튼만(토글 버튼은 data-lang이 없어서 제외됨)
   b.addEventListener('click',()=>setLang(b.dataset.lang));
 });
 /* 모바일 언어·SNS 드롭다운 토글(개념 유지: 클릭 열기/닫기, 바깥 클릭·다른쪽 열림 시 자동 닫힘) */
