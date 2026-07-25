@@ -45,15 +45,15 @@
   .cal-head [data-today]:hover{opacity:.85;border-color:var(--accent)}
   .spacer{flex:1}.sec-title{font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--coord);margin:30px 0 14px}
   .saved{font-size:12px;color:var(--confirmed);opacity:0;transition:opacity .2s}.saved.show{opacity:1}
-  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:14px;margin-bottom:24px}
-  .stat{background:var(--paper);border:1px solid var(--line);padding:18px 20px}
-  .stat .k{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--coord)}.stat .v{font-size:30px;font-weight:700;margin-top:6px}
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin-bottom:12px}
+  .stat{background:var(--paper);border:1px solid var(--line);padding:9px 12px}
+  .stat .k{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--coord)}.stat .v{font-size:19px;font-weight:700;margin-top:3px}
   /* 신청관리 2 표 */
   .l2-search{min-width:280px}
   .l2-count{font-size:13px;color:var(--ink-soft)}
   .l2-dirty{font-size:12px;color:var(--cancel);font-weight:600}
   /* max-height+overflow-y:auto로 표 자체가 뷰포트 안에서 스크롤되게 해서, 가로 스크롤바가 페이지 맨 아래까지 안 내려가도 항상 손닿는 위치에 있게 함 */
-  .l2-wrap{border:1px solid var(--line);background:var(--paper);overflow:auto;max-height:70vh}
+  .l2-wrap{border:1px solid var(--line);background:var(--paper);overflow:auto;max-height:calc(100vh - 330px);min-height:260px}
   .l2-table{width:100%;border-collapse:collapse;font-size:13px;white-space:nowrap}
   .l2-table thead th{position:sticky;top:0;background:#f4f4f5;text-align:left;font-size:11px;letter-spacing:.06em;color:var(--coord);font-weight:600;padding:11px 12px;border-bottom:1px solid var(--line);z-index:1}
   .l2-table tbody td{padding:11px 12px;border-bottom:1px solid var(--line);color:var(--ink-soft);vertical-align:middle}
@@ -570,8 +570,8 @@
 </div></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="../config.js?v=37"></script>
-<script src="../store.js?v=37"></script>
+<script src="../config.js?v=38"></script>
+<script src="../store.js?v=38"></script>
 <script>
 const STORE_KEY='liminal_applications';
 const SET_KEY='liminal_settings';
