@@ -4,8 +4,9 @@
 // 트리거: pg_cron이 매 10분마다 public.trigger_zalo_remind()를 실행 →
 //         "재알림 사용중 + 오늘 아직 안 보냄 + 설정 시각(베트남) 지남" 조건일 때만
 //         이 Edge Function을 호출한다(자세한 스케줄 조건은 SQL 쪽에서 판단).
-// 동작:  오늘(베트남 날짜) want_date가 오늘이고 status가 'confirmed'인 신청 전원에게
-//        예약확인과 동일한 승인 템플릿으로 ZNS 재발송한다.
+// 동작:  오늘(베트남 날짜) want_date가 오늘이고 status가 'confirmed'이며
+//        want_time이 설정된 재알림 시각 이후(그 전 시간대는 이미 방문했을 가능성이 커서 제외)인
+//        신청자 전원에게 예약확인과 동일한 승인 템플릿으로 ZNS 재발송한다.
 //
 // body: { date?: 'YYYY-MM-DD' }  (없으면 서버가 베트남 오늘 날짜로 계산)
 //
@@ -81,15 +82,17 @@ Deno.serve(async (req) => {
   let payload: any = {};
   try { payload = await req.json(); } catch { /* body 없어도 됨 */ }
 
-  const { data: si } = await db.from("site_info").select("zalo_remind_on").eq("id", "main").single();
+  const { data: si } = await db.from("site_info").select("zalo_remind_on,zalo_remind_hour").eq("id", "main").single();
   if (si?.zalo_remind_on !== true) {
     return new Response(JSON.stringify({ skipped: "remind_off" }), { status: 200, headers: { "Content-Type": "application/json" } });
   }
+  const remindHour = si?.zalo_remind_hour || "10:00";  // 이 시각 이전 want_time은 이미 방문했을 가능성이 커서 재알림 제외
 
   const date = payload?.date || vnToday();
   const { data: apps, error } = await db.from("applications")
     .select("id,name,phone,class_id,want_date,want_time,people,msg")
-    .eq("want_date", date).eq("status", "confirmed");
+    .eq("want_date", date).eq("status", "confirmed")
+    .gte("want_time", remindHour);
   if (error) return new Response(JSON.stringify({ error: error.message }), { status: 400, headers: { "Content-Type": "application/json" } });
   if (!apps || !apps.length) return new Response(JSON.stringify({ ok: true, sent: 0 }), { status: 200, headers: { "Content-Type": "application/json" } });
 
