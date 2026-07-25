@@ -52,11 +52,15 @@
   .l2-search{min-width:280px}
   .l2-count{font-size:13px;color:var(--ink-soft)}
   .l2-dirty{font-size:12px;color:var(--cancel);font-weight:600}
-  .l2-wrap{border:1px solid var(--line);background:var(--paper);overflow-x:auto}
+  /* max-height+overflow-y:auto로 표 자체가 뷰포트 안에서 스크롤되게 해서, 가로 스크롤바가 페이지 맨 아래까지 안 내려가도 항상 손닿는 위치에 있게 함 */
+  .l2-wrap{border:1px solid var(--line);background:var(--paper);overflow:auto;max-height:70vh}
   .l2-table{width:100%;border-collapse:collapse;font-size:13px;white-space:nowrap}
-  .l2-table thead th{position:sticky;top:0;background:#f4f4f5;text-align:left;font-size:11px;letter-spacing:.06em;color:var(--coord);font-weight:600;padding:11px 12px;border-bottom:1px solid var(--line)}
+  .l2-table thead th{position:sticky;top:0;background:#f4f4f5;text-align:left;font-size:11px;letter-spacing:.06em;color:var(--coord);font-weight:600;padding:11px 12px;border-bottom:1px solid var(--line);z-index:1}
   .l2-table tbody td{padding:11px 12px;border-bottom:1px solid var(--line);color:var(--ink-soft);vertical-align:middle}
   .l2-table tbody tr:hover{background:#eeeef0}
+  .l2-table tbody tr.current-row{background:#e4e7ec}
+  .l2-table tbody tr.current-row:hover{background:#dadee5}
+  .l2-table tbody tr.current-row td:first-child{box-shadow:inset 3px 0 0 var(--ink)}
   .l2-table td.strong{color:var(--ink);font-weight:600}
   .l2-table td.nowrap{white-space:nowrap}
   .l2-table td.memo{max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -451,7 +455,12 @@
             <h3 style="margin-top:18px;font-size:14px">예약자 확정메일 (Resend · 고객에게)</h3>
             <div class="field-row"><label>예약자 확정메일 발송</label><label style="display:inline-flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="inConfirmMailOn" /> <span style="font-size:13px;color:var(--ink-soft)">켜면 신청이 '확정'될 때 예약자 이메일로 예약확정 메일 발송 (⚠️ 고객 메일 발송엔 Resend 도메인 인증 필요)</span></label></div>
 
+            <h3 style="margin-top:18px;font-size:14px">당일 예약 재알림 (Zalo ZNS · 확정 고객에게)</h3>
+            <div class="field-row"><label>당일 재알림 사용</label><label style="display:inline-flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="inZaloRemindOn" /> <span style="font-size:13px;color:var(--ink-soft)">켜면 예약 당일(베트남 시간) 설정한 시각에, 그날 '확정' 상태인 신청자 전체에게 잘로로 재알림 발송</span></label></div>
+            <div class="field-row" style="max-width:200px"><label>재알림 시각 (베트남 시간)</label><input type="time" id="inZaloRemindHour" value="10:00" /></div>
+
             <div class="save-row"><button class="btn sm" id="notifySave">저장</button><span class="saved" id="notifySaved">저장됨 ✓</span></div>
+            <p class="desc" style="margin-top:18px"><a href="https://account.zalo.solutions/AEUR64QVJWRZ76N7/spending/overview" target="_blank" rel="noopener">잘로 잔액 확인 →</a></p>
           </div>
         </div>
 
@@ -561,8 +570,8 @@
 </div></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="../config.js?v=36"></script>
-<script src="../store.js?v=36"></script>
+<script src="../config.js?v=37"></script>
+<script src="../store.js?v=37"></script>
 <script>
 const STORE_KEY='liminal_applications';
 const SET_KEY='liminal_settings';
@@ -985,6 +994,12 @@ function renderList2(){
     document.getElementById('resendCancel').addEventListener('click',closeResendModal);
     document.getElementById('resendApply').addEventListener('click',applyResendModal);
     document.getElementById('resendModal').addEventListener('click',e=>{if(e.target.id==='resendModal')closeResendModal();});
+    // 행 클릭 시 선택 표시(가로 스크롤해도 어떤 행을 보고 있었는지 알 수 있도록) — 위임 바인딩이라 재렌더링해도 유지됨
+    document.getElementById('l2Body').addEventListener('click',e=>{
+      const tr=e.target.closest('tr[data-id]'); if(!tr)return;
+      document.querySelectorAll('#l2Body tr.current-row').forEach(x=>{if(x!==tr)x.classList.remove('current-row');});
+      tr.classList.toggle('current-row',true);
+    });
   }
   document.getElementById('l2Stats').innerHTML=statsCardsHTML(l2Get());
   const dh=document.getElementById('l2DirtyHint'); if(dh)dh.textContent=l2Dirty?'● 미저장 변경':'';
@@ -994,7 +1009,7 @@ function renderList2(){
   document.getElementById('l2Head').innerHTML='<tr><th class="l2-ck"><input type="checkbox" id="l2All"></th>'+cols.map(c=>`<th>${c}</th>`).join('')+'</tr>';
   document.getElementById('l2Body').innerHTML = rows.length ? rows.map(a=>{
     const st=STATUS[a.status]||STATUS.new;const msg=a.msg||'';
-    return `<tr>
+    return `<tr data-id="${a.id}">
       <td class="l2-ck"><input type="checkbox" class="l2-row" value="${a.id}" ${l2Sel.has(a.id)?'checked':''}></td>
       <td class="mono nowrap">${esc(a.date)||'-'}</td>
       <td class="mono nowrap">${esc(a.time)||'-'}</td>
@@ -1203,12 +1218,14 @@ function renderBranches(){const s=loadSettings();
   document.getElementById('inNotifyOn').checked=!(s.site&&s.site.notifyOn===false);
   document.getElementById('inZaloOn').checked=!!(s.site&&s.site.zaloOn);
   document.getElementById('inConfirmMailOn').checked=!!(s.site&&s.site.confirmMailOn);
+  document.getElementById('inZaloRemindOn').checked=!!(s.site&&s.site.zaloRemindOn);
+  document.getElementById('inZaloRemindHour').value=(s.site&&s.site.zaloRemindHour)||'10:00';
   (function(){var cl=(s.site&&s.site.conceptList)||[];document.querySelectorAll('#conceptList .cm-url').forEach(function(inp,i){inp.value=cl[i]||'';});})();
   document.getElementById('inConceptAuto').checked=!!(s.site&&s.site.conceptAutoplay);
 }
-document.getElementById('siteSave').addEventListener('click',()=>{const s=loadSettings();s.site={brandName:document.getElementById('inBrand').value.trim(),heroLogo:document.getElementById('inHeroLogo').value.trim(),notifyEmail:document.getElementById('inNotifyEmail').value.trim(),notifyOn:document.getElementById('inNotifyOn').checked,estYear:document.getElementById('inEst').value.trim(),copyrightYear:document.getElementById('inCopy').value.trim(),bizName:document.getElementById('inBizName').value.trim(),bizAddress:document.getElementById('inBizAddr').value.trim(),bizTax:document.getElementById('inBizTax').value.trim(),bizPhone:document.getElementById('inBizPhone').value.trim(),bizEmail:document.getElementById('inBizEmail').value.trim(),moitUrl:document.getElementById('inMoitUrl').value.trim(),moitLogo:document.getElementById('inMoitLogo').value.trim(),conceptList:[...document.querySelectorAll('#conceptList .cm-url')].map(i=>i.value.trim()).filter(Boolean).slice(0,5),conceptAutoplay:document.getElementById('inConceptAuto').checked,zaloOn:document.getElementById('inZaloOn').checked,confirmMailOn:document.getElementById('inConfirmMailOn').checked};saveSettings(s);toast('siteSaved');});
+document.getElementById('siteSave').addEventListener('click',()=>{const s=loadSettings();s.site={brandName:document.getElementById('inBrand').value.trim(),heroLogo:document.getElementById('inHeroLogo').value.trim(),notifyEmail:document.getElementById('inNotifyEmail').value.trim(),notifyOn:document.getElementById('inNotifyOn').checked,estYear:document.getElementById('inEst').value.trim(),copyrightYear:document.getElementById('inCopy').value.trim(),bizName:document.getElementById('inBizName').value.trim(),bizAddress:document.getElementById('inBizAddr').value.trim(),bizTax:document.getElementById('inBizTax').value.trim(),bizPhone:document.getElementById('inBizPhone').value.trim(),bizEmail:document.getElementById('inBizEmail').value.trim(),moitUrl:document.getElementById('inMoitUrl').value.trim(),moitLogo:document.getElementById('inMoitLogo').value.trim(),conceptList:[...document.querySelectorAll('#conceptList .cm-url')].map(i=>i.value.trim()).filter(Boolean).slice(0,5),conceptAutoplay:document.getElementById('inConceptAuto').checked,zaloOn:document.getElementById('inZaloOn').checked,confirmMailOn:document.getElementById('inConfirmMailOn').checked,zaloRemindOn:document.getElementById('inZaloRemindOn').checked,zaloRemindHour:document.getElementById('inZaloRemindHour').value||'10:00'};saveSettings(s);toast('siteSaved');});
 /* 알림관리 저장 (site 병합 — 다른 site 필드 보존) */
-document.getElementById('notifySave').addEventListener('click',()=>{const s=loadSettings();s.site=s.site||{};s.site.notifyOn=document.getElementById('inNotifyOn').checked;s.site.notifyEmail=document.getElementById('inNotifyEmail').value.trim();s.site.zaloOn=document.getElementById('inZaloOn').checked;s.site.confirmMailOn=document.getElementById('inConfirmMailOn').checked;saveSettings(s);toast('notifySaved');});
+document.getElementById('notifySave').addEventListener('click',()=>{const s=loadSettings();s.site=s.site||{};s.site.notifyOn=document.getElementById('inNotifyOn').checked;s.site.notifyEmail=document.getElementById('inNotifyEmail').value.trim();s.site.zaloOn=document.getElementById('inZaloOn').checked;s.site.confirmMailOn=document.getElementById('inConfirmMailOn').checked;s.site.zaloRemindOn=document.getElementById('inZaloRemindOn').checked;s.site.zaloRemindHour=document.getElementById('inZaloRemindHour').value||'10:00';saveSettings(s);toast('notifySaved');});
 /* 히어로 로고 업로드 */
 document.getElementById('heroLogoFile').addEventListener('change',async function(e){
   const f=e.target.files&&e.target.files[0]; if(!f)return;

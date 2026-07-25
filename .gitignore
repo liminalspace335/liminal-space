@@ -14,3 +14,4 @@ supabase/sql/security_hardening.sql
 supabase/sql/admin_allowlist.sql
 supabase/sql/admin_permissions.sql
 supabase/sql/admin_master.sql
+supabase/sql/zalo_remind.sql
