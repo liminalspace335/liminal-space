@@ -905,7 +905,21 @@ function validate(n){
     if(remain<=0||req>remain){showCapErr(remain);return false;}
   }
   if(n===5&&(!data.name||!data.phone||!data.email||!data.nationality)){showErr('contact');return false;}
+  if(n===5 && codeOf(data.nationality)==='VN' && looksInvalidVNPhone(data.phone)){
+    const lang=curLang();
+    const msg=lang==='en'?"This doesn't look like a valid Vietnamese phone number. Please double-check it.\n\nSubmit anyway?"
+      :lang==='vi'?'Số điện thoại này có vẻ không đúng định dạng Việt Nam. Vui lòng kiểm tra lại.\n\nBạn vẫn muốn gửi?'
+      :'베트남 번호 형식이 아닌 것 같습니다. 전화번호를 다시 확인해 주세요.\n\n이대로 접수하시겠습니까?';
+    if(!confirm(msg)) return false;   // 입력 자체는 막지 않고, 확인만 거쳐서 진행 가능
+  }
   return true;
+}
+/* 베트남 휴대폰 형식(0 3/5/7/8/9 + 9자리) 대략 확인 — 접수를 막진 않고 확인창만 띄우는 용도 */
+function looksInvalidVNPhone(phone){
+  var d=String(phone||'').replace(/[^0-9]/g,''); if(!d)return false;
+  if(d.startsWith('84'))d='0'+d.slice(2);
+  if(d.length!==10)return true;
+  return !/^0[35789]/.test(d);
 }
 function renderConfirm(){
   const lang=curLang();
