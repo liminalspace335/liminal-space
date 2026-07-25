@@ -457,7 +457,7 @@
 
             <h3 style="margin-top:18px;font-size:14px">당일 예약 재알림 (Zalo ZNS · 확정 고객에게)</h3>
             <div class="field-row"><label>당일 재알림 사용</label><label style="display:inline-flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="inZaloRemindOn" /> <span style="font-size:13px;color:var(--ink-soft)">켜면 예약 당일(베트남 시간) 설정한 시각에, 그날 '확정' 상태인 신청자 전체에게 잘로로 재알림 발송</span></label></div>
-            <div class="field-row" style="max-width:200px"><label>재알림 시각 (베트남 시간)</label><input type="time" id="inZaloRemindHour" value="10:00" /></div>
+            <div class="field-row" style="max-width:200px"><label>재알림 시각 (베트남 시간, 10분 단위)</label><input type="time" id="inZaloRemindHour" value="10:00" step="600" /></div>
 
             <div class="save-row"><button class="btn sm" id="notifySave">저장</button><span class="saved" id="notifySaved">저장됨 ✓</span></div>
             <p class="desc" style="margin-top:18px"><a href="https://account.zalo.solutions/AEUR64QVJWRZ76N7/spending/overview" target="_blank" rel="noopener">잘로 잔액 확인 →</a></p>
@@ -570,8 +570,8 @@
 </div></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="../config.js?v=40"></script>
-<script src="../store.js?v=40"></script>
+<script src="../config.js?v=41"></script>
+<script src="../store.js?v=41"></script>
 <script>
 const STORE_KEY='liminal_applications';
 const SET_KEY='liminal_settings';
@@ -1223,9 +1223,15 @@ function renderBranches(){const s=loadSettings();
   (function(){var cl=(s.site&&s.site.conceptList)||[];document.querySelectorAll('#conceptList .cm-url').forEach(function(inp,i){inp.value=cl[i]||'';});})();
   document.getElementById('inConceptAuto').checked=!!(s.site&&s.site.conceptAutoplay);
 }
-document.getElementById('siteSave').addEventListener('click',()=>{const s=loadSettings();s.site={brandName:document.getElementById('inBrand').value.trim(),heroLogo:document.getElementById('inHeroLogo').value.trim(),notifyEmail:document.getElementById('inNotifyEmail').value.trim(),notifyOn:document.getElementById('inNotifyOn').checked,estYear:document.getElementById('inEst').value.trim(),copyrightYear:document.getElementById('inCopy').value.trim(),bizName:document.getElementById('inBizName').value.trim(),bizAddress:document.getElementById('inBizAddr').value.trim(),bizTax:document.getElementById('inBizTax').value.trim(),bizPhone:document.getElementById('inBizPhone').value.trim(),bizEmail:document.getElementById('inBizEmail').value.trim(),moitUrl:document.getElementById('inMoitUrl').value.trim(),moitLogo:document.getElementById('inMoitLogo').value.trim(),conceptList:[...document.querySelectorAll('#conceptList .cm-url')].map(i=>i.value.trim()).filter(Boolean).slice(0,5),conceptAutoplay:document.getElementById('inConceptAuto').checked,zaloOn:document.getElementById('inZaloOn').checked,confirmMailOn:document.getElementById('inConfirmMailOn').checked,zaloRemindOn:document.getElementById('inZaloRemindOn').checked,zaloRemindHour:document.getElementById('inZaloRemindHour').value||'10:00'};saveSettings(s);toast('siteSaved');});
+/* 재알림 시각을 10분 단위로 내림(크론이 10분 간격으로만 체크하므로, 어긋난 값 저장을 방지) */
+function roundTo10Min(hhmm){
+  var m=/^(\d{1,2}):(\d{2})/.exec(hhmm||''); if(!m)return '10:00';
+  var h=(''+m[1]).padStart(2,'0'), min=Math.floor(parseInt(m[2],10)/10)*10;
+  return h+':'+String(min).padStart(2,'0');
+}
+document.getElementById('siteSave').addEventListener('click',()=>{const s=loadSettings();s.site={brandName:document.getElementById('inBrand').value.trim(),heroLogo:document.getElementById('inHeroLogo').value.trim(),notifyEmail:document.getElementById('inNotifyEmail').value.trim(),notifyOn:document.getElementById('inNotifyOn').checked,estYear:document.getElementById('inEst').value.trim(),copyrightYear:document.getElementById('inCopy').value.trim(),bizName:document.getElementById('inBizName').value.trim(),bizAddress:document.getElementById('inBizAddr').value.trim(),bizTax:document.getElementById('inBizTax').value.trim(),bizPhone:document.getElementById('inBizPhone').value.trim(),bizEmail:document.getElementById('inBizEmail').value.trim(),moitUrl:document.getElementById('inMoitUrl').value.trim(),moitLogo:document.getElementById('inMoitLogo').value.trim(),conceptList:[...document.querySelectorAll('#conceptList .cm-url')].map(i=>i.value.trim()).filter(Boolean).slice(0,5),conceptAutoplay:document.getElementById('inConceptAuto').checked,zaloOn:document.getElementById('inZaloOn').checked,confirmMailOn:document.getElementById('inConfirmMailOn').checked,zaloRemindOn:document.getElementById('inZaloRemindOn').checked,zaloRemindHour:roundTo10Min(document.getElementById('inZaloRemindHour').value)};saveSettings(s);toast('siteSaved');});
 /* 알림관리 저장 (site 병합 — 다른 site 필드 보존) */
-document.getElementById('notifySave').addEventListener('click',()=>{const s=loadSettings();s.site=s.site||{};s.site.notifyOn=document.getElementById('inNotifyOn').checked;s.site.notifyEmail=document.getElementById('inNotifyEmail').value.trim();s.site.zaloOn=document.getElementById('inZaloOn').checked;s.site.confirmMailOn=document.getElementById('inConfirmMailOn').checked;s.site.zaloRemindOn=document.getElementById('inZaloRemindOn').checked;s.site.zaloRemindHour=document.getElementById('inZaloRemindHour').value||'10:00';saveSettings(s);toast('notifySaved');});
+document.getElementById('notifySave').addEventListener('click',()=>{const s=loadSettings();s.site=s.site||{};s.site.notifyOn=document.getElementById('inNotifyOn').checked;s.site.notifyEmail=document.getElementById('inNotifyEmail').value.trim();s.site.zaloOn=document.getElementById('inZaloOn').checked;s.site.confirmMailOn=document.getElementById('inConfirmMailOn').checked;s.site.zaloRemindOn=document.getElementById('inZaloRemindOn').checked;s.site.zaloRemindHour=roundTo10Min(document.getElementById('inZaloRemindHour').value);saveSettings(s);toast('notifySaved');});
 /* 히어로 로고 업로드 */
 document.getElementById('heroLogoFile').addEventListener('change',async function(e){
   const f=e.target.files&&e.target.files[0]; if(!f)return;
