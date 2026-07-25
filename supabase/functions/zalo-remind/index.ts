@@ -13,6 +13,13 @@
 // 필요한 시크릿 (기존 zalo-notify와 동일 — 이미 등록되어 있으면 추가 설정 불필요):
 //   ZALO_APP_ID, ZALO_APP_SECRET, ZALO_TEMPLATE_ID, WEBHOOK_SECRET
 //   SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY  ← Edge 런타임이 자동 주입
+//
+// ⚠️ 배포 시 반드시 --no-verify-jwt 플래그 필요:
+//   supabase functions deploy zalo-remind --no-verify-jwt --project-ref euhuiktqoslmndozqpsr
+//   pg_cron(net.http_post)이 보내는 요청엔 Authorization 헤더가 없어서, 이 플래그 없이 배포하면
+//   Supabase 게이트웨이가 함수 코드(웹훅 시크릿 검증)까지 가지도 못하고 401로 막아버린다.
+//   (confirm-mail / zalo-notify / app-notify도 전부 이 플래그로 배포되어 있음 — 신규 웹훅/크론 함수를
+//    추가할 때는 항상 이 플래그를 잊지 말 것)
 // ============================================================
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
