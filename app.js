@@ -1007,6 +1007,19 @@ function submitApplication(){
   try{const list=(window.LS?LS.getApps():[]).slice();list.push(entry);LS.setApps(list);}catch(err){console.warn('저장 실패',err);}
   goto(7);
 }
+/* 신청 저장이 재시도까지 실패하면(순간 네트워크 오류 등) 확인 화면(7단계)에 그대로 있는 고객에게도 안내.
+   이미 화면을 벗어났으면(모달 닫힘 등) 되돌릴 방법이 없어 콘솔 로그만 남긴다. */
+if(window.LS&&LS.onError) LS.onError(function(){
+  if(cur!==7)return;
+  const box=modal.querySelector('.modal-step[data-step="7"] .modal-done');
+  if(!box)return;
+  const l=curLang();
+  let warn=box.querySelector('.done-fail');
+  if(!warn){warn=document.createElement('div');warn.className='done-fail';box.insertAdjacentElement('afterbegin',warn);}
+  warn.textContent = l==='en' ? 'Your submission was not completed. Please contact us to confirm.'
+    : l==='vi' ? 'Yêu cầu của bạn chưa được hoàn tất. Vui lòng liên hệ để xác nhận.'
+    : '접수가 완료되지 않았습니다. 담당자에게 확인해주세요.';
+});
 
 /* 초기 옵션 바인딩 (열릴 때 동적 렌더로 재바인딩됨) */
 modal.querySelectorAll('.opt-list').forEach(bindOptList);
