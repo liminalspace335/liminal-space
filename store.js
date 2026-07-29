@@ -191,6 +191,18 @@
   }
   // (branch_id,sched_date) 쌍 목록을 PostgREST or() 필터 문자열로 변환 — 바뀐 날짜만 콕 집어 지우기 위함
   function dayKeyOrFilter(keys){ return keys.map(function(k){ return 'and(branch_id.eq.'+k.branch_id+',sched_date.eq.'+k.sched_date+')'; }).join(','); }
+  function chunk(arr,size){ var out=[]; for(var i=0;i<arr.length;i+=size) out.push(arr.slice(i,i+size)); return out; }
+  // 한 번에 아주 많은 날짜(예: 1년치 스케줄을 통으로 붙여넣기)를 지울 때 or() 필터 문자열이 너무 길어져
+  // URL 길이 제한에 걸리지 않도록, 100개 단위로 나눠서 여러 번 삭제 요청을 보낸다.
+  async function deleteDayKeysChunked(table,keys){
+    var errs=[];
+    var batches=chunk(keys,100);
+    var results=await Promise.all(batches.map(function(b){
+      return _ckRetry(function(){return client.from(table).delete().or(dayKeyOrFilter(b));}, table+'(del)');
+    }));
+    results.forEach(function(e){ if(e) errs.push(e); });
+    return errs.length?errs.join('; '):null;
+  }
   // FK 순서를 지키되 독립 작업은 병렬로 — 저장 체감속도 개선
   // 스케줄/기본값은 이제 "바뀐 지점·바뀐 날짜"만 지웠다가 다시 쓴다(전체삭제 X) — 안 건드린 데이터는 절대 손대지 않는다
   async function pushPlan(p){
@@ -203,8 +215,8 @@
       p.siteRow ? _ckRetry(function(){return client.from('site_info').upsert([p.siteRow]);},'site_info') : null,
       p.branchRows.length ? _ckRetry(function(){return client.from('branches').upsert(p.branchRows);},'branches') : null,
       p.delDefBranchIds.length ? _ckRetry(function(){return client.from('default_slots').delete().in('branch_id',p.delDefBranchIds);},'default_slots(del)') : null,
-      p.delDayKeys.length ? _ckRetry(function(){return client.from('schedule_slots').delete().or(dayKeyOrFilter(p.delDayKeys));},'schedule_slots(del)') : null,
-      p.delDayKeys.length ? _ckRetry(function(){return client.from('schedule_days').delete().or(dayKeyOrFilter(p.delDayKeys));},'schedule_days(del)') : null
+      p.delDayKeys.length ? deleteDayKeysChunked('schedule_slots',p.delDayKeys) : null,
+      p.delDayKeys.length ? deleteDayKeysChunked('schedule_days',p.delDayKeys) : null
     ]));
     // 2단계: classes 업서트 (branches 필요)
     if(p.classRows.length) add([await _ckRetry(function(){return client.from('classes').upsert(p.classRows);},'classes')]);
