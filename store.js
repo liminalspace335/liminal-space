@@ -20,6 +20,8 @@
   function vi(v){ return (v&&typeof v==='object')?(v.vi||''):''; }
   function tri(k,e,v){ return {ko:k||'',en:e||'',vi:v||''}; }
   function numOrNull(x){ if(x===''||x==null) return null; var n=Number(x); return isNaN(n)?null:n; }
+  // 시간대 배열의 내용을 순서 무관하게 비교하기 위한 서명 (변경된 날짜/지점만 골라내는 데 사용)
+  function slotSig(arr){ return (arr||[]).map(function(s){return (s.time||'')+'|'+(s.cls||'')+'|'+(s.cap||0);}).sort().join(',,'); }
 
   /* ---------- 조립: 테이블 rows → settings 객체 / apps 배열 ---------- */
   function assemble(t){
@@ -107,22 +109,46 @@
         volume:numOrNull(d.volume), price_krw:d.priceKRW||'', price_vnd:d.priceVND||'', price_usd:d.priceUSD||'',
         disc_type:d.discType||'none', disc_val:d.discVal||'',
         detail_ko:ko(d.detail), detail_en:en(d.detail), detail_vi:vi(d.detail) }; });
-    // 기본값/스케줄: 전체 교체 (참조 안 됨)
-    var defRows=[]; var ds=s.defaultSchedule||{};
-    Object.keys(ds).forEach(function(bn){ (ds[bn]||[]).forEach(function(sl,i){ defRows.push({ id:rid('dslot'),
-      branch_id:brNameToId[bn]||null, class_id:(sl.cls?clKeyToId[classKey(bn,sl.cls)]||null:null), time:sl.time||'', cap:sl.cap||0, sort:i }); }); });
-    var schRows=[], dayRows=[]; var sc=s.schedule||{};
-    Object.keys(sc).forEach(function(bn){ var byDate=sc[bn]||{}; Object.keys(byDate).forEach(function(dt){
-      dayRows.push({ branch_id:brNameToId[bn]||null, sched_date:dt });
-      (byDate[dt]||[]).forEach(function(sl){ schRows.push({ id:rid('sslot'), branch_id:brNameToId[bn]||null,
-        sched_date:dt, class_id:(sl.cls?clKeyToId[classKey(bn,sl.cls)]||null:null), time:sl.time||'', cap:sl.cap||0 }); }); }); });
-    // schedule_days 복합 PK(branch_id,sched_date) 중복 제거 + branch_id 없는 행 제외
-    var _seenDay={}; dayRows=dayRows.filter(function(r){ if(!r.branch_id) return false; var k=r.branch_id+'|'+r.sched_date; if(_seenDay[k]) return false; _seenDay[k]=1; return true; });
+    // 기본값(지점별 템플릿): 내용이 실제로 바뀐 지점만 삭제 후 재삽입 — 안 건드린 지점은 그대로 둔다
+    var oldDef=oldS.defaultSchedule||{}, newDef=s.defaultSchedule||{};
+    var defRows=[], delDefBranchIds=[];
+    var defBranchSet={}; Object.keys(oldDef).forEach(function(bn){defBranchSet[bn]=1;}); Object.keys(newDef).forEach(function(bn){defBranchSet[bn]=1;});
+    Object.keys(defBranchSet).forEach(function(bn){
+      var bid=brNameToId[bn]||branchIdByName[bn]; if(!bid)return;
+      var oldArr=oldDef[bn], newArr=newDef[bn];
+      if(newArr===undefined){ delDefBranchIds.push(bid); return; }   // 지점 자체가 없어짐
+      if(oldArr===undefined || slotSig(oldArr)!==slotSig(newArr)){
+        delDefBranchIds.push(bid);
+        (newArr||[]).forEach(function(sl,i){ defRows.push({ id:rid('dslot'), branch_id:bid,
+          class_id:(sl.cls?clKeyToId[classKey(bn,sl.cls)]||null:null), time:sl.time||'', cap:sl.cap||0, sort:i }); });
+      }
+    });
+    // 개별 날짜 스케줄: 새로 생겼거나 내용이 바뀌었거나 삭제된 (지점,날짜)만 건드린다 — 안 건드린 날짜는 절대 손대지 않는다
+    var oldSc=oldS.schedule||{}, newSc=s.schedule||{};
+    var schRows=[], dayRows=[], delDayKeys=[];
+    var branchDateSet={};   // {branch: {date:1, ...}} - 문자열 키 합치기 대신 중첩 맵으로 구분자 충돌 위험을 없앤다
+    function collectKeys(scObj){ Object.keys(scObj).forEach(function(bn){ branchDateSet[bn]=branchDateSet[bn]||{}; Object.keys(scObj[bn]||{}).forEach(function(dt){ branchDateSet[bn][dt]=1; }); }); }
+    collectKeys(oldSc); collectKeys(newSc);
+    Object.keys(branchDateSet).forEach(function(bn){
+      var bid=brNameToId[bn]||branchIdByName[bn]; if(!bid)return;
+      Object.keys(branchDateSet[bn]).forEach(function(dt){
+        var oldArr=(oldSc[bn]||{})[dt], newArr=(newSc[bn]||{})[dt];
+        if(newArr===undefined){ delDayKeys.push({branch_id:bid,sched_date:dt}); return; }   // 개별설정 해제됨
+        if(oldArr===undefined || slotSig(oldArr)!==slotSig(newArr)){
+          delDayKeys.push({branch_id:bid,sched_date:dt});   // 새로 생겼거나 내용이 바뀐 날짜만 지웠다가 다시 씀
+          dayRows.push({branch_id:bid, sched_date:dt});
+          (newArr||[]).forEach(function(sl){ schRows.push({ id:rid('sslot'), branch_id:bid, sched_date:dt,
+            class_id:(sl.cls?clKeyToId[classKey(bn,sl.cls)]||null:null), time:sl.time||'', cap:sl.cap||0 }); });
+        }
+        // 내용이 같으면 완전히 건너뜀 (DB 안 건드림)
+      });
+    });
 
     var newBr={}; branchRows.forEach(function(r){newBr[r.id]=1;});
     var newCl={}; classRows.forEach(function(r){newCl[r.id]=1;});
     var newDt={}; detailRows.forEach(function(r){newDt[r.id]=1;});
-    return { branchRows:branchRows, siteRow:siteRow, classRows:classRows, detailRows:detailRows, defRows:defRows, schRows:schRows, dayRows:dayRows,
+    return { branchRows:branchRows, siteRow:siteRow, classRows:classRows, detailRows:detailRows,
+      defRows:defRows, delDefBranchIds:delDefBranchIds, schRows:schRows, dayRows:dayRows, delDayKeys:delDayKeys,
       delBranchIds:ob.map(function(b){return b.id;}).filter(function(id){return id&&!newBr[id];}),
       delClassIds:oc.map(function(c){return c.id;}).filter(function(id){return id&&!newCl[id];}),
       delDetailIds:od.map(function(d){return d.id;}).filter(function(id){return id&&!newDt[id];}),
@@ -143,7 +169,6 @@
       name:a.name||'', phone:a.phone||'', email:a.email||'', nationality:a.nationality||'', sns_facebook:a.facebook||'', sns_instagram:a.instagram||'', msg:a.msg||'', amount:a.amount||'', deposit:a.deposit||'', status:a.status||'new', lang:a.lang||'' }; }
 
   /* ---------- 원격 실행 ---------- */
-  var NONE='___none___';
   var onErr=null;   // 저장 실패 시 호출되는 콜백(LS.onError로 등록)
   async function _ck(promise,label){
     try{ var r=await promise; if(r&&r.error){return label+': '+(r.error.message||r.error.code||JSON.stringify(r.error));} return null; }
@@ -159,26 +184,30 @@
     }
     return msg;
   }
+  // (branch_id,sched_date) 쌍 목록을 PostgREST or() 필터 문자열로 변환 — 바뀐 날짜만 콕 집어 지우기 위함
+  function dayKeyOrFilter(keys){ return keys.map(function(k){ return 'and(branch_id.eq.'+k.branch_id+',sched_date.eq.'+k.sched_date+')'; }).join(','); }
   // FK 순서를 지키되 독립 작업은 병렬로 — 저장 체감속도 개선
+  // 스케줄/기본값은 이제 "바뀐 지점·바뀐 날짜"만 지웠다가 다시 쓴다(전체삭제 X) — 안 건드린 데이터는 절대 손대지 않는다
   async function pushPlan(p){
     var errs=[];
     function add(arr){ (arr||[]).forEach(function(e){ if(e) errs.push(e); }); }
-    // 1단계: 부모(branches)·site_info 업서트 + 슬롯/휴무 전체삭제 (서로 독립 → 병렬)
+    // 1단계: 부모(branches)·site_info 업서트 + 바뀐 지점의 기본값만 삭제 + 바뀐 날짜만 스케줄 삭제 (서로 독립 → 병렬)
     add(await Promise.all([
       p.siteRow ? _ck(client.from('site_info').upsert([p.siteRow]),'site_info') : null,
       p.branchRows.length ? _ck(client.from('branches').upsert(p.branchRows),'branches') : null,
-      _ck(client.from('default_slots').delete().neq('id',NONE),'default_slots(del)'),
-      _ck(client.from('schedule_slots').delete().neq('id',NONE),'schedule_slots(del)'),
-      _ck(client.from('schedule_days').delete().neq('sched_date',NONE),'schedule_days(del)')
+      p.delDefBranchIds.length ? _ck(client.from('default_slots').delete().in('branch_id',p.delDefBranchIds),'default_slots(del)') : null,
+      p.delDayKeys.length ? _ck(client.from('schedule_slots').delete().or(dayKeyOrFilter(p.delDayKeys)),'schedule_slots(del)') : null,
+      p.delDayKeys.length ? _ck(client.from('schedule_days').delete().or(dayKeyOrFilter(p.delDayKeys)),'schedule_days(del)') : null
     ]));
     // 2단계: classes 업서트 (branches 필요)
     if(p.classRows.length) add([await _ck(client.from('classes').upsert(p.classRows),'classes')]);
-    // 3단계: class_details 업서트 + 슬롯/휴무 삽입 + 삭제분(detail) (branches·classes 필요 → 서로 독립 병렬)
+    // 3단계: class_details 업서트 + 바뀐 슬롯/휴무만 삽입 + 삭제분(detail) (branches·classes 필요 → 서로 독립 병렬)
+    // dayRows/schRows는 위 1단계에서 이미 지운 (branch,date)에 대해서만 만들어지므로 순수 insert로 충분(충돌 없음)
     add(await Promise.all([
       p.detailRows.length ? _ck(client.from('class_details').upsert(p.detailRows),'class_details') : null,
       p.defRows.length ? _ck(client.from('default_slots').insert(p.defRows),'default_slots') : null,
       p.schRows.length ? _ck(client.from('schedule_slots').insert(p.schRows),'schedule_slots') : null,
-      p.dayRows.length ? _ck(client.from('schedule_days').upsert(p.dayRows,{onConflict:'branch_id,sched_date',ignoreDuplicates:true}),'schedule_days') : null,
+      p.dayRows.length ? _ck(client.from('schedule_days').insert(p.dayRows),'schedule_days') : null,
       p.delDetailIds.length ? _ck(client.from('class_details').delete().in('id',p.delDetailIds),'class_details(del)') : null
     ]));
     // 4단계: 삭제된 classes·branches 제거 (branches 삭제는 종속행 cascade)
