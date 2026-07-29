@@ -570,8 +570,8 @@
 </div></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="../config.js?v=43"></script>
-<script src="../store.js?v=43"></script>
+<script src="../config.js?v=44"></script>
+<script src="../store.js?v=44"></script>
 <script>
 const STORE_KEY='liminal_applications';
 const SET_KEY='liminal_settings';
@@ -1077,7 +1077,7 @@ function renderEditor(){
     <div id="edSlots">${slots.map((sl,i)=>{const cnt=bookedAt(bkBranch,bkSelected,sl.time);return `<div class="slot-row bk" data-i="${i}">
       <label class="sc" data-l="클래스"><select class="e-cls">${clsOptsFor(bkBranch,sl.cls)}</select></label><label class="sc" data-l="시간"><input type="time" class="e-time" value="${sl.time||''}" /></label><label class="sc" data-l="정원"><input type="number" min="0" class="e-cap" value="${sl.cap??0}" /></label><div class="cnt-cell ${cnt>0?'has':''}" data-l="신청">${cnt}명</div><button class="icon-btn e-del" ${cnt>0?'disabled title="신청 인원이 있어 삭제 불가"':''}>삭제</button></div>`;}).join('')||'<div class="hint">시간대 없음 (휴무)</div>'}</div>
     <div class="save-row"><button class="btn ghost sm" id="edAdd">+ 시간대 추가</button><button class="btn ghost sm" id="edDefault">기본값 적용</button><button class="btn sm" id="edSave">이 날짜 저장</button><button class="btn danger sm" id="edClosed">휴무일 지정</button>${isOverride?'<button class="btn ghost sm" id="edReset">개별설정 해제</button>':''}<span class="saved" id="edSaved">저장됨 ✓</span></div>
-    <div class="copybar"><button class="btn ${copyMode?'':'ghost'} sm" id="edCopy">${copyMode?'복사 취소':'이 날짜 복사'}</button><button class="btn ghost sm" id="edPaste" ${(copyMode&&clipboard)?'':'disabled'}>여기에 붙여넣기</button><span class="clip">${copyMode?`복사됨 ${clipboard?clipboard.length:0}개 · 선택 ${bkSel.size}일`:'기본은 1일 선택'}</span></div>
+    <div class="copybar"><button class="btn ${copyMode?'':'ghost'} sm" id="edCopy">${copyMode?'복사 취소':'이 날짜 복사'}</button><button class="btn ghost sm" id="edPaste" ${(copyMode&&clipboard&&clipboard.length)?'':'disabled'}>여기에 붙여넣기</button><span class="clip">${copyMode?`복사됨 ${clipboard?clipboard.length:0}개 · 선택 ${bkSel.size}일`:'기본은 1일 선택'}</span></div>
     <div class="hint">${copyMode?'캘린더에서 드래그·클릭으로 적용할 날짜를 선택한 뒤 "여기에 붙여넣기"를 누르세요.':'"이 날짜 복사"를 누르면 이 날짜의 시간대 설정을 다른 날짜로 복사할 수 있습니다.'}</div>`;
   ed.querySelectorAll('.e-del').forEach(b=>b.addEventListener('click',e=>e.target.closest('.slot-row').remove()));
   document.getElementById('edAdd').addEventListener('click',()=>{const wrap=document.getElementById('edSlots');const h=wrap.querySelector('.hint');if(h)h.remove();const t=document.createElement('div');t.innerHTML=`<div class="slot-row bk"><select class="e-cls">${clsOptsFor(bkBranch,'')}</select><input type="time" class="e-time" value="12:00" /><input type="number" min="0" class="e-cap" value="6" /><div class="cnt-cell">0명</div><button class="icon-btn e-del">삭제</button></div>`;const row=t.firstChild;row.querySelector('.e-del').addEventListener('click',ev=>ev.target.closest('.slot-row').remove());wrap.appendChild(row);});
@@ -1092,7 +1092,11 @@ function renderEditor(){
   });
   ed.querySelector('#edCopy').addEventListener('click',()=>{
     if(copyMode){copyMode=false;bkSel=new Set();renderBooking();}                      // 복사 취소 → 단일 선택
-    else{clipboard=readEditor();copyMode=true;bkSel=new Set(bkSelected?[bkSelected]:[]);renderBooking();}  // 복사 시작 → 다중 선택
+    else{
+      const cur=readEditor();
+      if(!cur.length){alert('이 날짜엔 복사할 시간대가 없습니다(휴무). 시간대가 설정된 날짜를 선택한 뒤 복사해주세요.');return;}
+      clipboard=cur;copyMode=true;bkSel=new Set(bkSelected?[bkSelected]:[]);renderBooking();  // 복사 시작 → 다중 선택
+    }
   });
   ed.querySelector('#edPaste').addEventListener('click',()=>{if(!clipboard||!copyMode)return;const targets=bkSel.size?[...bkSel]:(bkSelected?[bkSelected]:[]);if(!targets.length)return;if(!confirm(targets.length+'개 날짜에 적용할까요?'))return;const st=loadSettings();if(!st.schedule)st.schedule={};if(!st.schedule[bkBranch])st.schedule[bkBranch]={};targets.forEach(dt=>{st.schedule[bkBranch][dt]=sortSlots(bkBranch,clipboard.map(s=>Object.assign({},s)));});saveSettings(st);copyMode=false;bkSel=new Set();renderBooking();});
   const rst=document.getElementById('edReset');if(rst)rst.addEventListener('click',()=>{const st=loadSettings();if(st.schedule&&st.schedule[bkBranch])delete st.schedule[bkBranch][bkSelected];saveSettings(st);renderBooking();});
