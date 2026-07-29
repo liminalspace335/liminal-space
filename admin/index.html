@@ -570,8 +570,8 @@
 </div></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="../config.js?v=47"></script>
-<script src="../store.js?v=47"></script>
+<script src="../config.js?v=48"></script>
+<script src="../store.js?v=48"></script>
 <script>
 const STORE_KEY='liminal_applications';
 const SET_KEY='liminal_settings';
@@ -1098,7 +1098,7 @@ function renderEditor(){
       clipboard=cur;copyMode=true;bkSel=new Set(bkSelected?[bkSelected]:[]);renderBooking();  // 복사 시작 → 다중 선택
     }
   });
-  ed.querySelector('#edPaste').addEventListener('click',()=>{if(!clipboard||!copyMode)return;const targets=bkSel.size?[...bkSel]:(bkSelected?[bkSelected]:[]);if(!targets.length)return;if(!confirm(targets.length+'개 날짜에 적용할까요?'))return;const st=loadSettings();if(!st.schedule)st.schedule={};if(!st.schedule[bkBranch])st.schedule[bkBranch]={};targets.forEach(dt=>{st.schedule[bkBranch][dt]=sortSlots(bkBranch,clipboard.map(s=>Object.assign({},s)));});saveSettings(st);copyMode=false;bkSel=new Set();renderBooking();});
+  ed.querySelector('#edPaste').addEventListener('click',()=>{if(!clipboard||!copyMode)return;const targets=bkSel.size?[...bkSel]:(bkSelected?[bkSelected]:[]);if(!targets.length)return;if(!confirm(targets.length+'개 날짜에 적용할까요?'))return;const st=loadSettings();if(!st.schedule)st.schedule={};if(!st.schedule[bkBranch])st.schedule[bkBranch]={};targets.forEach(dt=>{st.schedule[bkBranch][dt]=sortSlots(bkBranch,clipboard.map(s=>Object.assign({},s)));});saveSettings(st);copyMode=false;bkSel=new Set();renderBooking();alert(targets.length+'개 날짜에 저장이 완료되었습니다. 별도로 "이 날짜 저장" 버튼을 누르실 필요 없습니다.');});
   const rst=document.getElementById('edReset');if(rst)rst.addEventListener('click',()=>{const st=loadSettings();if(st.schedule&&st.schedule[bkBranch])delete st.schedule[bkBranch][bkSelected];saveSettings(st);renderBooking();});
   // 복사/붙여넣기 바를 캘린더 상단으로 이동(바인딩 유지한 채 노드 이동)
   var _cs=document.getElementById('bkCopySlot');var _cb=ed.querySelector('.copybar');if(_cs&&_cb){_cs.innerHTML='';_cs.appendChild(_cb);}
