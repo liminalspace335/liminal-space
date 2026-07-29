@@ -11,6 +11,11 @@
   var useRemote = !!(CFG.url && CFG.anonKey && window.supabase && window.supabase.createClient);
   var client = useRemote ? window.supabase.createClient(CFG.url, CFG.anonKey) : null;
   var cache = { settings:{}, apps:[] };
+  // schedule/defaultSchedule의 "저장 전" 스냅샷 — cache.settings.schedule은 화면 코드가 saveSettings() 호출 *전에*
+  // 직접 in-place로 미리 mutate해버리기 때문에(같은 객체 참조를 공유), cache.settings를 그대로 "old" 기준으로 쓰면
+  // old와 new가 항상 같아져서 diff가 항상 "변경 없음"으로 오판한다. 그래서 별도로 깊은 복사본을 들고 있는다.
+  var _lastSchedule=null, _lastDefaultSchedule=null;
+  function deepClone(o){ try{ return JSON.parse(JSON.stringify(o||{})); }catch(e){ return {}; } }
 
   function lsGet(k,f){ try{ return JSON.parse(localStorage.getItem(k)||f); }catch(e){ return JSON.parse(f); } }
   function lsSet(k,v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
@@ -269,6 +274,7 @@
         cache.loadError=failed.length?failed:null;   // 재시도까지 다 실패한 테이블 목록(없으면 null)
         if(failed.length) console.warn('일부 테이블 로드 실패(재시도 후에도):', failed);
         var a=assemble(res); cache.settings=a.settings; cache.apps=a.apps;
+        _lastSchedule=deepClone(a.settings.schedule); _lastDefaultSchedule=deepClone(a.settings.defaultSchedule);
       }catch(e){ console.warn('Supabase init failed → localStorage', e); useRemote=false; }
     }
     if(!useRemote){ cache.settings=lsGet(KEY_SET,'{}'); cache.apps=lsGet(KEY_APPS,'[]'); }
@@ -281,7 +287,12 @@
   var _saveChain = Promise.resolve();
   function setSettings(v){
     if(useRemote){
-      var p=plan(cache.settings||{}, v); applyIds(v,p);
+      // schedule/defaultSchedule만 보호된 스냅샷(_lastSchedule/_lastDefaultSchedule)으로 old를 대체 —
+      // cache.settings.schedule은 화면 코드가 이미 in-place로 새 값을 넣어놓은 상태라 old 기준으로 못 씀(위 주석 참고).
+      // branches/classes/details는 기존 방식(자연키 매칭) 그대로 cache.settings를 사용.
+      var oldForPlan=Object.assign({}, cache.settings||{}, { schedule:_lastSchedule||{}, defaultSchedule:_lastDefaultSchedule||{} });
+      var p=plan(oldForPlan, v); applyIds(v,p);
+      _lastSchedule=deepClone(v.schedule); _lastDefaultSchedule=deepClone(v.defaultSchedule);
       _saveChain = _saveChain.then(function(){ return pushPlan(p); }).then(_report, function(e){ _report([String(e&&e.message||e)]); });
     }
     else { lsSet(KEY_SET, v); }
