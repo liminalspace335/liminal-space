@@ -211,13 +211,17 @@
     // 순간적인 오류(네트워크 끊김, 요청 몰림 등)로 한 번 실패해도 조용히 데이터가 안 반영되지 않도록,
     // pushApps/fetchTableWithRetry와 동일하게 모든 쓰기 작업에 자동 재시도(최대 3회)를 적용한다.
     // 1단계: 부모(branches)·site_info 업서트 + 바뀐 지점의 기본값만 삭제 + 바뀐 날짜만 스케줄 삭제 (서로 독립 → 병렬)
-    add(await Promise.all([
+    var stage1=await Promise.all([
       p.siteRow ? _ckRetry(function(){return client.from('site_info').upsert([p.siteRow]);},'site_info') : null,
       p.branchRows.length ? _ckRetry(function(){return client.from('branches').upsert(p.branchRows);},'branches') : null,
       p.delDefBranchIds.length ? _ckRetry(function(){return client.from('default_slots').delete().in('branch_id',p.delDefBranchIds);},'default_slots(del)') : null,
       p.delDayKeys.length ? deleteDayKeysChunked('schedule_slots',p.delDayKeys) : null,
       p.delDayKeys.length ? deleteDayKeysChunked('schedule_days',p.delDayKeys) : null
-    ]));
+    ]);
+    add(stage1);
+    // 옛 스케줄 삭제가 (재시도까지) 실패했는데 새 스케줄을 그냥 삽입하면, 지운 줄 알았던 옛 행 + 새 행이
+    // 같은 날짜에 중복으로 남는다 — 그래서 삭제가 실패하면 이번 저장에서 스케줄 삽입은 건너뛴다(다음 저장 때 재시도됨).
+    var schedDeleteFailed=!!(stage1[3]||stage1[4]);
     // 2단계: classes 업서트 (branches 필요)
     if(p.classRows.length) add([await _ckRetry(function(){return client.from('classes').upsert(p.classRows);},'classes')]);
     // 3단계: class_details 업서트 + 바뀐 슬롯/휴무만 삽입 + 삭제분(detail) (branches·classes 필요 → 서로 독립 병렬)
@@ -225,10 +229,11 @@
     add(await Promise.all([
       p.detailRows.length ? _ckRetry(function(){return client.from('class_details').upsert(p.detailRows);},'class_details') : null,
       p.defRows.length ? _ckRetry(function(){return client.from('default_slots').insert(p.defRows);},'default_slots') : null,
-      p.schRows.length ? _ckRetry(function(){return client.from('schedule_slots').insert(p.schRows);},'schedule_slots') : null,
-      p.dayRows.length ? _ckRetry(function(){return client.from('schedule_days').insert(p.dayRows);},'schedule_days') : null,
+      (p.schRows.length&&!schedDeleteFailed) ? _ckRetry(function(){return client.from('schedule_slots').insert(p.schRows);},'schedule_slots') : null,
+      (p.dayRows.length&&!schedDeleteFailed) ? _ckRetry(function(){return client.from('schedule_days').insert(p.dayRows);},'schedule_days') : null,
       p.delDetailIds.length ? _ckRetry(function(){return client.from('class_details').delete().in('id',p.delDetailIds);},'class_details(del)') : null
     ]));
+    if(schedDeleteFailed&&(p.schRows.length||p.dayRows.length)) errs.push('schedule_slots/schedule_days: 이전 데이터 삭제 실패로 이번 스케줄 저장을 건너뛰었습니다. 다시 저장해 주세요.');
     // 4단계: 삭제된 classes·branches 제거 (branches 삭제는 종속행 cascade)
     add(await Promise.all([
       p.delClassIds.length ? _ckRetry(function(){return client.from('classes').delete().in('id',p.delClassIds);},'classes(del)') : null,
