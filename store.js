@@ -196,29 +196,31 @@
   async function pushPlan(p){
     var errs=[];
     function add(arr){ (arr||[]).forEach(function(e){ if(e) errs.push(e); }); }
+    // 순간적인 오류(네트워크 끊김, 요청 몰림 등)로 한 번 실패해도 조용히 데이터가 안 반영되지 않도록,
+    // pushApps/fetchTableWithRetry와 동일하게 모든 쓰기 작업에 자동 재시도(최대 3회)를 적용한다.
     // 1단계: 부모(branches)·site_info 업서트 + 바뀐 지점의 기본값만 삭제 + 바뀐 날짜만 스케줄 삭제 (서로 독립 → 병렬)
     add(await Promise.all([
-      p.siteRow ? _ck(client.from('site_info').upsert([p.siteRow]),'site_info') : null,
-      p.branchRows.length ? _ck(client.from('branches').upsert(p.branchRows),'branches') : null,
-      p.delDefBranchIds.length ? _ck(client.from('default_slots').delete().in('branch_id',p.delDefBranchIds),'default_slots(del)') : null,
-      p.delDayKeys.length ? _ck(client.from('schedule_slots').delete().or(dayKeyOrFilter(p.delDayKeys)),'schedule_slots(del)') : null,
-      p.delDayKeys.length ? _ck(client.from('schedule_days').delete().or(dayKeyOrFilter(p.delDayKeys)),'schedule_days(del)') : null
+      p.siteRow ? _ckRetry(function(){return client.from('site_info').upsert([p.siteRow]);},'site_info') : null,
+      p.branchRows.length ? _ckRetry(function(){return client.from('branches').upsert(p.branchRows);},'branches') : null,
+      p.delDefBranchIds.length ? _ckRetry(function(){return client.from('default_slots').delete().in('branch_id',p.delDefBranchIds);},'default_slots(del)') : null,
+      p.delDayKeys.length ? _ckRetry(function(){return client.from('schedule_slots').delete().or(dayKeyOrFilter(p.delDayKeys));},'schedule_slots(del)') : null,
+      p.delDayKeys.length ? _ckRetry(function(){return client.from('schedule_days').delete().or(dayKeyOrFilter(p.delDayKeys));},'schedule_days(del)') : null
     ]));
     // 2단계: classes 업서트 (branches 필요)
-    if(p.classRows.length) add([await _ck(client.from('classes').upsert(p.classRows),'classes')]);
+    if(p.classRows.length) add([await _ckRetry(function(){return client.from('classes').upsert(p.classRows);},'classes')]);
     // 3단계: class_details 업서트 + 바뀐 슬롯/휴무만 삽입 + 삭제분(detail) (branches·classes 필요 → 서로 독립 병렬)
     // dayRows/schRows는 위 1단계에서 이미 지운 (branch,date)에 대해서만 만들어지므로 순수 insert로 충분(충돌 없음)
     add(await Promise.all([
-      p.detailRows.length ? _ck(client.from('class_details').upsert(p.detailRows),'class_details') : null,
-      p.defRows.length ? _ck(client.from('default_slots').insert(p.defRows),'default_slots') : null,
-      p.schRows.length ? _ck(client.from('schedule_slots').insert(p.schRows),'schedule_slots') : null,
-      p.dayRows.length ? _ck(client.from('schedule_days').insert(p.dayRows),'schedule_days') : null,
-      p.delDetailIds.length ? _ck(client.from('class_details').delete().in('id',p.delDetailIds),'class_details(del)') : null
+      p.detailRows.length ? _ckRetry(function(){return client.from('class_details').upsert(p.detailRows);},'class_details') : null,
+      p.defRows.length ? _ckRetry(function(){return client.from('default_slots').insert(p.defRows);},'default_slots') : null,
+      p.schRows.length ? _ckRetry(function(){return client.from('schedule_slots').insert(p.schRows);},'schedule_slots') : null,
+      p.dayRows.length ? _ckRetry(function(){return client.from('schedule_days').insert(p.dayRows);},'schedule_days') : null,
+      p.delDetailIds.length ? _ckRetry(function(){return client.from('class_details').delete().in('id',p.delDetailIds);},'class_details(del)') : null
     ]));
     // 4단계: 삭제된 classes·branches 제거 (branches 삭제는 종속행 cascade)
     add(await Promise.all([
-      p.delClassIds.length ? _ck(client.from('classes').delete().in('id',p.delClassIds),'classes(del)') : null,
-      p.delBranchIds.length ? _ck(client.from('branches').delete().in('id',p.delBranchIds),'branches(del)') : null
+      p.delClassIds.length ? _ckRetry(function(){return client.from('classes').delete().in('id',p.delClassIds);},'classes(del)') : null,
+      p.delBranchIds.length ? _ckRetry(function(){return client.from('branches').delete().in('id',p.delBranchIds);},'branches(del)') : null
     ]));
     return errs;
   }
