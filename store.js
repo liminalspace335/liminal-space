@@ -242,18 +242,28 @@
 
   function sleep(ms){ return new Promise(function(res){ setTimeout(res,ms); }); }
   // 순간적인 네트워크/서버 지연으로 조회 실패 시 짧은 대기 후 최대 2회 더 재시도(총 3회)
+  // + PostgREST 기본 응답 상한(보통 1000행)에 걸려 뒷부분 데이터가 조용히 잘리지 않도록,
+  //   1000행씩 range()로 끝까지 이어붙여 가져온다(테이블이 아무리 커져도 전체를 다 불러옴).
   async function fetchTableWithRetry(t){
     var delays=[0,350,900];
-    var lastErr=null;
-    for(var i=0;i<delays.length;i++){
-      if(delays[i]) await sleep(delays[i]);
-      try{
-        var r=await client.from(t).select('*');
-        if(r && !r.error && r.data) return r;
-        lastErr=r&&r.error;
-      }catch(e){ lastErr=e; }
+    var PAGE=1000;
+    var all=[];
+    var from=0;
+    for(;;){
+      var lastErr=null, page=null;
+      for(var i=0;i<delays.length;i++){
+        if(delays[i]) await sleep(delays[i]);
+        try{
+          var r=await client.from(t).select('*').range(from, from+PAGE-1);
+          if(r && !r.error && r.data){ page=r.data; break; }
+          lastErr=r&&r.error;
+        }catch(e){ lastErr=e; }
+      }
+      if(page===null) return { data:null, error:lastErr||{message:'load failed'} };
+      all=all.concat(page);
+      if(page.length<PAGE) return { data:all, error:null };   // 마지막 페이지(꽉 안 채워짐) → 종료
+      from+=PAGE;
     }
-    return { data:null, error:lastErr||{message:'load failed'} };
   }
   async function init(){
     if(useRemote){
