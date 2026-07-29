@@ -570,8 +570,8 @@
 </div></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="../config.js?v=42"></script>
-<script src="../store.js?v=42"></script>
+<script src="../config.js?v=43"></script>
+<script src="../store.js?v=43"></script>
 <script>
 const STORE_KEY='liminal_applications';
 const SET_KEY='liminal_settings';
@@ -1090,11 +1090,11 @@ function renderEditor(){
     const st=loadSettings();if(!st.schedule)st.schedule={};if(!st.schedule[bkBranch])st.schedule[bkBranch]={};
     st.schedule[bkBranch][bkSelected]=[];saveSettings(st);renderBooking();
   });
-  document.getElementById('edCopy').addEventListener('click',()=>{
+  ed.querySelector('#edCopy').addEventListener('click',()=>{
     if(copyMode){copyMode=false;bkSel=new Set();renderBooking();}                      // 복사 취소 → 단일 선택
     else{clipboard=readEditor();copyMode=true;bkSel=new Set(bkSelected?[bkSelected]:[]);renderBooking();}  // 복사 시작 → 다중 선택
   });
-  document.getElementById('edPaste').addEventListener('click',()=>{if(!clipboard||!copyMode)return;const targets=bkSel.size?[...bkSel]:(bkSelected?[bkSelected]:[]);if(!targets.length)return;if(!confirm(targets.length+'개 날짜에 적용할까요?'))return;const st=loadSettings();if(!st.schedule)st.schedule={};if(!st.schedule[bkBranch])st.schedule[bkBranch]={};targets.forEach(dt=>{st.schedule[bkBranch][dt]=sortSlots(bkBranch,clipboard.map(s=>Object.assign({},s)));});saveSettings(st);copyMode=false;bkSel=new Set();renderBooking();});
+  ed.querySelector('#edPaste').addEventListener('click',()=>{if(!clipboard||!copyMode)return;const targets=bkSel.size?[...bkSel]:(bkSelected?[bkSelected]:[]);if(!targets.length)return;if(!confirm(targets.length+'개 날짜에 적용할까요?'))return;const st=loadSettings();if(!st.schedule)st.schedule={};if(!st.schedule[bkBranch])st.schedule[bkBranch]={};targets.forEach(dt=>{st.schedule[bkBranch][dt]=sortSlots(bkBranch,clipboard.map(s=>Object.assign({},s)));});saveSettings(st);copyMode=false;bkSel=new Set();renderBooking();});
   const rst=document.getElementById('edReset');if(rst)rst.addEventListener('click',()=>{const st=loadSettings();if(st.schedule&&st.schedule[bkBranch])delete st.schedule[bkBranch][bkSelected];saveSettings(st);renderBooking();});
   // 복사/붙여넣기 바를 캘린더 상단으로 이동(바인딩 유지한 채 노드 이동)
   var _cs=document.getElementById('bkCopySlot');var _cb=ed.querySelector('.copybar');if(_cs&&_cb){_cs.innerHTML='';_cs.appendChild(_cb);}
