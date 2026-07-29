@@ -246,8 +246,15 @@
   }
 
   function _report(errs){ if(errs&&errs.length){ console.warn('save errors',errs); if(onErr)onErr(errs.join('\n')); } }
+  // schedule_slots/schedule_days 등은 저장할 때마다 테이블을 통째로 지웠다가 다시 쓰는 구조라,
+  // 두 저장이 겹치면(비동기라 순서 보장이 없음) 늦게 끝나는 쪽(옛 데이터일 수 있음)이 이겨서 방금 저장한 걸 덮어써버린다.
+  // 그래서 pushPlan 실행 자체를 큐에 넣어 항상 한 번에 하나씩, 호출 순서대로만 실행되게 한다.
+  var _saveChain = Promise.resolve();
   function setSettings(v){
-    if(useRemote){ var p=plan(cache.settings||{}, v); applyIds(v,p); pushPlan(p).then(_report,function(e){_report([String(e&&e.message||e)]);}); }
+    if(useRemote){
+      var p=plan(cache.settings||{}, v); applyIds(v,p);
+      _saveChain = _saveChain.then(function(){ return pushPlan(p); }).then(_report, function(e){ _report([String(e&&e.message||e)]); });
+    }
     else { lsSet(KEY_SET, v); }
     cache.settings = v;   // 안정 ID가 주입된 객체를 캐시 (다음 분해의 기준)
   }
