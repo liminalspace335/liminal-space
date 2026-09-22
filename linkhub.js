@@ -57,6 +57,9 @@
       +'<symbol id="lh-ic-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="1.7"/><path fill="none" stroke="currentColor" stroke-width="1.7" d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></symbol>'
       +'<symbol id="lh-ic-dots" viewBox="0 0 24 24"><circle cx="12" cy="6" r="1.7" fill="currentColor"/><circle cx="12" cy="12" r="1.7" fill="currentColor"/><circle cx="12" cy="18" r="1.7" fill="currentColor"/></symbol>'
       +'<symbol id="lh-ic-link" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" d="M9 15l6-6M9 10H7a3 3 0 0 0 0 6h2m6-6h2a3 3 0 0 1 0 6h-2"/></symbol>'
+      +'<symbol id="lh-ic-zalo" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" d="M4 12a8 8 0 1 1 3.5 6.6L4 20l1.3-3.7A8 8 0 0 1 4 12Z"/><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M9 9.3h5.2L9.6 14.7H15"/></symbol>'
+      +'<symbol id="lh-ic-whatsapp" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" d="M4 12a8 8 0 1 1 3.5 6.6L4 20l1.3-3.7A8 8 0 0 1 4 12Z"/><path fill="currentColor" d="M9.3 9.3c.3-.3.6-.3.8-.1.3.3.9 1.4.9 1.6s0 .3-.2.5l-.4.4c-.1.1-.2.3 0 .5.3.5 1.6 1.9 2.7 2.2.2.1.3 0 .4-.1l.4-.5c.2-.2.3-.2.5-.1.4.2 1.3.6 1.6.8.2.1.3.2.3.4 0 .5-.4 1-.8 1.1-.4.1-1.7.3-3.6-1-1.9-1.2-2.7-2.8-2.8-3-.1-.2-.6-.8-.6-1.5 0-.7.4-1.1.5-1.2Z"/></symbol>'
+      +'<symbol id="lh-ic-messenger" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" d="M4 12a8 8 0 1 1 3.5 6.6L4 20l1.3-3.7A8 8 0 0 1 4 12Z"/><path fill="currentColor" d="M12.3 8.5 9 12.9h2.4l-.1 2.9 3.3-4.4h-2.4l.1-2.9Z"/></symbol>'
       +'</svg>';
     document.body.appendChild(d);
   }
@@ -71,9 +74,12 @@
   var ICON_CLASS={ email:'em', phone:'ph', googlemap:'gm', facebook:'fb', instagram:'ig', tiktok:'tk', threads:'th' };
   /* 화면에 노출되는 짧은 UI 문구 — 베트남어 기본, 언어 전환 시 함께 바뀜 */
   var UI_TEXT={
-    vi:{ eyebrow:'PERFUME WORKSHOP · XƯỞNG NƯỚC HOA', shareTitle:'Chia sẻ', copy:'Sao chép liên kết', copied:'Đã sao chép ✓', copyFail:'Sao chép thất bại.', qr:'Xem trên điện thoại', shareAria:'Chia sẻ', moreAria:'Chia sẻ', closeAria:'Đóng', comingSoon:'Sắp ra mắt' },
-    en:{ eyebrow:'PERFUME WORKSHOP', shareTitle:'Share', copy:'Copy link', copied:'Copied ✓', copyFail:'Copy failed.', qr:'View on mobile', shareAria:'Share', moreAria:'Share', closeAria:'Close', comingSoon:'Coming soon' },
-    ko:{ eyebrow:'Perfume Workshop · 향수 공방', shareTitle:'공유하기', copy:'링크 복사', copied:'복사됨 ✓', copyFail:'복사에 실패했습니다.', qr:'모바일에서 보기', shareAria:'공유하기', moreAria:'공유', closeAria:'닫기', comingSoon:'준비 중입니다' }
+    vi:{ eyebrow:'PERFUME WORKSHOP · XƯỞNG NƯỚC HOA', shareTitle:'Chia sẻ', copy:'Sao chép liên kết', copied:'Đã sao chép ✓', copyFail:'Sao chép thất bại.', qr:'Xem trên điện thoại', shareAria:'Chia sẻ', moreAria:'Chia sẻ', closeAria:'Đóng', comingSoon:'Sắp ra mắt',
+      messengerFail:'Không tìm thấy ứng dụng Messenger trên thiết bị này.', instagramFail:'Không tìm thấy ứng dụng Instagram trên thiết bị này.', linkCopiedHint:'Đã sao chép liên kết — hãy dán vào ứng dụng để chia sẻ.' },
+    en:{ eyebrow:'PERFUME WORKSHOP', shareTitle:'Share', copy:'Copy link', copied:'Copied ✓', copyFail:'Copy failed.', qr:'View on mobile', shareAria:'Share', moreAria:'Share', closeAria:'Close', comingSoon:'Coming soon',
+      messengerFail:"Couldn't find the Messenger app on this device.", instagramFail:"Couldn't find the Instagram app on this device.", linkCopiedHint:'Copied the link — paste it in the app to share.' },
+    ko:{ eyebrow:'Perfume Workshop · 향수 공방', shareTitle:'공유하기', copy:'링크 복사', copied:'복사됨 ✓', copyFail:'복사에 실패했습니다.', qr:'모바일에서 보기', shareAria:'공유하기', moreAria:'공유', closeAria:'닫기', comingSoon:'준비 중입니다',
+      messengerFail:'이 기기에서 메신저 앱을 찾을 수 없습니다.', instagramFail:'이 기기에서 인스타그램 앱을 찾을 수 없습니다.', linkCopiedHint:'링크를 복사했습니다 — 앱에서 붙여넣어 공유해 주세요.' }
   };
   function ui(key){ var t=UI_TEXT[curLang]||UI_TEXT.vi; return t[key]||UI_TEXT.vi[key]||''; }
 
@@ -95,6 +101,61 @@
     return '<a class="lh-icon '+(ICON_CLASS[ic.type]||'')+'" href="'+esc(href)+'"'+(external?' target="_blank" rel="noopener"':'')+' aria-label="'+esc(iconLabel(ic.type))+'"><svg class="ic"><use href="#'+ICON_SVG[ic.type]+'"/></svg></a>';
   }
 
+  /* 공유하기 모달 아이콘 — 픽토그램과 별개로, 항상 이 순서로 고정: 잘로·왓츠앱·메신저·인스타·이메일 */
+  var SHARE_CHANNELS=['zalo','whatsapp','messenger','instagram','email'];
+  var SHARE_ICON_SVG={ zalo:'lh-ic-zalo', whatsapp:'lh-ic-whatsapp', messenger:'lh-ic-messenger', instagram:'lh-ic-instagram', email:'lh-ic-mail' };
+  var SHARE_ICON_CLASS={ zalo:'zl', whatsapp:'wa', messenger:'ms', instagram:'ig', email:'em' };
+  var SHARE_LABEL_I18N={
+    zalo:{vi:'Zalo',en:'Zalo',ko:'잘로'}, whatsapp:{vi:'WhatsApp',en:'WhatsApp',ko:'왓츠앱'},
+    messenger:{vi:'Messenger',en:'Messenger',ko:'메신저'}, instagram:{vi:'Instagram',en:'Instagram',ko:'인스타그램'}, email:{vi:'Email',en:'Email',ko:'이메일'}
+  };
+  function shareChannelHref(type,url,title){
+    var enc=encodeURIComponent(url);
+    switch(type){
+      case 'zalo': return 'https://sp.zalo.me/share?u='+enc+(title?('&title='+encodeURIComponent(title)):'');
+      case 'whatsapp': return 'https://wa.me/?text='+encodeURIComponent((title?title+' ':'')+url);
+      // 메신저·인스타그램 다이렉트는 앱 딥링크만 공개적으로 열려있음(브라우저 URL로는 상대 지정 불가) — 앱이 설치된 기기에서만 열림
+      case 'messenger': return 'fb-messenger://share?link='+enc;
+      case 'instagram': return 'instagram://direct';
+      case 'email': return 'mailto:?subject='+encodeURIComponent(title||'')+'&body='+enc;
+    }
+    return '';
+  }
+  function shareIconHTML(type,url,title){
+    var href=shareChannelHref(type,url,title);
+    var m=SHARE_LABEL_I18N[type]; var label=(m&&(m[curLang]||m.vi))||type;
+    var isAppOnly=(type==='messenger'||type==='instagram');
+    // 메신저·인스타는 앱 전용 딥링크라 앱이 없으면 아무 반응이 없어 보임 — 클릭을 가로채서 앱 전환 성공 여부를 감지하고,
+    // 실패로 보이면(아래 tryOpenApp) 알림 + 링크 복사로 사용자가 "오류인가?" 헷갈리지 않게 한다.
+    return '<a class="lh-icon '+(SHARE_ICON_CLASS[type]||'')+'" href="'+esc(href)+'"'
+      +(isAppOnly?(' data-app-link="'+esc(href)+'" data-app-type="'+type+'"'):' target="_blank" rel="noopener"')
+      +' aria-label="'+esc(label)+'"><svg class="ic"><use href="#'+SHARE_ICON_SVG[type]+'"/></svg></a>';
+  }
+  /* 앱 전용 딥링크(fb-messenger://, instagram://) 클릭 처리: 시도 후 일정 시간 안에 화면이 전환(blur)되지 않으면
+     앱이 없다고 보고, 링크를 대신 복사한 뒤 안내창을 띄운다(사용자가 "안 눌리나?" 헷갈리지 않도록). */
+  async function copyText(text){
+    try{ if(navigator.clipboard&&navigator.clipboard.writeText){ await navigator.clipboard.writeText(text); return true; } }catch(e){}
+    return fallbackCopy(text);
+  }
+  function tryOpenApp(deepLink,type){
+    var opened=false;
+    function markOpened(){ opened=true; }
+    window.addEventListener('blur',markOpened,{once:true});
+    document.addEventListener('visibilitychange',function onVis(){ if(document.hidden){ markOpened(); } document.removeEventListener('visibilitychange',onVis); });
+    try{ window.location.href=deepLink; }catch(e){}
+    setTimeout(async function(){
+      window.removeEventListener('blur',markOpened);
+      if(opened) return;
+      var copied=await copyText(shareUrl);
+      var failMsg=ui(type==='messenger'?'messengerFail':'instagramFail');
+      alert(failMsg+(copied?('\n\n'+ui('linkCopiedHint')):''));
+    },1400);
+  }
+  function renderShareIcons(url){
+    var name=Lval((currentData||{}).name,curLang)||'LIMINAL SPACE';
+    document.getElementById('lhShareIcons').innerHTML=SHARE_CHANNELS.map(function(t){ return shareIconHTML(t,url,name); }).join('');
+  }
+
   function renderProfile(lh){
     var name=Lval(lh.name,curLang)||'LIMINAL SPACE';
     var eyebrow=ui('eyebrow');
@@ -113,7 +174,6 @@
     var row=document.getElementById('lhIconsRow'); var icons=enabledIcons(lh);
     row.innerHTML=icons.map(iconLinkHTML).join('');
     row.style.display=icons.length?'':'none';
-    document.getElementById('lhShareIcons').innerHTML=icons.map(iconLinkHTML).join('');
   }
   function renderLinks(lh){
     var wrap=document.getElementById('lhLinksList');
@@ -150,6 +210,7 @@
   var overlay, shareUrl='';
   function openShare(url){
     shareUrl=url||location.href.split('#')[0];
+    renderShareIcons(shareUrl);
     overlay.classList.add('open'); overlay.setAttribute('aria-hidden','false'); document.body.style.overflow='hidden';
   }
   function closeShare(){ overlay.classList.remove('open'); overlay.setAttribute('aria-hidden','true'); document.body.style.overflow=''; }
@@ -206,6 +267,10 @@
     document.getElementById('lhLinksList').addEventListener('click',function(e){
       var more=e.target.closest('.lh-link-more'); if(!more) return;
       e.preventDefault(); openShare(more.dataset.shareUrl);
+    });
+    document.getElementById('lhShareIcons').addEventListener('click',function(e){
+      var a=e.target.closest('[data-app-link]'); if(!a) return;
+      e.preventDefault(); tryOpenApp(a.dataset.appLink,a.dataset.appType);
     });
 
     /* 언어 선택 (VI·EN·KO) — 기본 베트남어 */

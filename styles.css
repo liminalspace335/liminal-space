@@ -544,6 +544,9 @@ section[id], footer[id]{scroll-margin-top:63px}  /* 고정 네비 높이에 딱 
 .lh-icon.fb:hover{color:#1877f2}
 .lh-icon.ig:hover{color:#e1306c}
 .lh-icon.tk:hover{color:#ee1d52}
+.lh-icon.zl:hover{color:#0068ff}
+.lh-icon.wa:hover{color:#25d366}
+.lh-icon.ms:hover{color:#0084ff}
 
 .lh-links{width:80%;margin-top:30px;display:flex;flex-direction:column;gap:11px}
 .lh-link{display:flex;align-items:center;gap:4px;width:100%;background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:8px 10px;box-sizing:border-box;transition:border-color .25s,box-shadow .25s,transform .2s}
