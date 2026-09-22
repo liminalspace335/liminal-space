@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>LIMINAL SPACE — Perfume Workshop</title>
+<meta name="description" content="LIMINAL SPACE Perfume Workshop" />
+<!-- config.js의 SUPA_CONFIG.url과 반드시 같은 주소여야 함 — 연결을 미리 열어 첫 데이터 요청 지연을 줄임 -->
+<link rel="preconnect" href="https://euhuiktqoslmndozqpsr.supabase.co" crossorigin />
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+<link rel="stylesheet" href="styles.css?v=55" />
+</head>
+<body class="lh-body">
+
+<div class="lh-wrap" id="lhWrap">
+  <div class="lh-top">
+    <div class="lh-lang" id="lhLangBox">
+      <button type="button" class="lh-lang-toggle" id="lhLangToggle" aria-haspopup="listbox" aria-expanded="false"><span id="lhLangCur">VI</span><span class="lh-lang-caret">⌄</span></button>
+      <div class="lh-lang-menu" id="lhLangMenu" role="listbox">
+        <button type="button" data-lang="vi" class="active">VI</button>
+        <button type="button" data-lang="en">EN</button>
+        <button type="button" data-lang="ko">KO</button>
+      </div>
+    </div>
+    <button type="button" class="lh-share-btn" id="lhShareBtn" aria-label="공유하기"><svg class="ic"><use href="#lh-ic-share"/></svg></button>
+  </div>
+
+  <div class="lh-hero-mark">
+    <p class="lh-eyebrow" id="lhEyebrowEl">PERFUME WORKSHOP · XƯỞNG NƯỚC HOA</p>
+    <h1 class="lh-wordmark" id="lhNameEl">LIMINAL SPACE</h1>
+    <p class="lh-coord mono">10° 47' 27.49" N 106° 41' 36.89" E</p>
+  </div>
+
+  <p class="lh-comingsoon" id="lhComingSoon" style="display:none"></p>
+
+  <div class="lh-icons" id="lhIconsRow"></div>
+
+  <div class="lh-links" id="lhLinksList"></div>
+</div>
+
+<div class="lh-qr" id="lhQr" style="display:none">
+  <div id="lhQrCanvas" class="lh-qr-box"></div>
+  <p id="lhQrCaption">View on mobile</p>
+</div>
+
+<!-- 공유하기 모달 -->
+<div class="lh-share-overlay" id="lhShareOverlay" aria-hidden="true">
+  <div class="lh-share-modal" role="dialog" aria-modal="true">
+    <div class="lh-share-head"><span id="lhShareHead">공유하기</span><button type="button" class="lh-share-close" id="lhShareClose" aria-label="close">×</button></div>
+    <div class="lh-share-card">
+      <div class="lh-share-name" id="lhShareName">LIMINAL SPACE</div>
+      <div class="lh-share-sub" id="lhShareSub"></div>
+    </div>
+    <button type="button" class="lh-copy-btn" id="lhCopyBtn"><svg class="ic"><use href="#lh-ic-copy"/></svg><span>링크 복사</span></button>
+    <div class="lh-share-icons" id="lhShareIcons"></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<script src="config.js?v=55"></script>
+<script src="linkhub.js?v=55"></script>
+</body>
+</html>
