@@ -112,9 +112,10 @@
   function shareChannelHref(type,url,title){
     var enc=encodeURIComponent(url);
     switch(type){
-      // zalo.me는 Zalo 앱의 유니버설 링크 도메인이라, 앱이 설치된 기기에서는 OS가 자동으로 앱으로 연결한다
-      // (sp.zalo.me 하위 도메인은 앱 연결 대상이 아니라 웹 공유 페이지만 뜨는 문제가 있어 zalo.me로 변경)
-      case 'zalo': return 'https://zalo.me/share?u='+enc+(title?('&title='+encodeURIComponent(title)):'');
+      // zalo.me(루트 도메인)로 시도했더니 앱은 열리지만 /share 경로를 앱이 제대로 못 받아 웹과
+      // 앱 사이를 반복 전환하다 오류가 나는 문제가 있어, 안정적으로 동작하는 웹 공유 페이지(sp.zalo.me)로 되돌림.
+      // 앱에서 완전히 네이티브로 여는 공유는 Zalo 자체 Share SDK(App ID 등록 필요) 없이는 안정적으로 구현 불가.
+      case 'zalo': return 'https://sp.zalo.me/share?u='+enc+(title?('&title='+encodeURIComponent(title)):'');
       case 'whatsapp': return 'https://wa.me/?text='+encodeURIComponent((title?title+' ':'')+url);
       // 메신저·인스타그램 다이렉트는 앱 딥링크만 공개적으로 열려있음(브라우저 URL로는 상대 지정 불가) — 앱이 설치된 기기에서만 열림
       case 'messenger': return 'fb-messenger://share?link='+enc;

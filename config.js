@@ -8,7 +8,7 @@ window.SUPA_CONFIG = {
   anonKey: "sb_publishable_FrEHlpTzQpDmBh8Z8_2o_w_CKQomC2A"
 };
 /* 사이트 버전 — deploy.sh 실행 시 자동으로 +1 됨 (좌측 상단 로고 5번 클릭 시 표시) */
-window.LS_VERSION = "v60";
+window.LS_VERSION = "v61";
 /* 공개 예약 페이지 예약 가능 기간(오늘부터 N일) — app.js(날짜 선택 상한)와 store.js(공개 조회 시 스케줄 조회 범위)가
  * 반드시 같은 값을 써야 함(하나만 바꾸면 "선택은 되는데 데이터가 없어 빈 자리로 보이는" 불일치가 생김). */
 window.RESERVATION_WINDOW_DAYS = 90;
