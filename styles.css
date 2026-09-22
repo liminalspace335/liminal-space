@@ -572,11 +572,17 @@ section[id], footer[id]{scroll-margin-top:63px}  /* 고정 네비 높이에 딱 
 .lh-share-head{display:flex;align-items:center;justify-content:space-between;font-size:14px;font-weight:700;margin-bottom:14px}
 .lh-share-close{background:none;border:0;font-size:22px;line-height:1;cursor:pointer;color:var(--ink-soft)}
 .lh-share-close:hover{color:var(--ink)}
-.lh-share-card{background:var(--accent);color:#fff;border-radius:12px;padding:26px 20px;display:flex;flex-direction:column;align-items:center;text-align:center}
+.lh-share-card{background:var(--accent);color:#fff;border-radius:12px;padding:26px 20px;display:flex;flex-direction:column;align-items:center;text-align:center;transition:background-image .15s ease}
 .lh-share-name{font-size:15px;font-weight:700}
 .lh-share-sub{margin-top:6px;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.65)}
-.lh-copy-btn{width:100%;margin-top:16px;display:flex;align-items:center;justify-content:center;gap:8px;background:var(--accent);color:#fff;border:0;border-radius:999px;padding:12px;font-size:13px;font-weight:600;cursor:pointer;transition:opacity .2s}
-.lh-copy-btn:hover{opacity:.85}
+/* 버튼별 공유(⋮): 링크트리처럼 해당 링크의 썸네일을 배경으로 깔고 제목·도메인을 하단에 얹는 미리보기 카드 */
+.lh-share-card.has-image{background-size:cover;background-position:center;align-items:flex-start;text-align:left;justify-content:flex-end;min-height:150px;padding:16px 18px}
+.lh-share-card.has-image .lh-share-name{font-size:16px;text-shadow:0 1px 4px rgba(0,0,0,.5)}
+.lh-share-card.has-image .lh-share-sub{color:rgba(255,255,255,.8);text-transform:none;letter-spacing:.02em;font-size:12px}
+.lh-copy-btn{width:100%;margin-top:16px;display:flex;align-items:center;justify-content:center;gap:8px;
+  background:radial-gradient(120% 90% at 30% 20%,#fbfbfc 0%,transparent 45%),linear-gradient(105deg,#cfd0d4 0%,#e5e6e8 18%,#b6b8bd 34%,#eceded 52%,#c2c4c9 70%,#dedfe2 88%,#b9bbc0 100%);
+  color:var(--ink);border:1px solid var(--line);border-radius:999px;padding:12px;font-size:13px;font-weight:600;cursor:pointer;transition:border-color .2s,box-shadow .2s}
+.lh-copy-btn:hover{border-color:var(--ink);box-shadow:0 4px 14px -4px rgba(22,23,26,.35)}
 .lh-copy-btn .ic{width:16px;height:16px}
 .lh-share-icons{display:flex;gap:4px;flex-wrap:nowrap;justify-content:center;margin-top:16px}
 .lh-share-icons .lh-icon{width:34px;height:34px;flex:0 0 auto}

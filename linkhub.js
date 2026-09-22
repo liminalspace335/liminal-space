@@ -193,13 +193,15 @@
     var moreAria=ui('moreAria');
     wrap.innerHTML=links.map(function(l){
       var abs; try{ abs=new URL(l.url,location.href).href; }catch(e){ abs=l.url; }
+      var host=''; try{ host=new URL(abs).hostname.replace(/^www\./,''); }catch(e){}
       var external=/^https?:\/\//i.test(l.url);
+      var title=Lval(l.title,curLang);
       var img=l.image ? '<img class="lh-link-thumb" src="'+esc(l.image)+'" alt="" loading="lazy" decoding="async" width="42" height="42" />' : '<span class="lh-link-thumb lh-link-thumb-ph"><svg class="ic"><use href="#lh-ic-link"/></svg></span>';
       return '<div class="lh-link">'
         +'<a class="lh-link-body" href="'+esc(l.url)+'"'+(external?' target="_blank" rel="noopener"':'')+'>'
-          +img+'<span class="lh-link-title">'+esc(Lval(l.title,curLang))+'</span>'
+          +img+'<span class="lh-link-title">'+esc(title)+'</span>'
         +'</a>'
-        +'<button type="button" class="lh-link-more" data-share-url="'+esc(abs)+'" aria-label="'+esc(moreAria)+'"><svg class="ic"><use href="#lh-ic-dots"/></svg></button>'
+        +'<button type="button" class="lh-link-more" data-share-url="'+esc(abs)+'" data-share-title="'+esc(title)+'" data-share-image="'+esc(l.image||'')+'" data-share-domain="'+esc(host)+'" aria-label="'+esc(moreAria)+'"><svg class="ic"><use href="#lh-ic-dots"/></svg></button>'
         +'</div>';
     }).join('');
   }
@@ -220,10 +222,29 @@
 
   /* ---------- 공유하기 모달 ---------- */
   var overlay, shareUrl='';
-  function openShare(url){
+  // preview: {image,title,domain} — 버튼별 공유(⋮)는 실제 링크트리처럼 그 링크의 썸네일·제목을 미리보기로 보여준다.
+  // 전체 페이지 공유(상단 공유 버튼)는 preview 없이 기존 프로필 카드(로고 이름+eyebrow)를 그대로 보여준다.
+  function openShare(url,preview){
     shareUrl=url||location.href.split('#')[0];
+    renderShareCard(preview);
     renderShareIcons(shareUrl);
     overlay.classList.add('open'); overlay.setAttribute('aria-hidden','false'); document.body.style.overflow='hidden';
+  }
+  function renderShareCard(preview){
+    var card=document.getElementById('lhShareCard');
+    var img=preview&&preview.image;
+    if(img){
+      card.style.backgroundImage='linear-gradient(to top,rgba(10,10,12,.85),rgba(10,10,12,.15) 60%),url("'+img.replace(/"/g,'%22')+'")';
+      card.classList.add('has-image');
+      document.getElementById('lhShareName').textContent=preview.title||'';
+      document.getElementById('lhShareSub').textContent=preview.domain||'';
+    }else{
+      card.style.backgroundImage='';
+      card.classList.remove('has-image');
+      var name=(preview&&preview.title)||Lval((currentData||{}).name,curLang)||'LIMINAL SPACE';
+      document.getElementById('lhShareName').textContent=name;
+      document.getElementById('lhShareSub').textContent=(preview&&preview.domain)||ui('eyebrow');
+    }
   }
   function closeShare(){ overlay.classList.remove('open'); overlay.setAttribute('aria-hidden','true'); document.body.style.overflow=''; }
   function fallbackCopy(text){
@@ -278,7 +299,8 @@
     document.getElementById('lhCopyBtn').addEventListener('click',copyShareUrl);
     document.getElementById('lhLinksList').addEventListener('click',function(e){
       var more=e.target.closest('.lh-link-more'); if(!more) return;
-      e.preventDefault(); openShare(more.dataset.shareUrl);
+      e.preventDefault();
+      openShare(more.dataset.shareUrl,{ image:more.dataset.shareImage, title:more.dataset.shareTitle, domain:more.dataset.shareDomain });
     });
     document.getElementById('lhShareIcons').addEventListener('click',function(e){
       var a=e.target.closest('[data-app-link]'); if(!a) return;
