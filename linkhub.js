@@ -112,7 +112,9 @@
   function shareChannelHref(type,url,title){
     var enc=encodeURIComponent(url);
     switch(type){
-      case 'zalo': return 'https://sp.zalo.me/share?u='+enc+(title?('&title='+encodeURIComponent(title)):'');
+      // zalo.me는 Zalo 앱의 유니버설 링크 도메인이라, 앱이 설치된 기기에서는 OS가 자동으로 앱으로 연결한다
+      // (sp.zalo.me 하위 도메인은 앱 연결 대상이 아니라 웹 공유 페이지만 뜨는 문제가 있어 zalo.me로 변경)
+      case 'zalo': return 'https://zalo.me/share?u='+enc+(title?('&title='+encodeURIComponent(title)):'');
       case 'whatsapp': return 'https://wa.me/?text='+encodeURIComponent((title?title+' ':'')+url);
       // 메신저·인스타그램 다이렉트는 앱 딥링크만 공개적으로 열려있음(브라우저 URL로는 상대 지정 불가) — 앱이 설치된 기기에서만 열림
       case 'messenger': return 'fb-messenger://share?link='+enc;
@@ -142,7 +144,16 @@
     function markOpened(){ opened=true; }
     window.addEventListener('blur',markOpened,{once:true});
     document.addEventListener('visibilitychange',function onVis(){ if(document.hidden){ markOpened(); } document.removeEventListener('visibilitychange',onVis); });
-    try{ window.location.href=deepLink; }catch(e){}
+    // location.href로 미등록 스킴을 시도하면 일부 브라우저(iOS Safari·Android Chrome)가 현재 페이지에
+    // "주소를 찾을 수 없음" 오류를 띄우거나 페이지 자체를 이동시켜, 아래 대체 안내(alert)가 아예 안 뜨는 문제가 있었다.
+    // 보이지 않는 iframe으로 시도하면 실패해도 현재 페이지·스크립트에 영향이 없어 대체 안내가 항상 뜬다.
+    try{
+      var ifr=document.createElement('iframe');
+      ifr.style.cssText='position:fixed;width:1px;height:1px;opacity:0;pointer-events:none';
+      ifr.src=deepLink;
+      document.body.appendChild(ifr);
+      setTimeout(function(){ if(ifr.parentNode) ifr.parentNode.removeChild(ifr); },2000);
+    }catch(e){}
     setTimeout(async function(){
       window.removeEventListener('blur',markOpened);
       if(opened) return;
