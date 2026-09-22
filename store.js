@@ -25,6 +25,28 @@
   function vi(v){ return (v&&typeof v==='object')?(v.vi||''):''; }
   function tri(k,e,v){ return {ko:k||'',en:e||'',vi:v||''}; }
   function numOrNull(x){ if(x===''||x==null) return null; var n=Number(x); return isNaN(n)?null:n; }
+  // 홈화면(링크허브) 픽토그램은 항상 이 7종 고정 — 저장된 값과 타입 기준으로 병합해 누락분을 채운다
+  var LINKHUB_ICON_TYPES=['email','phone','googlemap','facebook','instagram','tiktok','threads'];
+  // 버튼 제목은 언어별({ko,en,vi}) 입력을 지원 — 기존에 저장된 일반 문자열은 3개 언어 모두에 그대로 채워 넣어(무손실 이관) 계속 표시되게 한다
+  function toLinkHubI18n(v){
+    if(v&&typeof v==='object'&&!Array.isArray(v)) return { ko:v.ko||'', en:v.en||'', vi:v.vi||'' };
+    var s=(v==null?'':String(v)); return { ko:s, en:s, vi:s };
+  }
+  // 로고(워드마크)는 언어를 바꿔도 항상 같은 표기(영어 "LIMINAL SPACE") — 언어별 객체로 저장돼있던 과거 값이 있어도 영어 우선으로 문자열 하나만 꺼내온다
+  function toLinkHubName(v){
+    if(v&&typeof v==='object'&&!Array.isArray(v)) return v.en||v.vi||v.ko||'';
+    return v==null?'':String(v);
+  }
+  function normalizeLinkHub(lh){
+    lh=(lh&&typeof lh==='object')?lh:{};
+    var byType={}; (Array.isArray(lh.icons)?lh.icons:[]).forEach(function(ic){ if(ic&&ic.type) byType[ic.type]=ic; });
+    var icons=LINKHUB_ICON_TYPES.map(function(type,i){ var ex=byType[type];
+      return { type:type, enabled: ex? ex.enabled!==false : false, order: (ex&&ex.order!=null)?ex.order:i, value: (ex&&ex.value)||'' }; });
+    return { avatar:lh.avatar||'', name:toLinkHubName(lh.name), tagline:lh.tagline||'', showQr: lh.showQr!==false,
+      enabled: lh.enabled!==false,
+      icons:icons, links:(Array.isArray(lh.links)?lh.links:[]).map(function(l){ return {
+        id:l.id||rid('lhl'), title:toLinkHubI18n(l.title), image:l.image||'', url:l.url||'', enabled:l.enabled!==false, order:l.order||0 }; }) };
+  }
   // 시간대 배열의 내용을 순서 무관하게 비교하기 위한 서명 (변경된 날짜/지점만 골라내는 데 사용)
   function slotSig(arr){ return (arr||[]).map(function(s){return (s.time||'')+'|'+(s.cls||'')+'|'+(s.cap||0);}).sort().join(',,'); }
 
@@ -47,7 +69,9 @@
       try{ settings.partners=JSON.parse(si.partners_json||'[]')||[]; }catch(e){ settings.partners=[]; }
       try{ settings.galleryFolders=JSON.parse(si.galleryfolders_json||'[]')||[]; }catch(e){ settings.galleryFolders=[]; }
       try{ settings.space=JSON.parse(si.space_json||'[]')||[]; }catch(e){ settings.space=[]; }
-      try{ settings.spaceFolders=JSON.parse(si.spacefolders_json||'[]')||[]; }catch(e){ settings.spaceFolders=[]; } }
+      try{ settings.spaceFolders=JSON.parse(si.spacefolders_json||'[]')||[]; }catch(e){ settings.spaceFolders=[]; }
+      try{ settings.linkHub=normalizeLinkHub(JSON.parse(si.linkhub_json||'{}')); }catch(e){ settings.linkHub=normalizeLinkHub({}); } }
+    if(!settings.linkHub) settings.linkHub=normalizeLinkHub({});
     (t.classes||[]).sort(function(a,b){return (a.sort||0)-(b.sort||0);}).forEach(function(c){
       var bn=branchById[c.branch_id]||''; classById[c.id]={branch:bn, nameKo:c.name_ko||''};
       settings.branchClasses.push({ id:c.id, branch:bn, order:c.sort||0,
@@ -103,7 +127,8 @@
       concept_json:JSON.stringify((_si.conceptList||[]).filter(Boolean).slice(0,5)),
       concept_media:((_si.conceptList&&_si.conceptList.filter(Boolean)[0])||_si.conceptMedia||''),
       gallery_json:JSON.stringify(s.gallery||[]), partners_json:JSON.stringify(s.partners||[]), galleryfolders_json:JSON.stringify(s.galleryFolders||[]),
-      space_json:JSON.stringify(s.space||[]), spacefolders_json:JSON.stringify(s.spaceFolders||[]) };
+      space_json:JSON.stringify(s.space||[]), spacefolders_json:JSON.stringify(s.spaceFolders||[]),
+      linkhub_json:JSON.stringify(normalizeLinkHub(s.linkHub||{})) };
     var classRows=(s.branchClasses||[]).map(function(c,i){ var k=classKey(c.branch,ko(c.name)); var id=classIdByKey[k]||rid('cl'); clKeyToId[k]=id;
       return { id:id, branch_id:brNameToId[c.branch]||null, sort:(c.order!=null?c.order:i),
         name_ko:ko(c.name), name_en:en(c.name), name_vi:vi(c.name),
@@ -261,7 +286,7 @@
   // 순간적인 네트워크/서버 지연으로 조회 실패 시 짧은 대기 후 최대 2회 더 재시도(총 3회)
   // + PostgREST 기본 응답 상한(보통 1000행)에 걸려 뒷부분 데이터가 조용히 잘리지 않도록,
   //   1000행씩 range()로 끝까지 이어붙여 가져온다(테이블이 아무리 커져도 전체를 다 불러옴).
-  async function fetchTableWithRetry(t){
+  async function fetchTableWithRetry(t, filterFn){
     var delays=[0,350,900];
     var PAGE=1000;
     var all=[];
@@ -271,7 +296,9 @@
       for(var i=0;i<delays.length;i++){
         if(delays[i]) await sleep(delays[i]);
         try{
-          var r=await client.from(t).select('*').range(from, from+PAGE-1);
+          var q=client.from(t).select('*').range(from, from+PAGE-1);
+          if(filterFn) q=filterFn(q);
+          var r=await q;
           if(r && !r.error && r.data){ page=r.data; break; }
           lastErr=r&&r.error;
         }catch(e){ lastErr=e; }
@@ -296,8 +323,25 @@
         // (신청 페이지 자체엔 어떤 권한 체크도 없음 — 그냥 anon이 볼 수 있는 데이터 범위가 다를 뿐)
         var appsSrc=isAuthed?'applications':'applications_public';
         var allTables=tables.concat([appsSrc]);
+        // 공개(비로그인) 조회는 "오늘 ~ +N일"(config.js의 RESERVATION_WINDOW_DAYS, app.js 날짜 선택 상한과 동일해야 함)로만
+        // 스케줄·신청 데이터를 제한해서, 방문마다 1년치 전체를 통째로 받지 않게 한다. 관리자는 제한 없이 전체를 본다.
+        var dateWindowCols={ schedule_slots:'sched_date', schedule_days:'sched_date', applications_public:'want_date' };
+        var winFrom=null, winTo=null;
+        if(!isAuthed){
+          // app.js의 vnToday()/vnMaxDate()와 동일하게 베트남 시간 기준으로 계산해야 경계 근처(자정 전후)에서
+          // "선택은 되는데 데이터 범위에 없어 빈 자리로 보이는" 어긋남이 안 생긴다. 앞뒤로 하루씩 여유를 둔다.
+          var _p=function(x){return String(x).padStart(2,'0');};
+          var _vn=function(d){return d.getFullYear()+'-'+_p(d.getMonth()+1)+'-'+_p(d.getDate());};
+          var _n=new Date(new Date().toLocaleString('en-US',{timeZone:'Asia/Ho_Chi_Minh'}));
+          _n.setDate(_n.getDate()-1); winFrom=_vn(_n);
+          _n.setDate(_n.getDate()+1+(window.RESERVATION_WINDOW_DAYS||90)+1); winTo=_vn(_n);
+        }
         var res={};
-        var rs=await Promise.all(allTables.map(fetchTableWithRetry));
+        var rs=await Promise.all(allTables.map(function(t){
+          var col=dateWindowCols[t];
+          if(winTo&&col) return fetchTableWithRetry(t, function(q){ return q.gte(col,winFrom).lte(col,winTo); });
+          return fetchTableWithRetry(t);
+        }));
         var failed=[];
         allTables.forEach(function(t,i){ var ok=rs[i]&&!rs[i].error&&rs[i].data; var key=(t===appsSrc)?'applications':t; res[key]=ok?rs[i].data:[]; if(!ok)failed.push(t); });
         cache.loadError=failed.length?failed:null;   // 재시도까지 다 실패한 테이블 목록(없으면 null)
@@ -307,6 +351,7 @@
       }catch(e){ console.warn('Supabase init failed → localStorage', e); useRemote=false; }
     }
     if(!useRemote){ cache.settings=lsGet(KEY_SET,'{}'); cache.apps=lsGet(KEY_APPS,'[]'); }
+    cache.settings.linkHub=normalizeLinkHub(cache.settings.linkHub);
   }
 
   function _report(errs){ if(errs&&errs.length){ console.warn('save errors',errs); if(onErr)onErr(errs.join('\n')); } }
@@ -333,12 +378,46 @@
     cache.apps = v;
   }
   /* 이미지 업로드 → Supabase Storage('images' 공개 버킷) → 공개 URL 반환 */
+  // 사진을 최대 1600px로 리사이즈 + JPEG 재압축해서 반환(실패하면 원본 그대로 반환) — 업로드 용량뿐 아니라
+  // 방문자가 그 사진을 볼 때마다 나가는 Storage egress를 크게 줄이기 위함.
+  function compressImage(file, maxDim, quality){
+    return new Promise(function(resolve){
+      try{
+        var img=new Image();
+        var url=URL.createObjectURL(file);
+        img.onload=function(){
+          URL.revokeObjectURL(url);
+          // 이 콜백은 비동기라 바깥 try/catch가 못 잡는다 — 여기서 뭐가 터지든(캔버스 미지원 등)
+          // 반드시 resolve는 되게 해서 업로드가 영원히 멈추는 일이 없게 한다(실패하면 원본으로 진행).
+          try{
+            var w=img.naturalWidth||0, h=img.naturalHeight||0;
+            if(!w||!h){ resolve(file); return; }
+            var scale=Math.min(1, maxDim/Math.max(w,h));
+            var cw=Math.max(1,Math.round(w*scale)), ch=Math.max(1,Math.round(h*scale));
+            var canvas=document.createElement('canvas'); canvas.width=cw; canvas.height=ch;
+            var ctx=canvas.getContext('2d');
+            if(!ctx){ resolve(file); return; }
+            ctx.drawImage(img,0,0,cw,ch);
+            canvas.toBlob(function(blob){ resolve(blob||file); }, 'image/jpeg', quality);
+          }catch(e){ resolve(file); }
+        };
+        img.onerror=function(){ URL.revokeObjectURL(url); resolve(file); };
+        img.src=url;
+      }catch(e){ resolve(file); }
+    });
+  }
   async function uploadImage(file, prefix){
     if(!useRemote || !client || !client.storage) return { error:'Supabase 연결이 필요합니다(로컬 모드에서는 업로드 불가).' };
     try{
       var ext=((file.name||'').split('.').pop()||'jpg').toLowerCase().replace(/[^a-z0-9]/g,'')||'jpg';
+      var upFile=file;
+      // 로고(투명 배경이 필요할 수 있음)는 원본 그대로, 그 외 실제 사진(갤러리·공간·컨셉·히어로)만 압축한다.
+      if(prefix!=='logo' && file.type && file.type.indexOf('image/')===0){
+        var blob=await compressImage(file, 1600, 0.82);
+        if(blob && blob.size && blob.size<file.size){ upFile=blob; ext='jpg'; }
+      }
       var path=(prefix||'img')+'/'+Date.now()+'_'+Math.random().toString(36).slice(2,8)+'.'+ext;
-      var up=await client.storage.from('images').upload(path, file, { upsert:false, contentType:file.type||'image/jpeg' });
+      var up=await client.storage.from('images').upload(path, upFile, { upsert:false, contentType:upFile.type||'image/jpeg' });
       if(up.error) return { error:(up.error.message||'업로드 실패') };
       var pub=client.storage.from('images').getPublicUrl(path);
       return { url:(pub && pub.data && pub.data.publicUrl)||'' };

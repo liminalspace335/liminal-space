@@ -16,7 +16,7 @@ sed -i '' -E 's/(LS_VERSION *= *"v)[0-9]+(")/\1'"$next"'\2/' config.js
 
 # 모든 HTML 의 자산 캐시버스터(?v=N) 를 새 버전으로 교체 → 브라우저가 새 config/app/styles 를 즉시 받음
 for f in index.html brand.html classes.html gallery.html location.html space.html admin/index.html; do
-  [ -f "$f" ] && sed -i '' -E "s/(styles\.css|config\.js|store\.js|app\.js)\?v=[0-9]+/\1?v=$next/g" "$f"
+  [ -f "$f" ] && sed -i '' -E "s/(styles\.css|config\.js|store\.js|app\.js|linkhub\.js)\?v=[0-9]+/\1?v=$next/g" "$f"
 done
 
 msg="${1:-deploy}"

@@ -641,6 +641,8 @@ function dayMsg(dateStr){const lang=curLang();const st=dayState(dateStr);
 function vnNow(){return new Date(new Date().toLocaleString('en-US',{timeZone:'Asia/Ho_Chi_Minh'}));}
 function vnToday(){const d=vnNow();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function vnHM(){const d=vnNow();return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');}
+// 예약 가능 상한(오늘부터 N일, config.js) — store.js가 공개 조회 시 스케줄을 같은 기간만 불러오므로 반드시 맞춰야 함
+function vnMaxDate(){const d=vnNow();d.setDate(d.getDate()+(window.RESERVATION_WINDOW_DAYS||90));return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function isPastSlot(dateStr,time){if(!dateStr)return false;if(dateStr<vnToday())return true;if(dateStr===vnToday()&&time&&time<=vnHM())return true;return false;}
 /* 선택한 날짜의 요일에 맞춰 시간대 드롭다운 채우기 */
 function populateTimes(){
@@ -844,7 +846,18 @@ function goto(n){
   if(n===3) renderSizes();
   if(n===4){
     var inq=isInquiry();
-    var di=modal.querySelector('[data-field="date"]');if(di)di.min=vnToday();
+    var di=modal.querySelector('[data-field="date"]');if(di){di.min=vnToday();if(inq)di.removeAttribute('max');else di.max=vnMaxDate();}
+    var dwn=document.getElementById('dateWindowNote');
+    if(dwn){
+      if(inq){ dwn.style.display='none'; }
+      else{
+        const lang=curLang();
+        dwn.textContent = lang==='en' ? 'Online booking is available up to '+(window.RESERVATION_WINDOW_DAYS||90)+' days ahead. For dates further out, please contact us directly.'
+          : lang==='vi' ? 'Đặt lịch trực tuyến chỉ khả dụng trong vòng '+(window.RESERVATION_WINDOW_DAYS||90)+' ngày tới. Với ngày xa hơn, vui lòng liên hệ trực tiếp.'
+          : '온라인 예약은 오늘로부터 '+(window.RESERVATION_WINDOW_DAYS||90)+'일 이내만 가능합니다. 그 이후 날짜는 직접 문의해 주세요.';
+        dwn.style.display='block';
+      }
+    }
     var tf=modal.querySelector('.modal-step[data-step="4"] [data-field="time"]'); var tw=tf?tf.closest('.mfield'):null;
     var pf=modal.querySelector('.modal-step[data-step="4"] [data-field="people"]'); var pw=pf?pf.closest('.mfield'):null;
     if(tw)tw.style.display=inq?'none':'';
@@ -893,7 +906,8 @@ function validate(n){
     const lang=curLang();const vi=lang==='vi';const en=lang==='en';
     if(!data.date){showErr('visit');return false;}
     if(data.date<vnToday()){const e=modal.querySelector('[data-err="cap"]');e.textContent=vi?'Không thể chọn ngày đã qua.':en?'Past dates cannot be selected.':'지난 날짜는 선택할 수 없습니다.';e.style.display='block';return false;}
-    if(isInquiry()) return true;   // 문의전용: 날짜만 확인(시간/슬롯/정원 검증 없음)
+    if(isInquiry()) return true;   // 문의전용: 날짜만 확인(시간/슬롯/정원 검증 없음, 90일 제한도 적용 안 함 — 스케줄 데이터를 안 쓰므로)
+    if(data.date>vnMaxDate()){const e=modal.querySelector('[data-err="cap"]');e.textContent=vi?'Ngày này còn quá xa, vui lòng liên hệ trực tiếp để đặt lịch.':en?'This date is too far ahead — please contact us directly to book.':'너무 먼 날짜는 온라인 예약이 불가합니다. 직접 문의해 주세요.';e.style.display='block';return false;}
     const slots=slotsFor(data.date);
     if(!slots.length){const e=modal.querySelector('[data-err="cap"]');e.textContent=dayMsg(data.date);e.style.display='block';return false;}
     if(!data.time){showErr('visit');return false;}
@@ -901,7 +915,7 @@ function validate(n){
     const slot=slots.find(s=>s.time===data.time);
     if(!slot){showErr('visit');return false;}
     const remain=slot.cap-bookedOn(data.date,data.time);
-    const req=parseInt(data.people)||1;
+    const req=Math.max(1,parseInt(data.people)||1);
     if(remain<=0||req>remain){showCapErr(remain);return false;}
   }
   if(n===5&&(!data.name||!data.phone||!data.email||!data.nationality)){showErr('contact');return false;}
@@ -1000,7 +1014,7 @@ function submitApplication(){
   const entry={id:Date.now(),createdAt:new Date().toISOString(),
     branch:data.branch,name:data.name,phone:(_dial?_dial+' ':'')+(data.phone||''),email:data.email,nationality:_nat,
     facebook:data.facebook||'',instagram:data.instagram||'',class:data.class,
-    size:inq?'':data.size,date:data.date,time:inq?'':data.time,people:inq?'':(data.people||'1'),
+    size:inq?'':data.size,date:data.date,time:inq?'':data.time,people:inq?'':String(Math.max(1,parseInt(data.people)||1)),
     amount:inq?'':expectedAmountStr(),deposit:'',
     msg:data.msg,status:inq?'new':'confirmed',   // 결제 없음 → 클래스 신청은 접수 즉시 '확정'(문의는 '신규' 유지)
     lang:curLang()};                              // 신청 당시 언어(확정메일 언어 결정)
@@ -1009,16 +1023,22 @@ function submitApplication(){
 }
 /* 신청 저장이 재시도까지 실패하면(순간 네트워크 오류 등) 확인 화면(7단계)에 그대로 있는 고객에게도 안내.
    이미 화면을 벗어났으면(모달 닫힘 등) 되돌릴 방법이 없어 콘솔 로그만 남긴다. */
-if(window.LS&&LS.onError) LS.onError(function(){
+if(window.LS&&LS.onError) LS.onError(function(msg){
   if(cur!==7)return;
   const box=modal.querySelector('.modal-step[data-step="7"] .modal-done');
   if(!box)return;
   const l=curLang();
   let warn=box.querySelector('.done-fail');
   if(!warn){warn=document.createElement('div');warn.className='done-fail';box.insertAdjacentElement('afterbegin',warn);}
-  warn.textContent = l==='en' ? 'Your submission was not completed. Please contact us to confirm.'
-    : l==='vi' ? 'Yêu cầu của bạn chưa được hoàn tất. Vui lòng liên hệ để xác nhận.'
-    : '접수가 완료되지 않았습니다. 담당자에게 확인해주세요.';
+  // CAPACITY_FULL: 동시신청으로 방금 마감된 경우(prevent_overbooking.sql 트리거) — 일반 실패와 다르게 원인이 명확하므로 문구를 구분
+  const full=/CAPACITY_FULL/.test(msg||'');
+  warn.textContent = full
+    ? (l==='en' ? 'Sorry, this time slot just became full. Please contact us to check other times.'
+      : l==='vi' ? 'Rất tiếc, khung giờ này vừa hết chỗ. Vui lòng liên hệ để kiểm tra giờ khác.'
+      : '죄송합니다, 방금 이 시간대가 마감되었습니다. 다른 시간을 문의해 주세요.')
+    : (l==='en' ? 'Your submission was not completed. Please contact us to confirm.'
+      : l==='vi' ? 'Yêu cầu của bạn chưa được hoàn tất. Vui lòng liên hệ để xác nhận.'
+      : '접수가 완료되지 않았습니다. 담당자에게 확인해주세요.');
 });
 
 /* 초기 옵션 바인딩 (열릴 때 동적 렌더로 재바인딩됨) */

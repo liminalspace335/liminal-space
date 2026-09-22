@@ -152,6 +152,8 @@
   .gf-row{grid-template-columns:64px 1fr 44px}
   .gl-row{grid-template-columns:1.2fr .85fr 1fr .8fr 46px 54px .7fr 38px}
   .lg-row{grid-template-columns:1fr 1.4fr 46px 54px 1fr 38px}
+  .lhi-row{grid-template-columns:110px 46px 1fr 70px}
+  .lhl-row{grid-template-columns:120px 1fr 1.4fr 46px 70px 38px}
   .gen-row .ck{display:flex;align-items:center;justify-content:center}
   .gen-row .ck input{width:18px;height:18px}
   .upwrap{display:flex;gap:6px;min-width:0}.upwrap input{flex:1;min-width:0}
@@ -201,6 +203,7 @@
     .subtab{white-space:nowrap}
     .gen-row{min-width:600px}
     .br-row{min-width:920px}.cd-row{min-width:860px}.bc-row{min-width:600px}
+    .lhi-row{min-width:520px}.lhl-row{min-width:660px}
     .slot-row,.slot-head{min-width:460px}
     /* 클래스설정(예약) 시간대: 가로 스크롤 대신 카드형으로 화면 안에 수납 */
     #bkEditor{overflow:visible}
@@ -300,6 +303,7 @@
       <button class="sb-item" data-tab="list"><span class="ic">▤</span> 신청관리(캘린더)</button>
       <button class="sb-item" data-tab="list2"><span class="ic">▦</span> 신청관리(리스트)</button>
       <button class="sb-item" data-tab="booking"><span class="ic">◷</span> 클래스설정</button>
+      <button class="sb-item" data-tab="linkhub"><span class="ic">🔗</span> 홈화면</button>
       <button class="sb-item" data-tab="settings"><span class="ic">⚙</span> 환경설정</button>
       <button class="sb-item" data-tab="accounts" id="sbAccounts" style="display:none"><span class="ic">👤</span> 계정관리</button>
     </nav>
@@ -360,6 +364,32 @@
         <div class="bk-grid">
           <div class="cal sel" id="bkCal"></div>
           <div class="editor" id="bkEditor"></div>
+        </div>
+      </div>
+
+      <!-- LINKHUB (홈화면 · 링크허브) -->
+      <div class="panel" id="panel-linkhub">
+        <div class="pill-tabs" id="lhAdmLangTabs" style="margin-bottom:16px"></div>
+        <div class="box" style="max-width:820px">
+          <h3>프로필</h3><p class="desc">홈화면(링크허브) 상단 히어로 마크에 표시되는 이름(로고 워드마크)입니다. 공유하기 미리보기 카드에도 동일하게 쓰이며, 방문자가 좌측 상단에서 언어를 바꿔도 이 이름은 바뀌지 않고 항상 그대로 표시됩니다.</p>
+          <div class="field-row"><label>홈화면 사용</label><label style="display:inline-flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="lhEnabled" /> <span style="font-size:13px;color:var(--ink-soft)">끄면 방문자에게 로고만 보이고(픽토그램·버튼·QR·공유 숨김) "준비 중" 상태로 표시됩니다</span></label></div>
+          <div class="field-row"><label>이름</label><input id="lhName" placeholder="LIMINAL SPACE" /></div>
+          <div class="field-row"><label>QR 코드</label><label style="display:inline-flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="lhShowQr" /> <span style="font-size:13px;color:var(--ink-soft)">켜면 데스크톱(웹)에서 볼 때만 화면 우측 하단에 페이지 QR코드가 표시됩니다 (모바일에서는 표시되지 않음)</span></label></div>
+          <div class="save-row"><button class="btn sm" id="lhProfileSave">저장</button><span class="saved" id="lhProfileSaved">저장됨 ✓</span></div>
+        </div>
+
+        <div class="box" style="max-width:1180px">
+          <h3>픽토그램</h3><p class="desc">홈화면 상단 아이콘 줄에 표시됩니다. 사용/미사용과 순서를 정하고, 클릭했을 때 이동할 값을 입력하세요.</p>
+          <div class="gen-row lhi-row head-row"><div>아이콘</div><div>사용</div><div>값</div><div>순서</div></div>
+          <div id="lhIconList"></div>
+          <div class="save-row"><button class="btn sm" id="lhIconSave">저장</button><span class="saved" id="lhIconSaved">저장됨 ✓</span></div>
+        </div>
+
+        <div class="box" style="max-width:1180px">
+          <h3>버튼 목록</h3><p class="desc">픽토그램 아래 큰 버튼 목록입니다. 썸네일 이미지·제목(언어별)·이동할 링크(내부 페이지 또는 외부 URL)를 자유롭게 추가·삭제·정렬하세요.</p>
+          <div class="gen-row lhl-row head-row"><div>썸네일</div><div>제목</div><div>링크(URL)</div><div>사용</div><div>순서</div><div></div></div>
+          <div id="lhLinkList"></div>
+          <div class="save-row"><button class="btn ghost sm" id="lhLinkAdd">+ 버튼 추가</button><button class="btn sm" id="lhLinkSave">저장</button><span class="saved" id="lhLinkSaved">저장됨 ✓</span></div>
         </div>
       </div>
 
@@ -570,8 +600,8 @@
 </div></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="../config.js?v=53"></script>
-<script src="../store.js?v=53"></script>
+<script src="../config.js?v=54"></script>
+<script src="../store.js?v=54"></script>
 <script>
 const STORE_KEY='liminal_applications';
 const SET_KEY='liminal_settings';
@@ -608,7 +638,8 @@ const DEFAULT_SETTINGS={
   partners:[],
   galleryFolders:[],
   space:[],
-  spaceFolders:[]
+  spaceFolders:[],
+  linkHub:{avatar:'',name:'',tagline:'',showQr:true,enabled:true,icons:[],links:[]}
 };
 
 function load(){return window.LS?LS.getApps():[];}
@@ -683,6 +714,7 @@ async function loadPerms(){
 function applyMenuVisibility(){
   document.querySelectorAll('.sb-item[data-tab]').forEach(function(b){
     if(b.dataset.tab==='accounts'){ b.style.display=IS_MASTER?'':'none'; return; }
+    if(b.dataset.tab==='linkhub'){ b.style.display=can('settings','view')?'':'none'; return; }
     b.style.display=can(b.dataset.tab,'view')?'':'none';
   });
   const activeBtn=document.querySelector('.sb-item.active');
@@ -704,12 +736,14 @@ const ACTION_MAP={
   glAdd:['settings','create'], glSave:['settings','update'],
   lgAdd:['settings','create'], lgSave:['settings','update'],
   sfAdd:['settings','create'], sfSave:['settings','update'],
-  spAdd:['settings','create'], spSave:['settings','update']
+  spAdd:['settings','create'], spSave:['settings','update'],
+  lhProfileSave:['settings','update'], lhIconSave:['settings','update'],
+  lhLinkAdd:['settings','create'], lhLinkSave:['settings','update']
 };
 /* 동적으로 생성되는 행의 삭제/재발송 버튼 → class로 매칭 */
 const ACTION_CLASS_MAP={
   'b-del':['settings','delete'], 'bc-del':['settings','delete'], 'cd-del':['settings','delete'], 'd-del':['settings','delete'],
-  'gf-del':['settings','delete'], 'gl-del':['settings','delete'], 'lg-del':['settings','delete'], 'sf-del':['settings','delete'], 'sp-del':['settings','delete'],
+  'gf-del':['settings','delete'], 'gl-del':['settings','delete'], 'lg-del':['settings','delete'], 'sf-del':['settings','delete'], 'sp-del':['settings','delete'], 'lhl-del':['settings','delete'],
   'e-del':['booking','delete'], 'l2-resend':['list2','update']
 };
 function permBlocked(area,type){ if(can(area,type))return false; alert('이 작업을 수행할 권한이 없습니다.'); return true; }
@@ -777,7 +811,7 @@ function showApp(){document.getElementById('gate').style.display='none';document
   burger.addEventListener('click',function(){var open=nav.classList.toggle('open');burger.setAttribute('aria-expanded',open?'true':'false');});})();
 
 /* tabs */
-const TITLES={overview:'소개',list:'신청관리(캘린더)',list2:'신청관리(리스트)',booking:'클래스설정',settings:'환경설정',accounts:'계정관리'};
+const TITLES={overview:'소개',list:'신청관리(캘린더)',list2:'신청관리(리스트)',booking:'클래스설정',linkhub:'홈화면',settings:'환경설정',accounts:'계정관리'};
 document.querySelectorAll('.sb-item').forEach(b=>b.addEventListener('click',()=>{
   const tab=b.dataset.tab;
   var _nav=document.querySelector('.sb-nav'),_bg=document.getElementById('sbBurger');
@@ -789,10 +823,11 @@ document.querySelectorAll('.sb-item').forEach(b=>b.addEventListener('click',()=>
   if(tab==='list')renderList();
   if(tab==='list2'){l2Reset();renderList2();}
   if(tab==='booking')renderBooking();
+  if(tab==='linkhub')renderLinkHub();
   if(tab==='settings')renderSettings();
   if(tab==='accounts')renderAccounts();
 }));
-function renderAll(){populateFilters();renderOverview();renderList();renderList2();renderBooking();renderSettings();
+function renderAll(){populateFilters();renderOverview();renderList();renderList2();renderBooking();renderLinkHub();renderSettings();
   document.getElementById('lastUpdate').textContent='최종 조회 '+fmt(new Date().toISOString());}
 
 /* calendar */
@@ -887,9 +922,13 @@ document.getElementById('exportBtn').addEventListener('click',()=>exportCSV(load
 
 /* ===== 신청관리(리스트) (행 목록형 대시보드 · staged 편집) ===== */
 let l2Bound=false;let l2Sel=new Set();let l2Data=null;let l2Dirty=false;
+// l2Touched: 이번 리스트 작업 세션에서 실제로 손댄 신청 id만 기록(추가/수정/삭제).
+// 저장할 때 이 id들만 draft 값으로 반영하고, 나머지는 최신 캐시를 그대로 써서, 그 사이 캘린더 탭 등
+// 다른 화면에서 따로 저장된 변경사항을 리스트 저장이 통째로 덮어써버리지 않게 한다.
+let l2Touched=new Set();
 function l2Get(){ if(!l2Data) l2Data=load().map(a=>Object.assign({},a)); return l2Data; }   // 작업 복사본
 function l2Active(){ const p=document.getElementById('panel-list2'); return !!(p&&p.classList.contains('active')); }
-function l2Reset(){ if(!l2Dirty){ l2Data=null; l2Sel=new Set(); } }   // dirty 아니면 store에서 새로 로드
+function l2Reset(){ if(!l2Dirty){ l2Data=null; l2Sel=new Set(); l2Touched=new Set(); } }   // dirty 아니면 store에서 새로 로드
 function l2Filtered(){
   const q=(document.getElementById('l2Search').value||'').trim().toLowerCase();
   const st=document.getElementById('l2Status').value;
@@ -923,7 +962,7 @@ function l2ApplyStatusModal(){
   if(from===to){alert('변경 전·후 상태가 같습니다.');return;}
   const rows=l2Get().filter(a=>l2Sel.has(a.id)&&a.status===from);
   if(!rows.length){alert('선택한 항목 중 "'+((STATUS[from]||{}).label)+'" 상태가 없습니다.');return;}
-  rows.forEach(a=>a.status=to); l2Dirty=true; l2CloseStatusModal(); renderList2();
+  rows.forEach(a=>{a.status=to;l2Touched.add(a.id);}); l2Dirty=true; l2CloseStatusModal(); renderList2();
 }
 /* 재발송(메일/잘로 선택) 팝업 */
 let resendTargetId=null;
@@ -960,15 +999,26 @@ async function applyResendModal(){
 function l2AddRow(){
   const b=branchNames()[0]||'';
   const row={id:Date.now()+Math.floor(Math.random()*1000),createdAt:new Date().toISOString(),branch:b,'class':'',size:'',date:'',time:'',people:'1',name:'',phone:'',email:'',nationality:'',facebook:'',instagram:'',msg:'',status:'new'};
-  l2Get().unshift(row); l2Dirty=true; renderList2(); openDetail(row.id);
+  l2Get().unshift(row); l2Touched.add(row.id); l2Dirty=true; renderList2(); openDetail(row.id);
 }
 function l2DelRows(){
   if(!l2Sel.size){alert('삭제할 신청을 먼저 체크하세요.');return;}
   if(!confirm(l2Sel.size+'건을 삭제할까요? (저장을 눌러야 최종 반영됩니다)'))return;
+  l2Sel.forEach(id=>l2Touched.add(id));
   l2Data=l2Get().filter(a=>!l2Sel.has(a.id)); l2Sel=new Set(); l2Dirty=true; renderList2();
 }
 function l2Save(){
-  save(l2Get()); l2Dirty=false; l2Data=null; l2Sel=new Set();
+  // 손댄 항목(l2Touched)만 이 리스트의 draft 값으로 반영하고, 안 건드린 항목은 최신 캐시(load())를 그대로 써서
+  // 저장하는 사이 캘린더 탭 등 다른 화면에서 바뀐 내용을 덮어쓰지 않게 한다.
+  const fresh=load(); const draft=l2Get();
+  const draftById={}; draft.forEach(a=>{draftById[a.id]=a;});
+  const result=[]; const seen=new Set();
+  fresh.forEach(a=>{
+    if(l2Touched.has(a.id)){ if(draftById[a.id]){result.push(draftById[a.id]);seen.add(a.id);} }   // 삭제된 경우 draft에 없으므로 결과에서 빠짐
+    else { result.push(a); seen.add(a.id); }
+  });
+  draft.forEach(a=>{ if(l2Touched.has(a.id) && !seen.has(a.id)){result.push(a);seen.add(a.id);} });   // 새로 추가된 항목
+  save(result); l2Dirty=false; l2Data=null; l2Sel=new Set(); l2Touched=new Set();
   renderList2(); renderOverview();
   const dh=document.getElementById('l2DirtyHint'); if(dh){dh.textContent='저장됨 ✓';dh.classList.remove('on');setTimeout(()=>{if(!l2Dirty&&dh.textContent==='저장됨 ✓')dh.textContent='';},1600);}
 }
@@ -1112,8 +1162,12 @@ function fillEditor(slots){document.getElementById('edSlots').innerHTML=slots.ma
 document.querySelectorAll('.subtab').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('.subtab').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('.subpanel').forEach(p=>p.classList.toggle('active',p.id==='sub-'+b.dataset.sub));}));
 let bcBranch='';let defBranch='';
 function renderAdmLang(){
-  document.getElementById('admLangTabs').innerHTML='<span class="head-row" style="align-self:center;margin-right:4px">입력 언어</span>'+LANGS.map(([k,l])=>`<button class="pill-tab ${k===admLang?'active':''}" data-l="${k}">${l}</button>`).join('');
-  document.querySelectorAll('#admLangTabs .pill-tab').forEach(b=>b.addEventListener('click',()=>{admLang=b.dataset.l;renderSettings();}));
+  const html='<span class="head-row" style="align-self:center;margin-right:4px">입력 언어</span>'+LANGS.map(([k,l])=>`<button class="pill-tab ${k===admLang?'active':''}" data-l="${k}">${l}</button>`).join('');
+  ['admLangTabs','lhAdmLangTabs'].forEach(id=>{
+    const el=document.getElementById(id); if(!el)return;
+    el.innerHTML=html;
+    el.querySelectorAll('.pill-tab').forEach(b=>b.addEventListener('click',()=>{admLang=b.dataset.l;renderSettings();renderLinkHub();}));
+  });
 }
 function renderSettings(){renderAdmLang();renderBranches();renderBranchClasses();renderClassDetails();renderDefaults();renderGalleryFolders();renderGalleryItems();renderPartnerItems();renderSpaceFolders();renderSpaceItems();dimBlockedButtons();}
 /* ===== 공간(사진+폴더) — 갤러리와 동일 구조 ===== */
@@ -1175,7 +1229,7 @@ function bindUploads(listEl){
     const row=e.target.closest('.gen-row'); const tgt=row.querySelector('.'+e.target.dataset.target); if(!tgt)return;
     const txt=e.target.parentNode.childNodes[0];
     if(txt)txt.textContent='…';
-    const tk=e.target.dataset.target||''; const kind=tk==='lg-logo'?'logo':(tk==='sp-img'?'space':'gallery');
+    const tk=e.target.dataset.target||''; const kind=tk==='lg-logo'?'logo':(tk==='sp-img'?'space':(tk==='lhl-img'?'linkhub':'gallery'));
     let r={error:'사용 불가'};
     try{ r=await (window.LS&&LS.uploadImage?LS.uploadImage(file,kind):Promise.resolve({error:'Supabase 필요'})); }catch(err){ r={error:String(err)}; }
     if(txt)txt.textContent='⬆';
@@ -1201,6 +1255,66 @@ function renderPartnerItems(){
 }
 document.getElementById('lgAdd').addEventListener('click',()=>{const s=loadSettings();s.partners=s.partners||[];s.partners.push({name:'',logo:'',link:'',featured:false,order:s.partners.length+1});saveSettings(s);renderPartnerItems();});
 document.getElementById('lgSave').addEventListener('click',()=>{const s=loadSettings();s.partners=[...document.querySelectorAll('#lgList .lg-row')].map(r=>({name:r.querySelector('.lg-name').value.trim(),logo:r.querySelector('.lg-logo').value.trim(),link:r.querySelector('.lg-link').value.trim(),featured:r.querySelector('.lg-feat').checked,order:+r.querySelector('.lg-order').value||0})).filter(p=>p.logo||p.name);saveSettings(s);toast('lgSaved');renderPartnerItems();});
+
+/* ===== 홈화면(링크허브) ===== */
+const LH_ICON_META={
+  email:{label:'이메일',ph:'받는사람 이메일 (예: hello@liminalspace.studio)'},
+  phone:{label:'전화',ph:'전화번호 (예: +84 90 123 4567)'},
+  googlemap:{label:'구글맵',ph:'주소 또는 장소명 (구글맵 검색어)'},
+  facebook:{label:'페이스북',ph:'페이스북 페이지 URL'},
+  instagram:{label:'인스타그램',ph:'인스타그램 URL'},
+  tiktok:{label:'틱톡',ph:'틱톡 URL'},
+  threads:{label:'쓰레드',ph:'쓰레드 URL'}
+};
+function renderLinkHub(){
+  renderAdmLang();
+  const lh=loadSettings().linkHub||{};
+  document.getElementById('lhEnabled').checked=lh.enabled!==false;
+  document.getElementById('lhName').value=(typeof lh.name==='string'?lh.name:'');
+  document.getElementById('lhShowQr').checked=lh.showQr!==false;
+  renderLinkHubIcons(); renderLinkHubLinks();
+}
+function renderLinkHubIcons(){
+  const list=document.getElementById('lhIconList'); if(!list)return;
+  const icons=((loadSettings().linkHub||{}).icons||[]).slice().sort((a,b)=>(a.order||0)-(b.order||0));
+  list.innerHTML=icons.map((ic,i)=>{const meta=LH_ICON_META[ic.type]||{label:ic.type,ph:''};
+    return `<div class="gen-row lhi-row" data-type="${ic.type}"><div>${esc(meta.label)}</div><label class="ck"><input type="checkbox" class="lhi-en" ${ic.enabled?'checked':''} /></label><input class="lhi-val" value="${esc(ic.value||'')}" placeholder="${esc(meta.ph)}" /><input type="number" class="lhi-order" value="${ic.order??(i+1)}" /></div>`;
+  }).join('');
+}
+document.getElementById('lhIconSave').addEventListener('click',()=>{
+  const s=loadSettings();
+  const icons=[...document.querySelectorAll('#lhIconList .lhi-row')].map(r=>({type:r.dataset.type,enabled:r.querySelector('.lhi-en').checked,value:r.querySelector('.lhi-val').value.trim(),order:+r.querySelector('.lhi-order').value||0}));
+  s.linkHub=Object.assign({},s.linkHub,{icons});
+  saveSettings(s);toast('lhIconSaved');renderLinkHubIcons();
+});
+function renderLinkHubLinks(){
+  const list=document.getElementById('lhLinkList'); if(!list)return;
+  const links=(loadSettings().linkHub||{}).links||[];
+  list.innerHTML=links.map((l,i)=>`<div class="gen-row lhl-row" data-i="${i}">
+    <div class="upwrap"><input class="lhl-img" value="${esc(l.image||'')}" placeholder="URL 또는 업로드 →" /><label class="upbtn" title="이미지 업로드">⬆<input type="file" class="upfile" accept="image/*" data-target="lhl-img" hidden /></label></div>
+    <input class="lhl-title" value="${esc(Lval(l.title,admLang))}" placeholder="버튼 제목 (${admLang})" />
+    <input class="lhl-url" value="${esc(l.url||'')}" placeholder="https://... 또는 classes.html 등" />
+    <label class="ck"><input type="checkbox" class="lhl-en" ${l.enabled!==false?'checked':''} /></label>
+    <input type="number" class="lhl-order" value="${l.order??(i+1)}" />
+    <button class="icon-btn lhl-del">삭제</button></div>`).join('');
+  list.querySelectorAll('.lhl-del').forEach(b=>b.addEventListener('click',e=>e.target.closest('.lhl-row').remove()));
+  bindUploads(list);
+}
+document.getElementById('lhLinkAdd').addEventListener('click',()=>{const s=loadSettings();s.linkHub=s.linkHub||{};s.linkHub.links=s.linkHub.links||[];s.linkHub.links.push({id:'lhl_'+Date.now().toString(36),title:'',image:'',url:'',enabled:true,order:s.linkHub.links.length+1});saveSettings(s);renderLinkHubLinks();});
+document.getElementById('lhLinkSave').addEventListener('click',()=>{
+  const s=loadSettings(); const prev=(s.linkHub&&s.linkHub.links)||[];
+  const links=[...document.querySelectorAll('#lhLinkList .lhl-row')].map((r,i)=>{const p=prev[+r.dataset.i]||{};
+    const title=Object.assign({},txObj(p.title)); title[admLang]=r.querySelector('.lhl-title').value.trim();
+    return {id:p.id||('lhl_'+Date.now().toString(36)+Math.random().toString(36).slice(2,5)),title,image:r.querySelector('.lhl-img').value.trim(),url:r.querySelector('.lhl-url').value.trim(),enabled:r.querySelector('.lhl-en').checked,order:+r.querySelector('.lhl-order').value||0};
+  }).filter(l=>Lval(l.title,admLang)||l.url||l.image);
+  s.linkHub=Object.assign({},s.linkHub,{links});
+  saveSettings(s);toast('lhLinkSaved');renderLinkHubLinks();
+});
+document.getElementById('lhProfileSave').addEventListener('click',()=>{
+  const s=loadSettings();
+  s.linkHub=Object.assign({},s.linkHub,{name:document.getElementById('lhName').value.trim(),showQr:document.getElementById('lhShowQr').checked,enabled:document.getElementById('lhEnabled').checked});
+  saveSettings(s);toast('lhProfileSaved');
+});
 
 /* 지점설정 (지점별 소셜 포함) */
 function renderBranches(){const s=loadSettings();
@@ -1487,10 +1601,10 @@ document.getElementById('d_class').addEventListener('change',()=>{document.getEl
 document.getElementById('d_date').addEventListener('change',()=>{document.getElementById('d_time').innerHTML=dTimeOpts(dval('d_branch'),dval('d_date'),document.getElementById('d_time').value);});
 function dApplyTo(a){a.name=dval('d_name');a.phone=dval('d_phone');a.email=dval('d_email');a.nationality=dval('d_nat');a.facebook=dval('d_fb');a.instagram=dval('d_ig');a.branch=dval('d_branch');a.class=dval('d_class');a.size=dval('d_size');a.date=dval('d_date');a.time=dval('d_time');a.people=dval('d_people')||'1';a.msg=dval('d_msg');a.amount=dval('d_amount');a.status=dval('d_status');}
 document.getElementById('dSave').addEventListener('click',()=>{
-  if(typeof l2Active==='function'&&l2Active()){const a=l2Get().find(x=>x.id===detailId);if(!a)return;dApplyTo(a);l2Dirty=true;closeDetail();renderList2();return;}
+  if(typeof l2Active==='function'&&l2Active()){const a=l2Get().find(x=>x.id===detailId);if(!a)return;dApplyTo(a);l2Touched.add(detailId);l2Dirty=true;closeDetail();renderList2();return;}
   const l=load();const a=l.find(x=>x.id===detailId);if(!a)return;dApplyTo(a);save(l);closeDetail();renderList();renderOverview();});
 document.getElementById('dDelete').addEventListener('click',()=>{if(!detailId)return;if(!confirm('이 신청을 삭제할까요?'))return;
-  if(typeof l2Active==='function'&&l2Active()){l2Data=l2Get().filter(x=>x.id!==detailId);l2Dirty=true;closeDetail();renderList2();return;}
+  if(typeof l2Active==='function'&&l2Active()){l2Touched.add(detailId);l2Data=l2Get().filter(x=>x.id!==detailId);l2Dirty=true;closeDetail();renderList2();return;}
   save(load().filter(x=>x.id!==detailId));closeDetail();renderList();renderOverview();});
 
 /* 로그인 게이트 ON — 데이터 로드 후 boot()이 세션을 보고 게이트/앱을 결정 */

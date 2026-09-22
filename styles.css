@@ -496,3 +496,89 @@ section[id], footer[id]{scroll-margin-top:63px}  /* 고정 네비 높이에 딱 
 @media(max-width:760px){.connect-grid{grid-template-columns:1fr}}
 /* 로고 옆 버전 배지 */
 .brand .ver-badge{display:none;margin-left:9px;font-size:10px;letter-spacing:.06em;color:var(--ink-soft);border:1px solid var(--line);border-radius:999px;padding:2px 8px;vertical-align:middle;font-weight:500;text-transform:none}
+
+/* ===================================================================
+   HOME(링크허브) — index.html 전용 레이아웃. 다른 페이지 섹션과 독립적.
+   =================================================================== */
+/* 히어로 섹션과 동일한 금속/마블 그라데이션을 페이지 전체 배경으로 그대로 사용 */
+.lh-body{
+  background:
+    radial-gradient(120% 60% at 30% 0%, #fbfbfc 0%, transparent 45%),
+    linear-gradient(105deg,#cfd0d4 0%,#e5e6e8 18%,#b6b8bd 34%,#eceded 52%,#c2c4c9 70%,#dedfe2 88%,#b9bbc0 100%);
+  background-attachment:fixed;
+}
+/* 히어로 워드마크(정적 마크업)와 아이콘·버튼(데이터 로딩 후)이 따로 튀어나오지 않도록,
+   데이터가 준비될 때까지 전체를 숨겼다가 한 번에 페이드인 시킨다(lh-ready는 JS가 붙임) */
+.lh-wrap{max-width:460px;margin:0 auto;min-height:100vh;padding:28px 20px 56px;display:flex;flex-direction:column;align-items:center;box-sizing:border-box;opacity:0;transition:opacity .22s ease}
+.lh-wrap.lh-ready{opacity:1}
+.lh-top{width:100%;display:flex;align-items:center;justify-content:space-between}
+.lh-share-btn{width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:var(--paper);color:var(--ink);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:border-color .2s,box-shadow .2s,transform .2s}
+.lh-share-btn:hover{border-color:var(--ink);box-shadow:0 0 0 4px rgba(22,23,26,.06);transform:translateY(-1px)}
+.lh-share-btn .ic{width:17px;height:17px}
+
+/* 언어 선택(VI·EN·KO) — 사이트 모바일 언어 드롭다운과 동일한 생김새를 항상(뷰포트 무관) 사용 */
+.lh-lang{position:relative;display:flex;align-items:center}
+.lh-lang-toggle{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line);border-radius:999px;
+  padding:6px 12px;background:var(--paper);color:var(--ink-soft);font:inherit;font-size:11px;letter-spacing:.1em;cursor:pointer;transition:border-color .2s,color .2s}
+.lh-lang-toggle:hover{border-color:var(--ink);color:var(--ink)}
+.lh-lang-caret{font-size:9px;opacity:.7}
+.lh-lang-menu{display:none;position:absolute;top:calc(100% + 8px);left:0;flex-direction:column;
+  border-radius:12px;overflow:hidden;min-width:88px;box-shadow:0 10px 30px rgba(0,0,0,.16);z-index:60;background:var(--paper);border:1px solid var(--line)}
+.lh-lang.open .lh-lang-menu{display:flex}
+.lh-lang-menu button{background:transparent;border:0;padding:9px 14px;text-align:left;font-size:12px;letter-spacing:.05em;color:var(--ink-soft);cursor:pointer;font:inherit}
+.lh-lang-menu button:hover{background:rgba(0,0,0,.05);color:var(--ink)}
+.lh-lang-menu button.active{background:var(--accent);color:#fff}
+
+/* eyebrow + 워드마크 + 좌표 — 카드 없이 페이지 배경(마블 그라데이션) 위에 바로 얹힘 */
+.lh-hero-mark{width:100%;margin-top:calc(15vh - 60px);padding:6px 18px 0;text-align:center}
+.lh-eyebrow{margin:0;font-size:10px;letter-spacing:.24em;text-transform:uppercase;color:#5a5c61}
+.lh-wordmark{margin:10px 0 0;font-size:clamp(30px,9vw,44px);line-height:.95;font-weight:700;letter-spacing:-.02em;color:#16171a}
+.lh-coord{margin:10px 0 0;font-size:13px;color:#2c2d31}
+
+.lh-comingsoon{margin:26px 0 0;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-soft);text-align:center}
+.lh-icons{display:flex;gap:2.5px;margin-top:26px;flex-wrap:wrap;justify-content:center}
+.lh-icon{width:40px;height:40px;border:0;background:none;border-radius:0;display:flex;align-items:center;justify-content:center;color:var(--ink-soft);transition:color .2s,transform .2s,filter .2s}
+.lh-icon .ic{width:24px;height:24px}
+.lh-icon:hover{color:var(--ink);transform:translateY(-2px);filter:drop-shadow(0 6px 12px currentColor)}
+.lh-icon.gm:hover{color:#ea4335}
+.lh-icon.fb:hover{color:#1877f2}
+.lh-icon.ig:hover{color:#e1306c}
+.lh-icon.tk:hover{color:#ee1d52}
+
+.lh-links{width:80%;margin-top:30px;display:flex;flex-direction:column;gap:11px}
+.lh-link{display:flex;align-items:center;gap:4px;width:100%;background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:8px 10px;box-sizing:border-box;transition:border-color .25s,box-shadow .25s,transform .2s}
+.lh-link:hover{border-color:var(--ink);box-shadow:0 0 0 1px var(--ink),0 10px 26px -8px rgba(22,23,26,.35);transform:translateY(-2px)}
+.lh-link-body{flex:1;min-width:0;display:flex;align-items:center;gap:12px;text-decoration:none;color:var(--ink)}
+.lh-link-thumb{width:42px;height:42px;border-radius:8px;object-fit:cover;flex:0 0 auto;background:#fff}
+.lh-link-thumb-ph{display:flex;align-items:center;justify-content:center;color:var(--ink-soft);border:1px solid var(--line)}
+.lh-link-title{flex:1;min-width:0;font-size:14px;font-weight:600;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lh-link-more{flex:0 0 auto;width:30px;height:30px;border-radius:50%;border:0;background:transparent;color:var(--ink-soft);display:flex;align-items:center;justify-content:center;cursor:pointer}
+.lh-link-more:hover{color:var(--ink);background:#fff}
+.lh-link-more .ic{width:17px;height:17px}
+
+.lh-qr{position:fixed;right:24px;bottom:24px;text-align:center;z-index:5}
+.lh-qr-box{display:inline-block;border:1px solid var(--line);border-radius:10px;background:#fff;padding:8px;line-height:0}
+.lh-qr-box canvas,.lh-qr-box img{display:block}
+.lh-qr p{margin:6px 0 0;font-size:11px;letter-spacing:.05em;color:var(--ink-soft)}
+@media(max-width:900px){.lh-qr{display:none!important}}
+
+/* 공유하기 모달 */
+.lh-share-overlay{position:fixed;inset:0;background:rgba(15,16,18,.55);display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:50}
+.lh-share-overlay.open{opacity:1;pointer-events:auto}
+.lh-share-modal{width:100%;max-width:380px;background:#fff;border-radius:16px;padding:20px;box-shadow:0 24px 60px -12px rgba(0,0,0,.4)}
+.lh-share-head{display:flex;align-items:center;justify-content:space-between;font-size:14px;font-weight:700;margin-bottom:14px}
+.lh-share-close{background:none;border:0;font-size:22px;line-height:1;cursor:pointer;color:var(--ink-soft)}
+.lh-share-close:hover{color:var(--ink)}
+.lh-share-card{background:var(--accent);color:#fff;border-radius:12px;padding:26px 20px;display:flex;flex-direction:column;align-items:center;text-align:center}
+.lh-share-name{font-size:15px;font-weight:700}
+.lh-share-sub{margin-top:6px;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.65)}
+.lh-copy-btn{width:100%;margin-top:16px;display:flex;align-items:center;justify-content:center;gap:8px;background:var(--accent);color:#fff;border:0;border-radius:999px;padding:12px;font-size:13px;font-weight:600;cursor:pointer;transition:opacity .2s}
+.lh-copy-btn:hover{opacity:.85}
+.lh-copy-btn .ic{width:16px;height:16px}
+.lh-share-icons{display:flex;gap:4px;flex-wrap:nowrap;justify-content:center;margin-top:16px}
+.lh-share-icons .lh-icon{width:34px;height:34px;flex:0 0 auto}
+.lh-share-icons .lh-icon .ic{width:19px;height:19px}
+
+@media(max-width:480px){
+  .lh-wrap{padding:22px 16px 48px}
+}

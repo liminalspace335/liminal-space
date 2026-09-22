@@ -61,6 +61,8 @@ alter table public.site_info add column if not exists hero_logo text default '';
 -- 신청 이메일 알림 (받는 주소 · 사용여부)
 alter table public.site_info add column if not exists notify_email text default '';
 alter table public.site_info add column if not exists notify_on boolean default true;
+-- 홈화면(링크허브) 설정 — 아바타/이름/태그라인/QR표시 + 픽토그램(이메일·전화·구글맵·SNS) + 커스텀 버튼 목록 JSON
+alter table public.site_info add column if not exists linkhub_json text default '{}';
 
 -- 클래스 (지점별)
 create table if not exists public.classes (
