@@ -572,11 +572,12 @@ section[id], footer[id]{scroll-margin-top:63px}  /* 고정 네비 높이에 딱 
 .lh-share-head{display:flex;align-items:center;justify-content:space-between;font-size:14px;font-weight:700;margin-bottom:14px}
 .lh-share-close{background:none;border:0;font-size:22px;line-height:1;cursor:pointer;color:var(--ink-soft)}
 .lh-share-close:hover{color:var(--ink)}
-.lh-share-card{background:var(--accent);color:#fff;border-radius:12px;padding:26px 20px;display:flex;flex-direction:column;align-items:center;text-align:center;transition:background-image .15s ease}
+.lh-share-card{background:var(--paper);color:var(--ink);border:1px solid var(--line);border-radius:12px;padding:26px 20px;display:flex;flex-direction:column;align-items:center;text-align:center;transition:background-image .15s ease,box-shadow .2s;cursor:pointer}
+.lh-share-card:hover{box-shadow:0 0 0 1px var(--ink)}
 .lh-share-name{font-size:15px;font-weight:700}
-.lh-share-sub{margin-top:6px;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.65)}
+.lh-share-sub{margin-top:6px;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-soft)}
 /* 버튼별 공유(⋮): 링크트리처럼 해당 링크의 썸네일을 배경으로 깔고 제목·도메인을 하단에 얹는 미리보기 카드 */
-.lh-share-card.has-image{background-size:cover;background-position:center;align-items:flex-start;text-align:left;justify-content:flex-end;min-height:150px;padding:16px 18px}
+.lh-share-card.has-image{background-size:cover;background-position:center;align-items:flex-start;text-align:left;justify-content:flex-end;min-height:150px;padding:16px 18px;border:0;color:#fff}
 .lh-share-card.has-image .lh-share-name{font-size:16px;text-shadow:0 1px 4px rgba(0,0,0,.5)}
 .lh-share-card.has-image .lh-share-sub{color:rgba(255,255,255,.8);text-transform:none;letter-spacing:.02em;font-size:12px}
 .lh-copy-btn{width:100%;margin-top:16px;display:flex;align-items:center;justify-content:center;gap:8px;

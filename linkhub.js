@@ -297,6 +297,7 @@
       if(e.key==='Escape') closeLangMenu();
     });
     document.getElementById('lhCopyBtn').addEventListener('click',copyShareUrl);
+    document.getElementById('lhShareCard').addEventListener('click',function(){ if(shareUrl) window.open(shareUrl,'_blank','noopener'); });
     document.getElementById('lhLinksList').addEventListener('click',function(e){
       var more=e.target.closest('.lh-link-more'); if(!more) return;
       e.preventDefault();
