@@ -412,8 +412,11 @@
       var ext=((file.name||'').split('.').pop()||'jpg').toLowerCase().replace(/[^a-z0-9]/g,'')||'jpg';
       var upFile=file;
       // 로고(투명 배경이 필요할 수 있음)는 원본 그대로, 그 외 실제 사진(갤러리·공간·컨셉·히어로)만 압축한다.
+      // 링크허브 버튼 썸네일은 화면에 42px로만 표시되므로, 큰 사진을 올려도 업로드가 오래 걸리지 않도록 훨씬 작게 압축한다.
       if(prefix!=='logo' && file.type && file.type.indexOf('image/')===0){
-        var blob=await compressImage(file, 1600, 0.82);
+        var maxDim = prefix==='linkhub' ? 240 : 1600;
+        var quality = prefix==='linkhub' ? 0.86 : 0.82;
+        var blob=await compressImage(file, maxDim, quality);
         if(blob && blob.size && blob.size<file.size){ upFile=blob; ext='jpg'; }
       }
       var path=(prefix||'img')+'/'+Date.now()+'_'+Math.random().toString(36).slice(2,8)+'.'+ext;
