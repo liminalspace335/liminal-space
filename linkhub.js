@@ -109,6 +109,7 @@
     zalo:{vi:'Zalo',en:'Zalo',ko:'잘로'}, whatsapp:{vi:'WhatsApp',en:'WhatsApp',ko:'왓츠앱'},
     messenger:{vi:'Messenger',en:'Messenger',ko:'메신저'}, instagram:{vi:'Instagram',en:'Instagram',ko:'인스타그램'}, email:{vi:'Email',en:'Email',ko:'이메일'}
   };
+  var IS_MOBILE_UA=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
   function shareChannelHref(type,url,title){
     var enc=encodeURIComponent(url);
     switch(type){
@@ -117,22 +118,37 @@
       // 앱에서 완전히 네이티브로 여는 공유는 Zalo 자체 Share SDK(App ID 등록 필요) 없이는 안정적으로 구현 불가.
       case 'zalo': return 'https://sp.zalo.me/share?u='+enc+(title?('&title='+encodeURIComponent(title)):'');
       case 'whatsapp': return 'https://wa.me/?text='+encodeURIComponent((title?title+' ':'')+url);
-      // 메신저·인스타그램 다이렉트는 앱 딥링크만 공개적으로 열려있음(브라우저 URL로는 상대 지정 불가) — 앱이 설치된 기기에서만 열림
+      // 메신저·인스타그램 다이렉트는 앱 딥링크만 공개적으로 열려있음(브라우저 URL로는 상대 지정 불가) — 모바일 기기에서만 시도
       case 'messenger': return 'fb-messenger://share?link='+enc;
       case 'instagram': return 'instagram://direct';
       case 'email': return 'mailto:?subject='+encodeURIComponent(title||'')+'&body='+enc;
     }
     return '';
   }
+  // 메신저·인스타는 앱 딥링크의 공식 웹 대안이 없다 — 대신 왓츠앱(wa.me)처럼 데스크톱/웹에서도 항상 뭔가 열리도록
+  // 메신저는 페이스북 공유 페이지로, 인스타는 인스타그램 홈으로 대체 이동시킨다(로그인 후 프로필에서 직접 공유 가능).
+  function webFallbackHref(type,url){
+    switch(type){
+      case 'messenger': return 'https://www.facebook.com/sharer/sharer.php?u='+encodeURIComponent(url);
+      case 'instagram': return 'https://www.instagram.com/';
+    }
+    return '';
+  }
   function shareIconHTML(type,url,title){
-    var href=shareChannelHref(type,url,title);
     var m=SHARE_LABEL_I18N[type]; var label=(m&&(m[curLang]||m.vi))||type;
     var isAppOnly=(type==='messenger'||type==='instagram');
-    // 메신저·인스타는 앱 전용 딥링크라 앱이 없으면 아무 반응이 없어 보임 — 클릭을 가로채서 앱 전환 성공 여부를 감지하고,
-    // 실패로 보이면(아래 tryOpenApp) 알림 + 링크 복사로 사용자가 "오류인가?" 헷갈리지 않게 한다.
-    return '<a class="lh-icon '+(SHARE_ICON_CLASS[type]||'')+'" href="'+esc(href)+'"'
-      +(isAppOnly?(' data-app-link="'+esc(href)+'" data-app-type="'+type+'"'):' target="_blank" rel="noopener"')
-      +' aria-label="'+esc(label)+'"><svg class="ic"><use href="#'+SHARE_ICON_SVG[type]+'"/></svg></a>';
+    if(isAppOnly && !IS_MOBILE_UA){
+      // 데스크톱(웹)에서는 앱 딥링크를 시도하지 않고, 왓츠앱과 똑같이 바로 동작하는 웹 페이지를 새 탭으로 연다
+      var webHref=webFallbackHref(type,url);
+      return '<a class="lh-icon '+(SHARE_ICON_CLASS[type]||'')+'" href="'+esc(webHref)+'" target="_blank" rel="noopener" aria-label="'+esc(label)+'"><svg class="ic"><use href="#'+SHARE_ICON_SVG[type]+'"/></svg></a>';
+    }
+    var href=shareChannelHref(type,url,title);
+    if(isAppOnly){
+      // 모바일: 앱이 없으면 아무 반응이 없어 보임 — 클릭을 가로채서 앱 전환 성공 여부를 감지하고,
+      // 실패로 보이면(아래 tryOpenApp) 알림 + 링크 복사로 사용자가 "오류인가?" 헷갈리지 않게 한다.
+      return '<a class="lh-icon '+(SHARE_ICON_CLASS[type]||'')+'" href="'+esc(href)+'" data-app-link="'+esc(href)+'" data-app-type="'+type+'" aria-label="'+esc(label)+'"><svg class="ic"><use href="#'+SHARE_ICON_SVG[type]+'"/></svg></a>';
+    }
+    return '<a class="lh-icon '+(SHARE_ICON_CLASS[type]||'')+'" href="'+esc(href)+'" target="_blank" rel="noopener" aria-label="'+esc(label)+'"><svg class="ic"><use href="#'+SHARE_ICON_SVG[type]+'"/></svg></a>';
   }
   /* 앱 전용 딥링크(fb-messenger://, instagram://) 클릭 처리: 시도 후 일정 시간 안에 화면이 전환(blur)되지 않으면
      앱이 없다고 보고, 링크를 대신 복사한 뒤 안내창을 띄운다(사용자가 "안 눌리나?" 헷갈리지 않도록). */
