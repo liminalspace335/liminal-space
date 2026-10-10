@@ -23,14 +23,15 @@
   function ko(v){ return (v&&typeof v==='object')?(v.ko||v.en||v.vi||''):(v||''); }
   function en(v){ return (v&&typeof v==='object')?(v.en||''):''; }
   function vi(v){ return (v&&typeof v==='object')?(v.vi||''):''; }
-  function tri(k,e,v){ return {ko:k||'',en:e||'',vi:v||''}; }
+  function ru(v){ return (v&&typeof v==='object')?(v.ru||''):''; }
+  function tri(k,e,v,r){ return {ko:k||'',en:e||'',vi:v||'',ru:r||''}; }
   function numOrNull(x){ if(x===''||x==null) return null; var n=Number(x); return isNaN(n)?null:n; }
   // 홈화면(링크허브) 픽토그램은 항상 이 7종 고정 — 저장된 값과 타입 기준으로 병합해 누락분을 채운다
   var LINKHUB_ICON_TYPES=['email','phone','googlemap','facebook','instagram','tiktok','threads'];
   // 버튼 제목은 언어별({ko,en,vi}) 입력을 지원 — 기존에 저장된 일반 문자열은 3개 언어 모두에 그대로 채워 넣어(무손실 이관) 계속 표시되게 한다
   function toLinkHubI18n(v){
-    if(v&&typeof v==='object'&&!Array.isArray(v)) return { ko:v.ko||'', en:v.en||'', vi:v.vi||'' };
-    var s=(v==null?'':String(v)); return { ko:s, en:s, vi:s };
+    if(v&&typeof v==='object'&&!Array.isArray(v)) return { ko:v.ko||'', en:v.en||'', vi:v.vi||'', ru:v.ru||'' };
+    var s=(v==null?'':String(v)); return { ko:s, en:s, vi:s, ru:s };
   }
   // 로고(워드마크)는 언어를 바꿔도 항상 같은 표기(영어 "LIMINAL SPACE") — 언어별 객체로 저장돼있던 과거 값이 있어도 영어 우선으로 문자열 하나만 꺼내온다
   function toLinkHubName(v){
@@ -56,8 +57,8 @@
     var settings={ branches:[], branchClasses:[], classDetails:[], defaultSchedule:{}, schedule:{}, site:{}, gallery:[], partners:[], galleryFolders:[], space:[], spaceFolders:[] };
     (t.branches||[]).sort(function(a,b){return (a.sort||0)-(b.sort||0);}).forEach(function(b){
       branchById[b.id]=b.name;
-      settings.branches.push({ id:b.id, name:b.name, nameI18n:{ko:b.name||'',en:b.name_en||'',vi:b.name_vi||''}, contact:b.contact||'', link:b.link||'',
-        location:tri(b.location_ko,b.location_en,b.location_vi), hours:tri(b.hours_ko,b.hours_en,b.hours_vi),
+      settings.branches.push({ id:b.id, name:b.name, nameI18n:{ko:b.name||'',en:b.name_en||'',vi:b.name_vi||'',ru:b.name_ru||''}, contact:b.contact||'', link:b.link||'',
+        location:tri(b.location_ko,b.location_en,b.location_vi,b.location_ru), hours:tri(b.hours_ko,b.hours_en,b.hours_vi,b.hours_ru),
         instagram:b.instagram||'', facebook:b.facebook||'', linktree:b.linktree||'', tiktok:b.tiktok||'' });
     });
     var si=(t.site_info||[])[0]; if(si){ settings.site={ brandName:si.brand_name||'', estYear:si.est_year||'', copyrightYear:si.copyright_year||'',
@@ -75,14 +76,14 @@
     (t.classes||[]).sort(function(a,b){return (a.sort||0)-(b.sort||0);}).forEach(function(c){
       var bn=branchById[c.branch_id]||''; classById[c.id]={branch:bn, nameKo:c.name_ko||''};
       settings.branchClasses.push({ id:c.id, branch:bn, order:c.sort||0,
-        name:tri(c.name_ko,c.name_en,c.name_vi), desc:tri(c.desc_ko,c.desc_en,c.desc_vi), active:c.active!==false, inquiry:c.inquiry_only===true });
+        name:tri(c.name_ko,c.name_en,c.name_vi,c.name_ru), desc:tri(c.desc_ko,c.desc_en,c.desc_vi,c.desc_ru), active:c.active!==false, inquiry:c.inquiry_only===true });
     });
     (t.class_details||[]).forEach(function(d){
       var cm=classById[d.class_id]||{};
       settings.classDetails.push({ id:d.id, branch:branchById[d.branch_id]||cm.branch||'', name:cm.nameKo||'',
         volume:(d.volume==null?'':d.volume), priceKRW:d.price_krw||'', priceVND:d.price_vnd||'', priceUSD:d.price_usd||'',
         discType:d.disc_type||'none', discVal:d.disc_val||'',
-        detail:tri(d.detail_ko,d.detail_en,d.detail_vi) });
+        detail:tri(d.detail_ko,d.detail_en,d.detail_vi,d.detail_ru) });
     });
     (t.default_slots||[]).sort(function(a,b){return (a.sort||0)-(b.sort||0);}).forEach(function(s){
       var bn=branchById[s.branch_id]||''; if(!bn)return; (settings.defaultSchedule[bn]=settings.defaultSchedule[bn]||[])
@@ -115,9 +116,9 @@
 
     var brNameToId={}, clKeyToId={};
     var branchRows=(s.branches||[]).map(function(b,i){ var id=branchIdByName[b.name]||rid('br'); brNameToId[b.name]=id;
-      return { id:id, name:b.name, name_en:(b.nameI18n?en(b.nameI18n):''), name_vi:(b.nameI18n?vi(b.nameI18n):''), contact:b.contact||'', link:b.link||'',
-        location_ko:ko(b.location), location_en:en(b.location), location_vi:vi(b.location),
-        hours_ko:ko(b.hours), hours_en:en(b.hours), hours_vi:vi(b.hours),
+      return { id:id, name:b.name, name_en:(b.nameI18n?en(b.nameI18n):''), name_vi:(b.nameI18n?vi(b.nameI18n):''), name_ru:(b.nameI18n?ru(b.nameI18n):''), contact:b.contact||'', link:b.link||'',
+        location_ko:ko(b.location), location_en:en(b.location), location_vi:vi(b.location), location_ru:ru(b.location),
+        hours_ko:ko(b.hours), hours_en:en(b.hours), hours_vi:vi(b.hours), hours_ru:ru(b.hours),
         instagram:b.instagram||'', facebook:b.facebook||'', linktree:b.linktree||'', tiktok:b.tiktok||'', sort:i }; });
     var _si=s.site||{};
     var siteRow={ id:'main', brand_name:_si.brandName||'', est_year:_si.estYear||'', copyright_year:_si.copyrightYear||'',
@@ -131,14 +132,14 @@
       linkhub_json:JSON.stringify(normalizeLinkHub(s.linkHub||{})) };
     var classRows=(s.branchClasses||[]).map(function(c,i){ var k=classKey(c.branch,ko(c.name)); var id=classIdByKey[k]||rid('cl'); clKeyToId[k]=id;
       return { id:id, branch_id:brNameToId[c.branch]||null, sort:(c.order!=null?c.order:i),
-        name_ko:ko(c.name), name_en:en(c.name), name_vi:vi(c.name),
-        desc_ko:ko(c.desc), desc_en:en(c.desc), desc_vi:vi(c.desc), active:c.active!==false, inquiry_only:!!c.inquiry }; });
+        name_ko:ko(c.name), name_en:en(c.name), name_vi:vi(c.name), name_ru:ru(c.name),
+        desc_ko:ko(c.desc), desc_en:en(c.desc), desc_vi:vi(c.desc), desc_ru:ru(c.desc), active:c.active!==false, inquiry_only:!!c.inquiry }; });
     var detKeyToId={};
     var detailRows=(s.classDetails||[]).map(function(d){ var k=detailKey(d); var id=detIdByKey[k]||rid('cd'); detKeyToId[k]=id;
       return { id:id, branch_id:brNameToId[d.branch]||null, class_id:clKeyToId[classKey(d.branch,d.name)]||null,
         volume:numOrNull(d.volume), price_krw:d.priceKRW||'', price_vnd:d.priceVND||'', price_usd:d.priceUSD||'',
         disc_type:d.discType||'none', disc_val:d.discVal||'',
-        detail_ko:ko(d.detail), detail_en:en(d.detail), detail_vi:vi(d.detail) }; });
+        detail_ko:ko(d.detail), detail_en:en(d.detail), detail_vi:vi(d.detail), detail_ru:ru(d.detail) }; });
     // 기본값(지점별 템플릿): 내용이 실제로 바뀐 지점만 삭제 후 재삽입 — 안 건드린 지점은 그대로 둔다
     var oldDef=oldS.defaultSchedule||{}, newDef=s.defaultSchedule||{};
     var defRows=[], delDefBranchIds=[];

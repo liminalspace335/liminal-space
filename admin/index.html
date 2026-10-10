@@ -601,8 +601,8 @@
 </div></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="../config.js?v=64"></script>
-<script src="../store.js?v=64"></script>
+<script src="../config.js?v=65"></script>
+<script src="../store.js?v=65"></script>
 <script>
 const STORE_KEY='liminal_applications';
 const SET_KEY='liminal_settings';
@@ -620,8 +620,9 @@ function zBadge(v){return cmBadge(v);}
 const DOW=['일','월','화','수','목','금','토'];
 const DAYKEYS=['sun','mon','tue','wed','thu','fri','sat'];
 function defaultDaySlots(){return [{cls:'',time:'11:00',cap:6},{cls:'',time:'14:00',cap:6},{cls:'',time:'17:00',cap:6}];}
-const LANGS=[['ko','한글'],['en','영어'],['vi','베트남어']];
+const LANGS=[['ko','한글'],['en','영어'],['vi','베트남어'],['ru','러시아어']];
 let admLang='ko';   // 어드민 입력 언어
+let lhLang='ko';   // 링크허브 입력 언어(설정 탭과 별도로 기억)
 /* 다국어 값 helper: 문자열이면 {ko}로 간주, 객체면 그대로 */
 function txObj(v){return (v&&typeof v==='object'&&!Array.isArray(v))?v:(v?{ko:String(v)}:{});}
 function Lval(v,lang){const o=txObj(v);return o[lang]||o.ko||o.en||o.vi||'';}
@@ -1163,12 +1164,11 @@ function fillEditor(slots){document.getElementById('edSlots').innerHTML=slots.ma
 document.querySelectorAll('.subtab').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('.subtab').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('.subpanel').forEach(p=>p.classList.toggle('active',p.id==='sub-'+b.dataset.sub));}));
 let bcBranch='';let defBranch='';
 function renderAdmLang(){
-  const html='<span class="head-row" style="align-self:center;margin-right:4px">입력 언어</span>'+LANGS.map(([k,l])=>`<button class="pill-tab ${k===admLang?'active':''}" data-l="${k}">${l}</button>`).join('');
-  ['admLangTabs','lhAdmLangTabs'].forEach(id=>{
-    const el=document.getElementById(id); if(!el)return;
-    el.innerHTML=html;
-    el.querySelectorAll('.pill-tab').forEach(b=>b.addEventListener('click',()=>{admLang=b.dataset.l;renderSettings();renderLinkHub();}));
-  });
+  const tabs=(langs,cur)=>'<span class="head-row" style="align-self:center;margin-right:4px">입력 언어</span>'+langs.map(([k,l])=>`<button class="pill-tab ${k===cur?'active':''}" data-l="${k}">${l}</button>`).join('');
+  const a=document.getElementById('admLangTabs');
+  if(a){a.innerHTML=tabs(LANGS,admLang);a.querySelectorAll('.pill-tab').forEach(b=>b.addEventListener('click',()=>{admLang=b.dataset.l;renderSettings();}));}
+  const h=document.getElementById('lhAdmLangTabs');
+  if(h){h.innerHTML=tabs(LANGS,lhLang);h.querySelectorAll('.pill-tab').forEach(b=>b.addEventListener('click',()=>{lhLang=b.dataset.l;renderLinkHub();}));}
 }
 function renderSettings(){renderAdmLang();renderBranches();renderBranchClasses();renderClassDetails();renderDefaults();renderGalleryFolders();renderGalleryItems();renderPartnerItems();renderSpaceFolders();renderSpaceItems();dimBlockedButtons();}
 /* ===== 공간(사진+폴더) — 갤러리와 동일 구조 ===== */
@@ -1293,7 +1293,7 @@ function renderLinkHubLinks(){
   const links=(loadSettings().linkHub||{}).links||[];
   list.innerHTML=links.map((l,i)=>`<div class="gen-row lhl-row" data-i="${i}">
     <div class="upwrap"><input class="lhl-img" value="${esc(l.image||'')}" placeholder="URL 또는 업로드 →" /><label class="upbtn" title="이미지 업로드">⬆<input type="file" class="upfile" accept="image/*" data-target="lhl-img" hidden /></label></div>
-    <input class="lhl-title" value="${esc(Lval(l.title,admLang))}" placeholder="버튼 제목 (${admLang})" />
+    <input class="lhl-title" value="${esc(txObj(l.title)[lhLang]||'')}" placeholder="버튼 제목 (${lhLang})" />
     <input class="lhl-url" value="${esc(l.url||'')}" placeholder="https://... 또는 classes.html 등" />
     <label class="ck"><input type="checkbox" class="lhl-en" ${l.enabled!==false?'checked':''} /></label>
     <input type="number" class="lhl-order" value="${l.order??(i+1)}" />
@@ -1305,9 +1305,9 @@ document.getElementById('lhLinkAdd').addEventListener('click',()=>{const s=loadS
 document.getElementById('lhLinkSave').addEventListener('click',()=>{
   const s=loadSettings(); const prev=(s.linkHub&&s.linkHub.links)||[];
   const links=[...document.querySelectorAll('#lhLinkList .lhl-row')].map((r,i)=>{const p=prev[+r.dataset.i]||{};
-    const title=Object.assign({},txObj(p.title)); title[admLang]=r.querySelector('.lhl-title').value.trim();
+    const title=Object.assign({},txObj(p.title)); title[lhLang]=r.querySelector('.lhl-title').value.trim();
     return {id:p.id||('lhl_'+Date.now().toString(36)+Math.random().toString(36).slice(2,5)),title,image:r.querySelector('.lhl-img').value.trim(),url:r.querySelector('.lhl-url').value.trim(),enabled:r.querySelector('.lhl-en').checked,order:+r.querySelector('.lhl-order').value||0};
-  }).filter(l=>Lval(l.title,admLang)||l.url||l.image);
+  }).filter(l=>Lval(l.title,lhLang)||l.url||l.image);
   s.linkHub=Object.assign({},s.linkHub,{links});
   saveSettings(s);toast('lhLinkSaved');renderLinkHubLinks();
 });

@@ -115,22 +115,63 @@ const I18N = {
     "modal.back":"Quay lại","modal.next":"Tiếp theo",
     "loc.title":"Đường đến","loc.addr.t":"Địa chỉ","loc.addr.d":"10° 47' 27.49\" N 106° 41' 36.89\" E","loc.hours.t":"Giờ mở cửa","loc.hours.d":"Thứ 3–CN 11:00 – 20:00 (nghỉ thứ 2)","loc.contact.t":"Liên hệ",
     "loc.mapnote":"Khu vực bản đồ","slot":"Khu vực ảnh"
+  },
+  ru: {
+    "nav.home":"О нас","nav.space":"Пространство","nav.classes":"Классы","nav.gallery":"Галерея","nav.location":"Как добраться","nav.contact":"Запись · Контакты","space.title":"Пространство","space.more":"Подробнее о пространстве →","contact.title":"Контакты","contact.note":"Будем рады вопросам о классах, корпоративных и групповых программах, а также о сотрудничестве.","connect.title":"Мы в соцсетях",
+    "cta.lead":"Создайте свой аромат вместе с парфюмерным дизайнером.","cta.sub":"Премиальная парфюмерная мастерская: более 100 нот, собственный купаж и флакон, который вы заберёте с собой.","cta.btn":"Записаться на класс",
+    "gallery.title":"Галерея","gallery.featured":"Мы сотрудничали с","gallery.more":"Вся галерея →",
+    "hero.eyebrow":"Perfume Workshop · Парфюмерная мастерская","hero.sub":"Аромат мгновений на границе. Мастерская, где вы смешиваете и разливаете во флакон собственные духи.",
+    "hero.tag1":"Completely new experience","hero.tag2":"Eau de Parfum","hero.cta":"Записаться на класс","hero.cta2":"Смотреть классы",
+    "concept.title":"Аромат, который начинается на пороге",
+    "concept.pa.t":"Более 100 нот","concept.pa.d":"Попробуйте их сами и откройте вкус, о котором вы не знали.",
+    "concept.pb.t":"1:1 с парфюмерным дизайнером","concept.pb.d":"Особое время, чтобы облечь ваши ощущения и эмоции в слова.",
+    "concept.pc.t":"Единственный в своём роде аромат","concept.pc.d":"Дайте ему имя и сделайте своей личной подписью.",
+    "m.lead":"Все мы переживаем моменты, которые не принадлежат ни одному месту. Незнакомое пространство, пустой отрезок времени, чувство, которому нет названия. LIMINAL SPACE — от латинского «limen», порог — это миг перехода, не определённый никаким состоянием. Мы запечатлеваем этот невидимый промежуток в аромате.",
+    "m.p1":"Аромат — это не просто приятный запах. Это самое первобытное чувство: оно возвращает воспоминания, хранит эмоции и состояния. Воздух места, где когда-то было спокойно, тепло воспоминаний о близком человеке, чувства, которые всё ещё живут без названия. Нас интересуют время и пространство, созданные ароматом, больше, чем сам аромат.",
+    "m.p2":"Здесь вы пробуете более 100 ароматов, чтобы найти свой вкус, вспоминаете прошлое, чтобы назвать то, что чувствуете сейчас, и превращаете ещё безымянное состояние в аромат. Это не просто DIY, где выбирают запах. Вместе с парфюмерным дизайнером вы облекаете ощущения и эмоции в слова, открываете вкус, о котором не знали, и создаёте единственные в своём роде духи — это и есть LIMINAL SPACE.",
+    "m.p3":"Такой опыт впервые предлагается во Вьетнаме. Места, где можно понюхать, выбрать и сделать аромат, были и раньше, но не было опыта, который помогает понять, почему вас притягивает аромат и кто вы. Лёгкий и увлекательный день — но в конце вы точно почувствуете, что что-то изменилось. Начав с пустого, неопределённого пространства, вы уйдёте с ароматом, который определили сами.",
+    "m.quote":"Пока вы не дали ему определения, это место — ничто. В тот миг, когда вы его определяете, оно становится только вашим.",
+    "classes.title":"Классы и программы",
+    "apply.note":"Длительность 1–2 часа · Только по предварительной записи.",
+    "proc.title":"Как проходит класс",
+    "proc.s1.t":"Консультация","proc.s1.d":"На личной консультации с парфюмерным дизайнером мы вместе находим ароматы, которые вам нравятся.",
+    "proc.s2.t":"Знакомство с ароматами","proc.s2.d":"Свободно пробуйте более 100 ароматов в нашей комнате ароматов и уточняйте свои предпочтения.",
+    "proc.s3.t":"Создание композиции","proc.s3.d":"Из выбранных вами нот мы создаём аромат, который принадлежит только вам, — дизайнер помогает точно попасть в ваш вкус.",
+    "proc.s4.t":"Купажирование","proc.s4.d":"За несколько этапов смешивания вы доводите свои духи до совершенства.",
+    "proc.s5.t":"Упаковка","proc.s5.d":"Мы бережно упаковываем флакон в фирменную упаковку LIMINAL SPACE.",
+    "proc.philosophy":"LIMINAL SPACE — это не DIY, где просто смешивают ароматы. Мы учитываем, как аромат взаимодействует с человеком, характером, погодой и обстоятельствами, чтобы вы создали именно тот аромат, который хотите.",
+    "proc.close":"Подарите себе особенное воспоминание в единственном в своём роде пространстве LIMINAL SPACE.",
+    "form.name":"Имя","form.phone":"Телефон","form.email":"Email","form.date":"Желаемая дата","form.people":"Количество человек","form.msg":"Сообщение (необязательно)","form.nationality":"Гражданство","form.fb":"Facebook (необязательно)","form.ig":"Instagram (необязательно)",
+    "ph.nat":"Поиск или выбор","ph.phone":"Номер телефона","ph.fb":"ID или ссылка","ph.ig":"ID / ник",
+    "modal.confirmlabel":"ПРОВЕРКА","modal.confirmq":"Пожалуйста, проверьте данные.","modal.confirmnote":"Пожалуйста, ещё раз проверьте адрес email. Если данные указаны неверно, вы можете не получить подтверждение записи. Проверьте всё перед отправкой.",
+    "modal.sub":"Запись на класс · 5 шагов","modal.step1":"ШАГ 1 / 5","modal.q0":"Выберите филиал, который хотите посетить.",
+    "modal.step2":"ШАГ 2 / 5","modal.q1":"Какую программу вы выбираете?",
+    "modal.err":"Пожалуйста, выберите вариант.","modal.step3":"ШАГ 3 / 5","modal.q2":"Выберите объём духов.",
+    "modal.step4":"ШАГ 4 / 5","modal.q3":"Укажите детали визита.","modal.time":"Желаемое время","modal.errdate":"Пожалуйста, укажите дату и время.","modal.pickdate":"Сначала выберите дату",
+    "modal.step5":"ШАГ 5 / 5","modal.q4":"Введите свои данные и подтвердите.","modal.errcontact":"Пожалуйста, заполните все поля, кроме сообщения.",
+    "modal.donet":"Ваша заявка принята","modal.doned":"После проверки мы подтвердим запись по указанным контактам.","modal.back":"Назад","modal.next":"Далее",
+    "loc.title":"Как добраться","loc.addr.t":"Адрес","loc.hours.t":"Часы работы","loc.hours.d":"Вт–Вс 11:00 – 20:00 (Пн — выходной)","loc.contact.t":"Контакты","loc.mapnote":"Карта"
   }
 };
 // 한국어 기본값을 DOM에서 수집해 저장
 document.querySelectorAll('[data-i18n]').forEach(el=>{
   I18N.ko[el.getAttribute('data-i18n')] = el.innerHTML;
 });
+function i18nGet(lang,k){
+  if(I18N[lang] && I18N[lang][k]!==undefined) return I18N[lang][k];
+  if(lang==='ru' && I18N.en[k]!==undefined) return I18N.en[k];
+  return I18N.ko[k];
+}
 function setLang(lang){
   document.documentElement.lang = lang;
   document.querySelectorAll('[data-i18n]').forEach(el=>{
     const k = el.getAttribute('data-i18n');
-    const t = (I18N[lang] && I18N[lang][k]!==undefined) ? I18N[lang][k] : I18N.ko[k];  // 없으면 한국어 폴백
+    const t = i18nGet(lang,k);  // 없으면 한국어 폴백(러시아어는 영어 먼저)
     if(t!==undefined) el.innerHTML = t;
   });
   document.querySelectorAll('[data-i18n-ph]').forEach(el=>{   // placeholder 다국어
     const k = el.getAttribute('data-i18n-ph');
-    const t = (I18N[lang] && I18N[lang][k]!==undefined) ? I18N[lang][k] : I18N.ko[k];
+    const t = i18nGet(lang,k);
     if(t!=null) el.setAttribute('placeholder', t);
   });
   document.querySelectorAll('.lang button').forEach(b=>{
@@ -219,7 +260,9 @@ const DEFAULT_DAY=[{cls:'',time:'11:00',cap:6},{cls:'',time:'14:00',cap:6},{cls:
 /* 다국어 helper */
 function curLang(){return document.documentElement.lang||'vi';}
 function txObj(v){return (v&&typeof v==='object'&&!Array.isArray(v))?v:(v?{ko:String(v)}:{});}
-function Lval(v,lang){const o=txObj(v);return o[lang||curLang()]||o.ko||o.en||o.vi||'';}
+function Lval(v,lang){lang=lang||curLang();const o=txObj(v);return o[lang]||(lang==='ru'&&o.en)||o.ko||o.en||o.vi||'';}   // 러시아어 값이 없으면 영어 우선
+/* 화면 문구 언어 선택: tr({ko,en,vi,ru}) — 해당 언어가 없으면 러시아어는 영어, 나머지는 한국어 */
+function tr(o,lang){lang=lang||curLang();return o[lang]!=null?o[lang]:(lang==='ru'&&o.en!=null?o.en:o.ko);}
 function keyOf(v){const o=txObj(v);return o.ko||o.en||o.vi||'';}
 function tri(ko,en,vi){return {ko:ko||'',en:en||'',vi:vi||''};}
 const _wd=tri('100여 종 향 · 나만의 시그니처 완성','Over 100 notes · craft your signature','Hơn 100 loại hương · tạo signature của bạn');
@@ -288,10 +331,8 @@ function bindOptList(list){
 /* 일시적 조회 실패(재시도까지 실패) 시 안내 — 실제로 등록된 항목이 없는 것과 구분 */
 function loadErrorHTML(){
   const lang=curLang();
-  const msg=lang==='en'?'Temporarily unable to load data. Please refresh and try again.'
-    :lang==='vi'?'Tạm thời không tải được dữ liệu. Vui lòng tải lại trang và thử lại.'
-    :'일시적인 오류로 정보를 불러오지 못했습니다. 새로고침 후 다시 시도해 주세요.';
-  const btn=lang==='en'?'Refresh':(lang==='vi'?'Tải lại trang':'새로고침');
+  const msg=tr({en:'Temporarily unable to load data. Please refresh and try again.',vi:'Tạm thời không tải được dữ liệu. Vui lòng tải lại trang và thử lại.',ru:'Временно не удалось загрузить данные. Обновите страницу и попробуйте снова.',ko:'일시적인 오류로 정보를 불러오지 못했습니다. 새로고침 후 다시 시도해 주세요.'},lang);
+  const btn=tr({en:'Refresh',vi:'Tải lại trang',ru:'Обновить',ko:'새로고침'},lang);
   return `<div class="opt-loaderr">${esc(msg)}<button type="button" class="opt-loaderr-btn" onclick="location.reload()">${esc(btn)}</button></div>`;
 }
 /* 지점 옵션 (지점설정 연동) */
@@ -299,7 +340,7 @@ function populateBranches(){
   const list=modal.querySelector('.opt-list[data-field="branch"]'); if(!list)return;
   const brs=getSettings().branches||[];
   if(!brs.length){ if(window.LS&&LS.hadLoadError&&LS.hadLoadError())list.innerHTML=loadErrorHTML(); return; }
-  const lang=curLang();const soon=lang==='en'?'Opening soon':(lang==='vi'?'Sắp mở':'오픈 준비중');
+  const lang=curLang();
   list.innerHTML=brs.map(b=>`<div class="opt ${b.name===data.branch?'sel':''}" data-val="${esc(b.name)}"><div><div class="ti">${esc(branchLabel(b.name))}</div>${Lval(b.location,lang)?`<div class="de">${esc(Lval(b.location,lang))}</div>`:''}</div></div>`).join('');
   bindOptList(list);
 }
@@ -308,7 +349,7 @@ function renderPrograms(){
   const list=modal.querySelector('.opt-list[data-field="class"]'); if(!list)return;
   const progs=programList(data.branch);
   if(!progs.length){ if(window.LS&&LS.hadLoadError&&LS.hadLoadError())list.innerHTML=loadErrorHTML(); return; }
-  const lang=curLang();const soon=lang==='en'?' · Opening soon':(lang==='vi'?' · Sắp mở':' · 오픈 준비중');const inq=lang==='en'?'Inquire':(lang==='vi'?'Liên hệ':'문의');
+  const lang=curLang();const soon=tr({en:' · Opening soon',vi:' · Sắp mở',ru:' · Скоро открытие',ko:' · 오픈 준비중'},lang);const inq=tr({en:'Inquire',vi:'Liên hệ',ru:'По запросу',ko:'문의'},lang);
   list.innerHTML=progs.map(c=>{
     const key=keyOf(c.name);const inactive=c.active===false;
     const vols=volumesForName(data.branch,key);
@@ -343,9 +384,10 @@ function renderClasses(){
   const wrap=document.querySelector('#classes .class-grid'); if(!wrap)return;
   const tabs=document.getElementById('classTabs');
   const lang=curLang();
-  const L=lang==='en'?{price:'Price',inq:'Inquire',cta:'Apply',soon:'Opening soon',none:'No programs registered yet.'}
-    :(lang==='vi'?{price:'Giá',inq:'Liên hệ',cta:'Đăng ký',soon:'Sắp mở',none:'Chưa có chương trình nào.'}
-    :{price:'가격',inq:'문의',cta:'이 프로그램 신청',soon:'오픈 준비중',none:'등록된 프로그램이 없습니다.'});
+  const L=tr({en:{price:'Price',inq:'Inquire',cta:'Apply',soon:'Opening soon',none:'No programs registered yet.'},
+    vi:{price:'Giá',inq:'Liên hệ',cta:'Đăng ký',soon:'Sắp mở',none:'Chưa có chương trình nào.'},
+    ru:{price:'Цена',inq:'По запросу',cta:'Записаться',soon:'Скоро открытие',none:'Программы пока не добавлены.'},
+    ko:{price:'가격',inq:'문의',cta:'이 프로그램 신청',soon:'오픈 준비중',none:'등록된 프로그램이 없습니다.'}},lang);
   const branches=(getSettings().branches||[]).filter(b=>b&&b.name);
   if(!branches.length){ if(tabs)tabs.innerHTML=''; wrap.className='class-grid'; wrap.innerHTML=`<div class="class-empty">${L.none}</div>`; return; }
   if(!classTabBranch || !branches.some(b=>b.name===classTabBranch)) classTabBranch=branches[0].name;
@@ -394,9 +436,10 @@ function renderFootBiz(si){
   var foot=document.getElementById('contact'); if(!foot)return;
   si=si||{};
   var L=curLang();
-  var lab=L==='en'?{name:'Company',addr:'Address',tax:'Tax code',tel:'Tel',email:'Email'}
-        :L==='vi'?{name:'Tên',addr:'Địa chỉ',tax:'MST',tel:'ĐT',email:'Email'}
-        :{name:'상호',addr:'주소',tax:'세금코드',tel:'전화',email:'이메일'};
+  var lab=tr({en:{name:'Company',addr:'Address',tax:'Tax code',tel:'Tel',email:'Email'},
+        vi:{name:'Tên',addr:'Địa chỉ',tax:'MST',tel:'ĐT',email:'Email'},
+        ru:{name:'Компания',addr:'Адрес',tax:'ИНН',tel:'Тел.',email:'Email'},
+        ko:{name:'상호',addr:'주소',tax:'세금코드',tel:'전화',email:'이메일'}},L);
   function pair(k,v){return v?('<span class="fb-i"><b>'+lab[k]+'</b> '+esc(v)+'</span>'):'';}
   var line1=[pair('name',si.bizName),pair('addr',si.bizAddress)].filter(Boolean).join('<span class="fb-sep">·</span>');
   var line2=[pair('tax',si.bizTax),pair('tel',si.bizPhone),pair('email',si.bizEmail)].filter(Boolean).join('<span class="fb-sep">·</span>');
@@ -423,7 +466,7 @@ function renderLocation(){
     if(b.linktree)soc.push(`<a href="${esc(b.linktree)}" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline">Linktree</a>`);
     var hrs=Lval(b.hours,curLang());
     // 표기 순서: 주소·더보기 → 전화번호 → 영업시간 → SNS, 각각 줄바꿈
-    return `<dt>${esc(branchLabel(b.name))}</dt><dd>${esc(Lval(b.location,curLang()))}${b.link?` · <a href="${esc(b.link)}" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline">${curLang()==='en'?'Visit':(curLang()==='vi'?'Xem':'바로가기')}</a>`:''}${b.contact?'<br>'+esc(b.contact):''}${hrs?'<br>'+esc(hrs):''}${soc.length?'<br>'+soc.join(' · '):''}</dd>`;
+    return `<dt>${esc(branchLabel(b.name))}</dt><dd>${esc(Lval(b.location,curLang()))}${b.link?` · <a href="${esc(b.link)}" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline">${tr({en:'Visit',vi:'Xem',ru:'Открыть',ko:'바로가기'})}</a>`:''}${b.contact?'<br>'+esc(b.contact):''}${hrs?'<br>'+esc(hrs):''}${soc.length?'<br>'+soc.join(' · '):''}</dd>`;
   }).join('');
 }
 /* 찾아오는 길 지도 — 저장된 위치를 구글맵으로 표시(클릭 시 새 창) */
@@ -433,13 +476,13 @@ function renderMap(){
   const brs=(getSettings().branches||[]).filter(b=>b&&b.name);
   const b=brs[0];
   const loc=b?Lval(b.location,lang):'';
-  if(!loc){ el.innerHTML=`<div class="pin">◎<br><span>${lang==='en'?'Map area':(lang==='vi'?'Khu vực bản đồ':'지도 영역')}</span></div>`; return; }
+  if(!loc){ el.innerHTML=`<div class="pin">◎<br><span>${tr({en:'Map area',vi:'Khu vực bản đồ',ru:'Карта',ko:'지도 영역'},lang)}</span></div>`; return; }
   const brand=(getSettings().site&&getSettings().site.brandName)||'LIMINAL SPACE';
   const q=encodeURIComponent(brand+', '+loc);   // 지도 위 핀 이름이 주소 대신 브랜드명으로 표시되도록 검색어 앞에 브랜드명을 붙임
   const embed=`https://www.google.com/maps?q=${q}&z=16&output=embed`;
   // "지도에서 열기"는 위치설정의 "Xem/바로가기"(b.link)와 동일한 곳으로 가야 함 — 주소 텍스트 재검색(부정확할 수 있음) 대신 관리자가 지정한 정확한 링크 우선 사용
   const open=b.link||`https://www.google.com/maps/search/?api=1&query=${q}`;
-  const hint=lang==='en'?'Open in Google Maps ↗':(lang==='vi'?'Mở trong Google Maps ↗':'Google 지도에서 보기 ↗');
+  const hint=tr({en:'Open in Google Maps ↗',vi:'Mở trong Google Maps ↗',ru:'Открыть в Google Maps ↗',ko:'Google 지도에서 보기 ↗'},lang);
   el.innerHTML=`<a class="map-link" href="${open}" target="_blank" rel="noopener" aria-label="${esc(loc)}">`
     +`<iframe class="map-frame" src="${embed}" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="${esc(loc)}"></iframe>`
     +`<span class="map-cover"></span>`
@@ -455,7 +498,7 @@ function renderSpaceFolderChips(){
   var folders=(getSettings().spaceFolders||[]).slice().sort(function(a,b){return (Number(a.order)||999)-(Number(b.order)||999);});
   if(!folders.length){ box.innerHTML=''; box.style.display='none'; spaceFolder=''; return; }
   box.style.display='';
-  var allLabel=lang==='en'?'All':(lang==='vi'?'Tất cả':'전체');
+  var allLabel=tr({en:'All',vi:'Tất cả',ru:'Все',ko:'전체'},lang);
   function chip(fid,name,cover){return '<button class="folder-chip '+(spaceFolder===fid?'active':'')+'" data-fid="'+esc(fid)+'"><span class="fc-thumb" style="background-image:url(\''+esc(cover)+'\')"></span><span class="fc-name">'+esc(name)+'</span></button>';}
   var html=chip('',allLabel,(sortGal(spaceItemsAll())[0]||{}).img||'');   // 전체 = 모든 공간 사진 중 첫 번째(대표 우선)
   folders.forEach(function(f){ html+=chip(f.id,Lval(f.name,lang),spaceCover(f.id)); });
@@ -635,8 +678,8 @@ function bookedOn(dateStr,time){
 /* 날짜 상태: none(미등록) / closed(휴무지정) / open(시간대 있음) */
 function dayState(dateStr){if(!dateStr||!data.branch)return 'none';const sc=(getSettings().schedule||{})[data.branch]||{};if(sc[dateStr]===undefined)return 'none';return (sc[dateStr]||[]).length?'open':'closed';}
 function dayMsg(dateStr){const lang=curLang();const st=dayState(dateStr);
-  if(st==='none')return lang==='en'?'No classes are registered. Please contact the administrator.':lang==='vi'?'Chưa có lớp nào được đăng ký. Vui lòng liên hệ quản trị viên.':'등록된 클래스가 없습니다. 관리자에게 문의하세요.';
-  return lang==='en'?'Closed on this day.':lang==='vi'?'Ngày này nghỉ.':'휴무일입니다.';}
+  if(st==='none')return tr({en:'No classes are registered. Please contact the administrator.',vi:'Chưa có lớp nào được đăng ký. Vui lòng liên hệ quản trị viên.',ru:'На этот день нет занятий. Пожалуйста, свяжитесь с нами.',ko:'등록된 클래스가 없습니다. 관리자에게 문의하세요.'},lang);
+  return tr({en:'Closed on this day.',vi:'Ngày này nghỉ.',ru:'В этот день выходной.',ko:'휴무일입니다.'},lang);}
 /* 베트남 시간(UTC+7) 기준 */
 function vnNow(){return new Date(new Date().toLocaleString('en-US',{timeZone:'Asia/Ho_Chi_Minh'}));}
 function vnToday(){const d=vnNow();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
@@ -647,16 +690,15 @@ function isPastSlot(dateStr,time){if(!dateStr)return false;if(dateStr<vnToday())
 /* 선택한 날짜의 요일에 맞춰 시간대 드롭다운 채우기 */
 function populateTimes(){
   const sel=modal.querySelector('[data-field="time"]'); if(!sel)return;
-  const lang=curLang();const vi=lang==='vi';const en=lang==='en';
-  if(!data.date){sel.innerHTML=`<option value="">${vi?'Chọn ngày trước':en?'Select a date first':'날짜를 먼저 선택'}</option>`;return;}
+  if(!data.date){sel.innerHTML=`<option value="">${tr({vi:'Chọn ngày trước',en:'Select a date first',ru:'Сначала выберите дату',ko:'날짜를 먼저 선택'})}</option>`;return;}
   const slots=slotsFor(data.date);
-  if(!slots.length){const st=dayState(data.date);const ph=st==='none'?(vi?'Chưa có lớp':en?'No classes':'등록된 클래스 없음'):(vi?'Ngày nghỉ':en?'Closed':'휴무일');sel.innerHTML=`<option value="">${ph}</option>`;return;}
+  if(!slots.length){const st=dayState(data.date);const ph=st==='none'?tr({vi:'Chưa có lớp',en:'No classes',ru:'Нет занятий',ko:'등록된 클래스 없음'}):tr({vi:'Ngày nghỉ',en:'Closed',ru:'Выходной',ko:'휴무일'});sel.innerHTML=`<option value="">${ph}</option>`;return;}
   const today=data.date===vnToday();const nowHM=vnHM();
-  sel.innerHTML=`<option value="">${vi?'Chọn giờ':en?'Select time':'시간 선택'}</option>`+slots.map(s=>{
+  sel.innerHTML=`<option value="">${tr({vi:'Chọn giờ',en:'Select time',ru:'Выберите время',ko:'시간 선택'})}</option>`+slots.map(s=>{
     const remain=s.cap-bookedOn(data.date,s.time); const full=remain<=0;
     const past=today&&s.time<=nowHM;
     const dis=full||past;
-    const lbl=past?(vi?'(đã qua)':en?'(passed)':'(지난 시간)'):full?(vi?'(kín)':en?'(full)':'(마감)'):(vi?`(còn ${remain})`:en?`(${remain} left)`:`(잔여 ${remain})`);
+    const lbl=past?tr({vi:'(đã qua)',en:'(passed)',ru:'(прошло)',ko:'(지난 시간)'}):full?tr({vi:'(kín)',en:'(full)',ru:'(мест нет)',ko:'(마감)'}):tr({vi:`(còn ${remain})`,en:`(${remain} left)`,ru:`(осталось ${remain})`,ko:`(잔여 ${remain})`});
     return `<option value="${s.time}" ${dis?'disabled':''}>${s.time} ${lbl}</option>`;
   }).join('');
   // 기본값: 비었거나 무효(마감/지난시간)면 가장 빠른 가용 시간 자동 선택
@@ -670,22 +712,21 @@ function updateAmtNote(){
   const amt=isInquiry()?'':expectedAmountStr();
   if(!amt){el.textContent='';el.style.display='none';return;}
   const L=curLang();
-  const label=L==='en'?'Estimated payment':(L==='vi'?'Số tiền dự kiến':'결제 예상 금액');
+  const label=tr({en:'Estimated payment',vi:'Số tiền dự kiến',ru:'Ориентировочная сумма',ko:'결제 예상 금액'},L);
   el.textContent=label+' : '+amt; el.style.display='';
 }
 function updateCapNote(){
   updateAmtNote();
   const note=document.getElementById('capNote'); if(!note)return;
-  const vi=document.documentElement.lang==='vi';
   note.classList.remove('full');
   if(!data.date){note.textContent='';return;}
   const slots=slotsFor(data.date);
   if(!slots.length){note.classList.add('full');note.textContent=dayMsg(data.date);return;}
-  if(!data.time){note.textContent=vi?'Vui lòng chọn giờ.':'시간대를 선택해 주세요.';return;}
+  if(!data.time){note.textContent=tr({vi:'Vui lòng chọn giờ.',en:'Please select a time.',ru:'Пожалуйста, выберите время.',ko:'시간대를 선택해 주세요.'});return;}
   const slot=slots.find(s=>s.time===data.time);
   const remain=slot?slot.cap-bookedOn(data.date,data.time):0;
   note.classList.toggle('full',remain<=0);
-  note.textContent=remain<=0?(vi?'Khung giờ này đã kín.':'이 시간대는 마감되었습니다.'):(vi?`Còn ${remain} chỗ.`:`이 시간대 잔여 ${remain}명.`);
+  note.textContent=remain<=0?tr({vi:'Khung giờ này đã kín.',en:'This time slot is full.',ru:'На это время мест нет.',ko:'이 시간대는 마감되었습니다.'}):tr({vi:`Còn ${remain} chỗ.`,en:`${remain} spots left.`,ru:`Осталось мест: ${remain}.`,ko:`이 시간대 잔여 ${remain}명.`});
 }
 const modal=document.getElementById('applyModal');
 const steps=[...modal.querySelectorAll('.modal-step')];
@@ -753,7 +794,7 @@ function ensureNatSelect(){
 function renderNatList(){
   var sel=ensureNatSelect(); if(!sel)return;
   var lang=curLang(); var prev=sel.value||'';
-  var ph=lang==='en'?'Select nationality':(lang==='vi'?'Chọn quốc tịch':'국적 선택');
+  var ph=tr({en:'Select nationality',vi:'Chọn quốc tịch',ru:'Выберите гражданство',ko:'국적 선택'},lang);
   sel.innerHTML='<option value="">'+esc(ph)+'</option>'+COUNTRY_LIST.map(function(co){return '<option value="'+co.c+'">'+esc(natLabel(co,lang))+'</option>';}).join('');
   sel.value=prev;
 }
@@ -780,17 +821,18 @@ function ensureEmailDomains(){
 }
 function renderEmailDomains(){
   var sel=document.querySelector('.email-domain'); if(!sel)return;
-  var l=curLang(); var manual=l==='en'?'Enter manually':(l==='vi'?'Nhập thủ công':'직접 입력');
+  var manual=tr({en:'Enter manually',vi:'Nhập thủ công',ru:'Ввести вручную',ko:'직접 입력'});
   sel.innerHTML='<option value="">'+esc(manual)+'</option>'+EMAIL_DOMAINS.map(function(d){return '<option value="'+d+'">@'+d+'</option>';}).join('');
 }
 ensureEmailDomains();
 
 function classObjOf(){return branchClassesOf(data.branch).find(c=>keyOf(c.name)===data.class);}
 function isInquiry(){const c=classObjOf();return !!(c&&c.inquiry);}
-function inquiryTemplate(){var l=curLang();
-  if(l==='en')return '[Inquiry]\n- Group size: \n- Preferred date/time: \n- Details: \n';
-  if(l==='vi')return '[Liên hệ]\n- Số người: \n- Ngày/giờ mong muốn: \n- Nội dung: \n';
-  return '[문의 내용]\n- 희망 인원: \n- 희망 일정/시간: \n- 문의 사항: \n';
+function inquiryTemplate(){
+  return tr({en:'[Inquiry]\n- Group size: \n- Preferred date/time: \n- Details: \n',
+    vi:'[Liên hệ]\n- Số người: \n- Ngày/giờ mong muốn: \n- Nội dung: \n',
+    ru:'[Запрос]\n- Количество человек: \n- Желаемая дата/время: \n- Подробности: \n',
+    ko:'[문의 내용]\n- 희망 인원: \n- 희망 일정/시간: \n- 문의 사항: \n'});
 }
 /* 열 때마다 기본값으로 리셋(캐시 잔존 방지): 첫 지점·첫 클래스·30ml·오늘·가장 빠른 시간·1명·신청자 공란 */
 function resetApplyData(preClass){
@@ -852,9 +894,11 @@ function goto(n){
       if(inq){ dwn.style.display='none'; }
       else{
         const lang=curLang();
-        dwn.textContent = lang==='en' ? 'Online booking is available up to '+(window.RESERVATION_WINDOW_DAYS||90)+' days ahead. For dates further out, please contact us directly.'
-          : lang==='vi' ? 'Đặt lịch trực tuyến chỉ khả dụng trong vòng '+(window.RESERVATION_WINDOW_DAYS||90)+' ngày tới. Với ngày xa hơn, vui lòng liên hệ trực tiếp.'
-          : '온라인 예약은 오늘로부터 '+(window.RESERVATION_WINDOW_DAYS||90)+'일 이내만 가능합니다. 그 이후 날짜는 직접 문의해 주세요.';
+        const days=(window.RESERVATION_WINDOW_DAYS||90);
+        dwn.textContent = tr({en:'Online booking is available up to '+days+' days ahead. For dates further out, please contact us directly.',
+          vi:'Đặt lịch trực tuyến chỉ khả dụng trong vòng '+days+' ngày tới. Với ngày xa hơn, vui lòng liên hệ trực tiếp.',
+          ru:'Онлайн-запись доступна не более чем на '+days+' дней вперёд. Для более поздних дат свяжитесь с нами напрямую.',
+          ko:'온라인 예약은 오늘로부터 '+days+'일 이내만 가능합니다. 그 이후 날짜는 직접 문의해 주세요.'},lang);
         dwn.style.display='block';
       }
     }
@@ -874,21 +918,20 @@ function goto(n){
 }
 function applyBtnLabels(){
   const lang=curLang();
-  btnBack.textContent=lang==='en'?'Back':(lang==='vi'?'Quay lại':'이전');
+  btnBack.textContent=tr({en:'Back',vi:'Quay lại',ru:'Назад',ko:'이전'},lang);
   const m=btnNext.dataset.mode;
-  if(m==='review')btnNext.textContent=lang==='en'?'Submit':(lang==='vi'?'Gửi':'접수');
-  else if(m==='finish')btnNext.textContent=lang==='en'?'Confirm & apply':(lang==='vi'?'Hoàn tất đăng ký':'신청완료');
-  else if(m==='close')btnNext.textContent=lang==='en'?'Close':(lang==='vi'?'Đóng':'닫기');
-  else btnNext.textContent=lang==='en'?'Next':(lang==='vi'?'Tiếp theo':'다음');
+  if(m==='review')btnNext.textContent=tr({en:'Submit',vi:'Gửi',ru:'Отправить',ko:'접수'},lang);
+  else if(m==='finish')btnNext.textContent=tr({en:'Confirm & apply',vi:'Hoàn tất đăng ký',ru:'Подтвердить запись',ko:'신청완료'},lang);
+  else if(m==='close')btnNext.textContent=tr({en:'Close',vi:'Đóng',ru:'Закрыть',ko:'닫기'},lang);
+  else btnNext.textContent=tr({en:'Next',vi:'Tiếp theo',ru:'Далее',ko:'다음'},lang);
 }
 function hideErrors(){modal.querySelectorAll('.err').forEach(e=>e.style.display='none');}
 function showErr(name){const e=modal.querySelector(`[data-err="${name}"]`);if(e)e.style.display='block';}
 function showCapErr(remain){
-  const vi=document.documentElement.lang==='vi';
   const e=modal.querySelector('[data-err="cap"]');
   e.textContent = remain<=0
-    ? (vi?'Ngày này đã kín chỗ. Vui lòng chọn ngày khác.':'해당 날짜는 마감되었습니다. 다른 날짜를 선택해 주세요.')
-    : (vi?`Chỉ còn ${remain} chỗ. Vui lòng điều chỉnh số người.`:`이 날짜는 잔여 ${remain}명입니다. 인원을 조정해 주세요.`);
+    ? tr({vi:'Ngày này đã kín chỗ. Vui lòng chọn ngày khác.',en:'This date is fully booked. Please choose another date.',ru:'На эту дату мест нет. Пожалуйста, выберите другую дату.',ko:'해당 날짜는 마감되었습니다. 다른 날짜를 선택해 주세요.'})
+    : tr({vi:`Chỉ còn ${remain} chỗ. Vui lòng điều chỉnh số người.`,en:`Only ${remain} spots left. Please adjust the number of people.`,ru:`Осталось мест: ${remain}. Пожалуйста, измените количество человек.`,ko:`이 날짜는 잔여 ${remain}명입니다. 인원을 조정해 주세요.`});
   e.style.display='block';
 }
 
@@ -903,15 +946,14 @@ function validate(n){
   if(n===2&&!data.class){showErr('class');return false;}
   if(n===3 && !isInquiry() && !data.size){showErr('size');return false;}
   if(n===4){
-    const lang=curLang();const vi=lang==='vi';const en=lang==='en';
     if(!data.date){showErr('visit');return false;}
-    if(data.date<vnToday()){const e=modal.querySelector('[data-err="cap"]');e.textContent=vi?'Không thể chọn ngày đã qua.':en?'Past dates cannot be selected.':'지난 날짜는 선택할 수 없습니다.';e.style.display='block';return false;}
+    if(data.date<vnToday()){const e=modal.querySelector('[data-err="cap"]');e.textContent=tr({vi:'Không thể chọn ngày đã qua.',en:'Past dates cannot be selected.',ru:'Нельзя выбрать прошедшую дату.',ko:'지난 날짜는 선택할 수 없습니다.'});e.style.display='block';return false;}
     if(isInquiry()) return true;   // 문의전용: 날짜만 확인(시간/슬롯/정원 검증 없음, 90일 제한도 적용 안 함 — 스케줄 데이터를 안 쓰므로)
-    if(data.date>vnMaxDate()){const e=modal.querySelector('[data-err="cap"]');e.textContent=vi?'Ngày này còn quá xa, vui lòng liên hệ trực tiếp để đặt lịch.':en?'This date is too far ahead — please contact us directly to book.':'너무 먼 날짜는 온라인 예약이 불가합니다. 직접 문의해 주세요.';e.style.display='block';return false;}
+    if(data.date>vnMaxDate()){const e=modal.querySelector('[data-err="cap"]');e.textContent=tr({vi:'Ngày này còn quá xa, vui lòng liên hệ trực tiếp để đặt lịch.',en:'This date is too far ahead — please contact us directly to book.',ru:'Эта дата слишком далеко — для записи свяжитесь с нами напрямую.',ko:'너무 먼 날짜는 온라인 예약이 불가합니다. 직접 문의해 주세요.'});e.style.display='block';return false;}
     const slots=slotsFor(data.date);
     if(!slots.length){const e=modal.querySelector('[data-err="cap"]');e.textContent=dayMsg(data.date);e.style.display='block';return false;}
     if(!data.time){showErr('visit');return false;}
-    if(isPastSlot(data.date,data.time)){const e=modal.querySelector('[data-err="cap"]');e.textContent=vi?'Khung giờ đã qua. Vui lòng chọn giờ khác.':en?'This time has passed. Please choose another time.':'이미 지난 시간입니다. 다른 시간을 선택해 주세요.';e.style.display='block';return false;}
+    if(isPastSlot(data.date,data.time)){const e=modal.querySelector('[data-err="cap"]');e.textContent=tr({vi:'Khung giờ đã qua. Vui lòng chọn giờ khác.',en:'This time has passed. Please choose another time.',ru:'Это время уже прошло. Пожалуйста, выберите другое.',ko:'이미 지난 시간입니다. 다른 시간을 선택해 주세요.'});e.style.display='block';return false;}
     const slot=slots.find(s=>s.time===data.time);
     if(!slot){showErr('visit');return false;}
     const remain=slot.cap-bookedOn(data.date,data.time);
@@ -921,9 +963,10 @@ function validate(n){
   if(n===5&&(!data.name||!data.phone||!data.email||!data.nationality)){showErr('contact');return false;}
   if(n===5 && codeOf(data.nationality)==='VN' && looksInvalidVNPhone(data.phone)){
     const lang=curLang();
-    const msg=lang==='en'?"This doesn't look like a valid Vietnamese phone number. Please double-check it.\n\nSubmit anyway?"
-      :lang==='vi'?'Số điện thoại này có vẻ không đúng định dạng Việt Nam. Vui lòng kiểm tra lại.\n\nBạn vẫn muốn gửi?'
-      :'베트남 번호 형식이 아닌 것 같습니다. 전화번호를 다시 확인해 주세요.\n\n이대로 접수하시겠습니까?';
+    const msg=tr({en:"This doesn't look like a valid Vietnamese phone number. Please double-check it.\n\nSubmit anyway?",
+      vi:'Số điện thoại này có vẻ không đúng định dạng Việt Nam. Vui lòng kiểm tra lại.\n\nBạn vẫn muốn gửi?',
+      ru:'Похоже, это не вьетнамский номер телефона. Пожалуйста, проверьте его.\n\nВсё равно отправить?',
+      ko:'베트남 번호 형식이 아닌 것 같습니다. 전화번호를 다시 확인해 주세요.\n\n이대로 접수하시겠습니까?'},lang);
     if(!confirm(msg)) return false;   // 입력 자체는 막지 않고, 확인만 거쳐서 진행 가능
   }
   return true;
@@ -937,9 +980,10 @@ function looksInvalidVNPhone(phone){
 }
 function renderConfirm(){
   const lang=curLang();
-  const L = lang==='en'?{branch:'Branch',class:'Class',size:'Volume',date:'Date',time:'Time',people:'People',amount:'Estimated payment',name:'Name',phone:'Phone',email:'Email',nat:'Nationality',fb:'Facebook',ig:'Instagram',msg:'Note'}
-    : lang==='vi'?{branch:'Chi nhánh',class:'Lớp',size:'Dung tích',date:'Ngày',time:'Giờ',people:'Số người',amount:'Số tiền dự kiến',name:'Họ tên',phone:'SĐT',email:'Email',nat:'Quốc tịch',fb:'Facebook',ig:'Instagram',msg:'Ghi chú'}
-    : {branch:'지점',class:'클래스',size:'용량',date:'날짜',time:'시간',people:'인원',amount:'결제 예정 금액',name:'이름',phone:'연락처',email:'이메일',nat:'국적',fb:'Facebook',ig:'Instagram',msg:'메모'};
+  const L = tr({en:{branch:'Branch',class:'Class',size:'Volume',date:'Date',time:'Time',people:'People',amount:'Estimated payment',name:'Name',phone:'Phone',email:'Email',nat:'Nationality',fb:'Facebook',ig:'Instagram',msg:'Note'},
+    vi:{branch:'Chi nhánh',class:'Lớp',size:'Dung tích',date:'Ngày',time:'Giờ',people:'Số người',amount:'Số tiền dự kiến',name:'Họ tên',phone:'SĐT',email:'Email',nat:'Quốc tịch',fb:'Facebook',ig:'Instagram',msg:'Ghi chú'},
+    ru:{branch:'Филиал',class:'Класс',size:'Объём',date:'Дата',time:'Время',people:'Человек',amount:'Ориентировочная сумма',name:'Имя',phone:'Телефон',email:'Email',nat:'Гражданство',fb:'Facebook',ig:'Instagram',msg:'Комментарий'},
+    ko:{branch:'지점',class:'클래스',size:'용량',date:'날짜',time:'시간',people:'인원',amount:'결제 예정 금액',name:'이름',phone:'연락처',email:'이메일',nat:'국적',fb:'Facebook',ig:'Instagram',msg:'메모'}},lang);
   const cObj=branchClassesOf(data.branch).find(c=>keyOf(c.name)===data.class);
   const clsDisp=cObj?Lval(cObj.name,lang):data.class;
   const inq=isInquiry();
@@ -961,7 +1005,7 @@ var CONTACT_TEL='0818880504';
 /* 연락처를 tel: 링크(모바일 탭하면 바로 전화)+복사 버튼으로 렌더 */
 function telLinkHTML(tel,lang){
   var href='tel:+84'+String(tel).replace(/^0/,'');
-  var label=lang==='en'?'Copy':(lang==='vi'?'Sao chép':'복사');
+  var label=tr({en:'Copy',vi:'Sao chép',ru:'Копировать',ko:'복사'},lang);
   return '<span class="tel-wrap"><a href="'+href+'" class="tel-link">'+esc(tel)+'</a>'
     +'<button type="button" class="tel-copy" data-tel="'+esc(tel)+'" data-label="'+esc(label)+'">'+esc(label)+'</button></span>';
 }
@@ -974,7 +1018,7 @@ document.addEventListener('click',function(e){
   e.preventDefault();
   var tel=btn.dataset.tel, label=btn.dataset.label;
   var showDone=function(){
-    var doneTxt=curLang()==='en'?'Copied!':(curLang()==='vi'?'Đã chép!':'복사됨!');
+    var doneTxt=tr({en:'Copied!',vi:'Đã chép!',ru:'Скопировано!',ko:'복사됨!'});
     btn.textContent=doneTxt; btn.classList.add('copied');
     setTimeout(function(){ btn.textContent=label; btn.classList.remove('copied'); },1400);
   };
@@ -989,23 +1033,21 @@ function renderDone(){
   var note=box.querySelector('.done-note');
   if(!note){ note=document.createElement('div'); note.className='done-note'; p.insertAdjacentElement('afterend',note); }
   if(inq){
-    h.textContent = l==='en'?'Your inquiry has been received':(l==='vi'?'Đã nhận liên hệ của bạn':'문의가 접수되었습니다');
-    p.textContent = l==='en'?'We will get back to you after review.':(l==='vi'?'Chúng tôi sẽ liên hệ lại với bạn sau khi xem xét.':'확인 후 입력하신 연락처로 안내드리겠습니다.');
+    h.textContent = tr({en:'Your inquiry has been received',vi:'Đã nhận liên hệ của bạn',ru:'Ваш запрос получен',ko:'문의가 접수되었습니다'},l);
+    p.textContent = tr({en:'We will get back to you after review.',vi:'Chúng tôi sẽ liên hệ lại với bạn sau khi xem xét.',ru:'Мы свяжемся с вами после рассмотрения.',ko:'확인 후 입력하신 연락처로 안내드리겠습니다.'},l);
     note.style.display='none';
   } else {
-    h.textContent = l==='en'?'Your booking is confirmed':(l==='vi'?'Đặt lịch của bạn đã được xác nhận':'예약이 확정되었습니다');
-    p.innerHTML = l==='en'
-      ? 'Please check the confirmation sent to your <b>email</b> or <b>Zalo</b>.'
-      : l==='vi'
-      ? 'Vui lòng kiểm tra xác nhận được gửi qua <b>email</b> hoặc <b>Zalo</b>.'
-      : '<b>이메일</b> 또는 <b>잘로(Zalo)</b>로 보내드린 확정 안내를 확인해 주세요.';
+    h.textContent = tr({en:'Your booking is confirmed',vi:'Đặt lịch của bạn đã được xác nhận',ru:'Ваша запись подтверждена',ko:'예약이 확정되었습니다'},l);
+    p.innerHTML = tr({en:'Please check the confirmation sent to your <b>email</b> or <b>Zalo</b>.',
+      vi:'Vui lòng kiểm tra xác nhận được gửi qua <b>email</b> hoặc <b>Zalo</b>.',
+      ru:'Проверьте подтверждение, отправленное на <b>email</b> или в <b>Zalo</b>.',
+      ko:'<b>이메일</b> 또는 <b>잘로(Zalo)</b>로 보내드린 확정 안내를 확인해 주세요.'},l);
     note.style.display='block';
     var tel=telLinkHTML(CONTACT_TEL,l);
-    note.innerHTML = l==='en'
-      ? 'If you don\'t hear back via Zalo or email within <b>2–3 minutes</b>, please call us at '+tel+'.'
-      : l==='vi'
-      ? 'Nếu trong vòng <b>2–3 phút</b> bạn chưa nhận được phản hồi qua Zalo hoặc email, vui lòng gọi '+tel+'.'
-      : '<b>2~3분 이내</b>에 잘로 또는 이메일로 회신이 오지 않으면, 아래 번호로 연락해 주세요: '+tel;
+    note.innerHTML = tr({en:'If you don\'t hear back via Zalo or email within <b>2–3 minutes</b>, please call us at '+tel+'.',
+      vi:'Nếu trong vòng <b>2–3 phút</b> bạn chưa nhận được phản hồi qua Zalo hoặc email, vui lòng gọi '+tel+'.',
+      ru:'Если в течение <b>2–3 минут</b> вы не получите ответ в Zalo или по email, позвоните нам: '+tel+'.',
+      ko:'<b>2~3분 이내</b>에 잘로 또는 이메일로 회신이 오지 않으면, 아래 번호로 연락해 주세요: '+tel},l);
   }
 }
 function submitApplication(){
@@ -1033,12 +1075,14 @@ if(window.LS&&LS.onError) LS.onError(function(msg){
   // CAPACITY_FULL: 동시신청으로 방금 마감된 경우(prevent_overbooking.sql 트리거) — 일반 실패와 다르게 원인이 명확하므로 문구를 구분
   const full=/CAPACITY_FULL/.test(msg||'');
   warn.textContent = full
-    ? (l==='en' ? 'Sorry, this time slot just became full. Please contact us to check other times.'
-      : l==='vi' ? 'Rất tiếc, khung giờ này vừa hết chỗ. Vui lòng liên hệ để kiểm tra giờ khác.'
-      : '죄송합니다, 방금 이 시간대가 마감되었습니다. 다른 시간을 문의해 주세요.')
-    : (l==='en' ? 'Your submission was not completed. Please contact us to confirm.'
-      : l==='vi' ? 'Yêu cầu của bạn chưa được hoàn tất. Vui lòng liên hệ để xác nhận.'
-      : '접수가 완료되지 않았습니다. 담당자에게 확인해주세요.');
+    ? tr({en:'Sorry, this time slot just became full. Please contact us to check other times.',
+      vi:'Rất tiếc, khung giờ này vừa hết chỗ. Vui lòng liên hệ để kiểm tra giờ khác.',
+      ru:'К сожалению, на это время только что закончились места. Свяжитесь с нами, чтобы подобрать другое время.',
+      ko:'죄송합니다, 방금 이 시간대가 마감되었습니다. 다른 시간을 문의해 주세요.'},l)
+    : tr({en:'Your submission was not completed. Please contact us to confirm.',
+      vi:'Yêu cầu của bạn chưa được hoàn tất. Vui lòng liên hệ để xác nhận.',
+      ru:'Заявка не была отправлена. Пожалуйста, свяжитесь с нами для подтверждения.',
+      ko:'접수가 완료되지 않았습니다. 담당자에게 확인해주세요.'},l);
 });
 
 /* 초기 옵션 바인딩 (열릴 때 동적 렌더로 재바인딩됨) */
@@ -1081,9 +1125,9 @@ document.querySelectorAll('[data-open-apply]').forEach(b=>b.addEventListener('cl
 }));
 /* 지점명 언어별 라벨 (지점명은 단일 문자열이라, 알려진 지점명을 언어에 맞게 변환·없으면 원문) */
 var BRANCH_I18N={
-  '호치민':{ko:'호치민',en:'Ho Chi Minh',vi:'Hồ Chí Minh'},
-  '하노이':{ko:'하노이',en:'Hanoi',vi:'Hà Nội'},
-  '다낭':{ko:'다낭',en:'Da Nang',vi:'Đà Nẵng'}
+  '호치민':{ko:'호치민',en:'Ho Chi Minh',vi:'Hồ Chí Minh',ru:'Хошимин'},
+  '하노이':{ko:'하노이',en:'Hanoi',vi:'Hà Nội',ru:'Ханой'},
+  '다낭':{ko:'다낭',en:'Da Nang',vi:'Đà Nẵng',ru:'Дананг'}
 };
 function branchLabel(name){
   var L=curLang();
@@ -1092,7 +1136,8 @@ function branchLabel(name){
   if(b&&b.nameI18n&&b.nameI18n[L]) return b.nameI18n[L];       // 1) 저장된 해당 언어 지점명
   var key=((name||'').split('(')[0]||name||'').trim();
   var m=BRANCH_I18N[key]; if(m&&m[L]) return m[L];             // 2) 알려진 지점명 매핑 폴백
-  if(b&&b.nameI18n&&b.nameI18n.ko) return b.nameI18n.ko;        // 3) 저장된 한국어
+  if(L==='ru'&&b&&b.nameI18n&&b.nameI18n.en) return b.nameI18n.en; // 3) 러시아어는 저장된 영어
+  if(b&&b.nameI18n&&b.nameI18n.ko) return b.nameI18n.ko;        // 4) 저장된 한국어
   return name||'';
 }
 /* 상단 네비 지점별 소셜 버튼(호버 펼침) — 어드민 지점설정의 인스타·페북·링크트리 링크 사용 */
@@ -1253,7 +1298,7 @@ function initEffects(){
   }
   // 5) 플로팅 버튼(예약하기 · 맨 위로) — 스크롤해도 항상 표시
   if(!document.querySelector('.floaty')){
-    try{ I18N.en['floaty.book']='Book a class'; I18N.vi['floaty.book']='Đặt lịch'; I18N.ko['floaty.book']='예약하기'; }catch(e){}
+    try{ I18N.en['floaty.book']='Book a class'; I18N.vi['floaty.book']='Đặt lịch'; I18N.ru['floaty.book']='Записаться'; I18N.ko['floaty.book']='예약하기'; }catch(e){}
     var f=document.createElement('div'); f.className='floaty';
     var book=document.createElement('button'); book.type='button'; book.className='floaty-book';
     book.setAttribute('data-i18n','floaty.book'); book.textContent=(I18N[curLang()]&&I18N[curLang()]['floaty.book'])||'예약하기';

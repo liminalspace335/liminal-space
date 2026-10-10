@@ -4,11 +4,12 @@
 (function(){
   function esc(s){ return (s==null?'':String(s)).replace(/[&<>"]/g,function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
 
-  /* 언어 — 좌측 상단에서 베트남어/영어/한글 순으로 고르며, 기본은 베트남어 */
-  var LANGS=[['vi','VI'],['en','EN'],['ko','KO']];
+  /* 언어 — 좌측 상단에서 베트남어/러시아어/영어/한글 순으로 고르며, 기본은 베트남어 */
+  var LANGS=[['vi','VI'],['ru','RU'],['en','EN'],['ko','KO']];
   var curLang='vi';
-  function txObj(v){ return (v&&typeof v==='object'&&!Array.isArray(v))?v:(v?{ko:String(v),en:String(v),vi:String(v)}:{}); }
-  function Lval(v,lang){ var o=txObj(v); return o[lang||curLang]||o.vi||o.en||o.ko||''; }
+  function txObj(v){ return (v&&typeof v==='object'&&!Array.isArray(v))?v:(v?{ko:String(v),en:String(v),vi:String(v),ru:String(v)}:{}); }
+  // 러시아어 제목이 아직 입력되지 않은 버튼은 영어로 대신 보여준다
+  function Lval(v,lang){ lang=lang||curLang; var o=txObj(v); return o[lang]||(lang==='ru'?o.en:'')||o.vi||o.en||o.ko||''; }
 
   /* 홈화면(링크허브) 픽토그램은 항상 이 7종 고정 — store.js의 normalizeLinkHub와 동일한 규칙 */
   var LINKHUB_ICON_TYPES=['email','phone','googlemap','facebook','instagram','tiktok','threads'];
@@ -66,11 +67,11 @@
 
   var ICON_SVG={ email:'lh-ic-mail', phone:'lh-ic-phone', googlemap:'lh-ic-map', facebook:'lh-ic-facebook', instagram:'lh-ic-instagram', tiktok:'lh-ic-tiktok', threads:'lh-ic-threads' };
   var ICON_LABEL_I18N={
-    email:{vi:'Email',en:'Email',ko:'이메일'}, phone:{vi:'Điện thoại',en:'Phone',ko:'전화'},
+    email:{vi:'Email',en:'Email',ko:'이메일'}, phone:{vi:'Điện thoại',en:'Phone',ko:'전화',ru:'Телефон'},
     googlemap:{vi:'Google Maps',en:'Google Maps',ko:'구글맵'}, facebook:{vi:'Facebook',en:'Facebook',ko:'페이스북'},
     instagram:{vi:'Instagram',en:'Instagram',ko:'인스타그램'}, tiktok:{vi:'TikTok',en:'TikTok',ko:'틱톡'}, threads:{vi:'Threads',en:'Threads',ko:'쓰레드'}
   };
-  function iconLabel(type){ var m=ICON_LABEL_I18N[type]; return (m&&(m[curLang]||m.vi))||type; }
+  function iconLabel(type){ var m=ICON_LABEL_I18N[type]; return (m&&(m[curLang]||m.en))||type; }
   var ICON_CLASS={ email:'em', phone:'ph', googlemap:'gm', facebook:'fb', instagram:'ig', tiktok:'tk', threads:'th' };
   /* 화면에 노출되는 짧은 UI 문구 — 베트남어 기본, 언어 전환 시 함께 바뀜 */
   var UI_TEXT={
@@ -79,7 +80,9 @@
     en:{ eyebrow:'PERFUME WORKSHOP', shareTitle:'Share', copy:'Copy link', copied:'Copied ✓', copyFail:'Copy failed.', qr:'View on mobile', shareAria:'Share', moreAria:'Share', closeAria:'Close', comingSoon:'Coming soon',
       messengerFail:"Couldn't find the Messenger app on this device.", instagramFail:"Couldn't find the Instagram app on this device.", linkCopiedHint:'Copied the link — paste it in the app to share.' },
     ko:{ eyebrow:'Perfume Workshop · 향수 공방', shareTitle:'공유하기', copy:'링크 복사', copied:'복사됨 ✓', copyFail:'복사에 실패했습니다.', qr:'모바일에서 보기', shareAria:'공유하기', moreAria:'공유', closeAria:'닫기', comingSoon:'준비 중입니다',
-      messengerFail:'이 기기에서 메신저 앱을 찾을 수 없습니다.', instagramFail:'이 기기에서 인스타그램 앱을 찾을 수 없습니다.', linkCopiedHint:'링크를 복사했습니다 — 앱에서 붙여넣어 공유해 주세요.' }
+      messengerFail:'이 기기에서 메신저 앱을 찾을 수 없습니다.', instagramFail:'이 기기에서 인스타그램 앱을 찾을 수 없습니다.', linkCopiedHint:'링크를 복사했습니다 — 앱에서 붙여넣어 공유해 주세요.' },
+    ru:{ eyebrow:'PERFUME WORKSHOP · ПАРФЮМЕРНАЯ МАСТЕРСКАЯ', shareTitle:'Поделиться', copy:'Копировать ссылку', copied:'Скопировано ✓', copyFail:'Не удалось скопировать.', qr:'Открыть на телефоне', shareAria:'Поделиться', moreAria:'Поделиться', closeAria:'Закрыть', comingSoon:'Скоро открытие',
+      messengerFail:'Приложение Messenger не найдено на этом устройстве.', instagramFail:'Приложение Instagram не найдено на этом устройстве.', linkCopiedHint:'Ссылка скопирована — вставьте её в приложение, чтобы поделиться.' }
   };
   function ui(key){ var t=UI_TEXT[curLang]||UI_TEXT.vi; return t[key]||UI_TEXT.vi[key]||''; }
 
@@ -135,7 +138,7 @@
     return '';
   }
   function shareIconHTML(type,url,title){
-    var m=SHARE_LABEL_I18N[type]; var label=(m&&(m[curLang]||m.vi))||type;
+    var m=SHARE_LABEL_I18N[type]; var label=(m&&(m[curLang]||m.en))||type;
     var isAppOnly=(type==='messenger'||type==='instagram');
     if(isAppOnly && !IS_MOBILE_UA){
       // 데스크톱(웹)에서는 앱 딥링크를 시도하지 않고, 왓츠앱과 똑같이 바로 동작하는 웹 페이지를 새 탭으로 연다
@@ -324,7 +327,7 @@
       e.preventDefault(); tryOpenApp(a.dataset.appLink,a.dataset.appType);
     });
 
-    /* 언어 선택 (VI·EN·KO) — 기본 베트남어 */
+    /* 언어 선택 (VI·RU·EN·KO) — 기본 베트남어 */
     var langBox=document.getElementById('lhLangBox');
     document.getElementById('lhLangToggle').addEventListener('click',function(e){
       e.stopPropagation();
