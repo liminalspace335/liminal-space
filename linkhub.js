@@ -7,6 +7,7 @@
   /* 언어 — 좌측 상단에서 베트남어/러시아어/영어/한글 순으로 고르며, 기본은 베트남어 */
   var LANGS=[['vi','VI'],['ru','RU'],['en','EN'],['ko','KO']];
   var curLang='vi';
+  try{ var s=localStorage.getItem('ls_lang'); if(LANGS.some(function(l){ return l[0]===s; })) curLang=s; }catch(e){}   // 홈페이지와 같은 선택 언어 사용
   function txObj(v){ return (v&&typeof v==='object'&&!Array.isArray(v))?v:(v?{ko:String(v),en:String(v),vi:String(v),ru:String(v)}:{}); }
   // 러시아어 제목이 아직 입력되지 않은 버튼은 영어로 대신 보여준다
   function Lval(v,lang){ lang=lang||curLang; var o=txObj(v); return o[lang]||(lang==='ru'?o.en:'')||o.vi||o.en||o.ko||''; }
@@ -336,7 +337,7 @@
     });
     document.getElementById('lhLangMenu').addEventListener('click',function(e){
       var b=e.target.closest('button[data-lang]'); if(!b) return;
-      curLang=b.dataset.lang; closeLangMenu(); renderAll();
+      curLang=b.dataset.lang; try{ localStorage.setItem('ls_lang',curLang); }catch(e){} closeLangMenu(); renderAll();
     });
     document.addEventListener('click',function(e){ if(!langBox.contains(e.target)) closeLangMenu(); });
   }

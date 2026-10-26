@@ -196,7 +196,7 @@ function setLang(lang){
   if(typeof renderEmailDomains==='function') renderEmailDomains(); // 이메일 도메인 '직접 입력' 라벨 언어 재적용
 }
 document.querySelectorAll('.lang button[data-lang]').forEach(b=>{   // data-lang 있는 실제 언어 버튼만(토글 버튼은 data-lang이 없어서 제외됨)
-  b.addEventListener('click',()=>setLang(b.dataset.lang));
+  b.addEventListener('click',()=>{ setLang(b.dataset.lang); try{ localStorage.setItem('ls_lang',b.dataset.lang); }catch(e){} });   // 선택 언어 기억(다른 페이지로 이동해도 유지)
 });
 /* 모바일 언어·SNS 드롭다운 토글(개념 유지: 클릭 열기/닫기, 바깥 클릭·다른쪽 열림 시 자동 닫힘) */
 (function(){
@@ -1171,17 +1171,24 @@ function renderSocialCards(){
       +'<span class="cc-go">↗</span></a>';
   }).join('');
 }
+var navSocReady=false;   // 데이터 로드 전엔 지난번에 저장한 SNS를 먼저 그림 → 페이지 이동 때마다 SNS가 늦게 끼어들며 메뉴가 밀리지 않게
 function renderNavSocials(){
   var langEl=document.querySelector('header .lang'); if(!langEl)return;
   ensureSvgDefs();
   var drop=document.getElementById('snsDrop');
   var brs=(getSettings().branches||[]).filter(function(b){return b&&b.name&&(b.instagram||b.facebook||b.linktree||b.tiktok);});
+  var html=null, n=brs.length;
+  if(!navSocReady){ try{ var c=JSON.parse(localStorage.getItem('ls_nav_soc')||'null'); if(c){ html=c.html; n=c.n; } }catch(e){} }
+  if(html===null){ html=navSocHTML(brs); if(navSocReady){ try{ localStorage.setItem('ls_nav_soc',JSON.stringify({html:html,n:n})); }catch(e){} } }
   var box=document.getElementById('navSocials');
-  if(!brs.length){ if(box)box.parentNode.removeChild(box); if(drop)drop.classList.remove('has-items','open'); return; }
+  if(!n){ if(box)box.parentNode.removeChild(box); if(drop)drop.classList.remove('has-items','open'); return; }
   if(drop)drop.classList.add('has-items');
   if(!box){ box=document.createElement('div'); box.className='socials'; box.id='navSocials'; if(drop){ drop.appendChild(box); } else { langEl.parentNode.insertBefore(box, langEl); } }
-  box.classList.toggle('show-all', brs.length<=1); // 지점 1곳이면 호버 없이 아이콘 항상 노출
-  box.innerHTML=brs.map(function(b){
+  box.classList.toggle('show-all', n<=1); // 지점 1곳이면 호버 없이 아이콘 항상 노출
+  box.innerHTML=html;
+}
+function navSocHTML(brs){
+  return brs.map(function(b){
     var nm=esc(b.name); var ic='';
     if(b.instagram) ic+='<a class="ig" href="'+esc(b.instagram)+'" target="_blank" rel="noopener" aria-label="'+nm+' Instagram"><svg class="ic"><use href="#ic-instagram"/></svg></a>';
     if(b.facebook)  ic+='<a class="fb" href="'+esc(b.facebook)+'" target="_blank" rel="noopener" aria-label="'+nm+' Facebook"><svg class="ic"><use href="#ic-facebook"/></svg></a>';
@@ -1208,6 +1215,7 @@ function renderNavSocials(){
   renderFolderChips();
   renderGallery();
   renderPartners();
+  navSocReady=!(window.LS&&LS.hadLoadError&&LS.hadLoadError());   // 로드 실패 시엔 저장된 SNS 유지
   renderNavSocials();
 });
 /* close triggers */
@@ -1312,5 +1320,6 @@ initEffects();
 /* 로고 오른쪽에 버전 배지 표시 */
 (function(){var b=document.querySelector('header .brand'); var v=window.LS_VERSION||''; if(!b||!v)return;
   var s=document.createElement('span'); s.className='ver-badge'; s.textContent=v; b.appendChild(s);})();
-setLang('vi');   // 기본 언어: 베트남어 (모든 정의 이후 호출 — TDZ 회피)
+(function(){ var s=''; try{ s=localStorage.getItem('ls_lang')||''; }catch(e){}
+  setLang(I18N[s]?s:'vi'); })();   // 저장된 언어, 없으면 기본 베트남어 (모든 정의 이후 호출 — TDZ 회피)
 

@@ -55,7 +55,7 @@
     border:1px solid var(--line);border-radius:999px;background:transparent;color:var(--ink-soft);cursor:pointer}
   .sns-toggle .ic{width:16px;height:16px;display:block}
   .sns-toggle:hover{color:var(--ink);border-color:var(--ink)}
-  .menu-toggle{display:none;background:none;border:0;font-size:22px;cursor:pointer}
+  .menu-toggle{display:none;background:none;border:0;font-size:22px;cursor:pointer;color:var(--ink)}   /* 색 미지정 시 iOS가 버튼을 파란색으로 그림 */
 
   /* ---------- HERO ---------- */
   .hero{
