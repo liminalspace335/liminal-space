@@ -550,31 +550,29 @@ function renderConcept(){
     else fig.innerHTML='<img src="'+esc(url)+'" alt="LIMINAL SPACE — Eau de Parfum" loading="lazy">';
     return;
   }
-  // 다중(2~5개): 순서대로 재생, 끝나면 다음 — 시작/끝 페이드
-  fig.innerHTML='<div class="concept-seq"></div>';
-  var box=fig.querySelector('.concept-seq');
-  var FADE=600, IMG_MS=5000, seq={i:0,t:0}; fig._seq=seq;
-  function tag(u){ return isVideoUrl(u) ? '<video src="'+esc(u)+'" muted playsinline preload="metadata" tabindex="0" data-hover="pause"></video>' : '<img src="'+esc(u)+'" alt="LIMINAL SPACE — Eau de Parfum" loading="lazy" decoding="async">'; }
-  function go(idx,faded){
-    clearTimeout(seq.t);
-    seq.i=((idx%list.length)+list.length)%list.length;
-    function swap(){
-      box.style.minHeight=box.offsetHeight+'px'; box.style.minWidth=box.offsetWidth+'px';   // 새 미디어 로드 전 0으로 접혀 아래 내용이 튀는 것 방지(모바일)
-      box.innerHTML=tag(list[seq.i]); var el=box.firstChild;
-      if(el) el.addEventListener(el.tagName==='VIDEO'?'loadedmetadata':'load',function(){ box.style.minHeight=''; box.style.minWidth=''; },{once:true});
-      if(el && el.tagName==='VIDEO'){
-        el.muted=true;
-        el.addEventListener('ended',function(){ go(seq.i+1,true); });
-        el.addEventListener('timeupdate',function(){ if(el.duration && (el.duration-el.currentTime)<(FADE/1000+0.05)) box.style.opacity='0'; });   // 끝 페이드아웃
-        try{ el.play(); }catch(e){}
-      } else {   // 이미지: IMG_MS 후 다음
-        seq.t=setTimeout(function(){ box.style.opacity='0'; seq.t=setTimeout(function(){ go(seq.i+1,true); },FADE); }, IMG_MS);
-      }
-      requestAnimationFrame(function(){ box.style.opacity='1'; });   // 시작 페이드인
+  // 다중(2~5개): 전부 미리 겹쳐 로드해 두고, 다음 미디어가 실제 재생되기 시작하면 위로 크로스페이드
+  //  → 이전 것이 아래에 계속 보이므로 회색 로딩 화면이 없음. 박스 크기는 첫 미디어가 정함(전환 시 높이 변화 없음)
+  var FADE=600, IMG_MS=5000, seq={t:0}; fig._seq=seq;
+  function tag(u){ return isVideoUrl(u) ? '<video src="'+esc(u)+'" muted playsinline preload="auto" tabindex="0" data-hover="pause"></video>' : '<img src="'+esc(u)+'" alt="LIMINAL SPACE — Eau de Parfum" decoding="async">'; }
+  fig.innerHTML='<div class="concept-seq">'+list.map(tag).join('')+'</div>';
+  var els=[].slice.call(fig.querySelectorAll('.concept-seq > *')), cur=-1, z=1;
+  function next(){ show((cur+1)%els.length); }
+  function show(i){
+    var el=els[i], prev=els[cur];
+    function reveal(){
+      if(el.tagName!=='VIDEO') seq.t=setTimeout(next,IMG_MS);   // 이미지: IMG_MS 후 다음
+      el.style.zIndex=++z; el.classList.add('on'); cur=i;
+      setTimeout(function(){ if(prev&&prev!==el){ prev.classList.remove('on'); if(prev.pause)prev.pause(); } },FADE);   // 다 덮인 뒤 이전 것 정리
     }
-    if(faded){ swap(); } else { box.style.opacity='0'; seq.t=setTimeout(swap,FADE); }
+    if(el.tagName==='VIDEO'){
+      el.muted=true; el.currentTime=0; el._next=false;
+      el.addEventListener('playing',reveal,{once:true});
+      try{ var p=el.play(); if(p&&p.catch)p.catch(function(){}); }catch(e){}
+    } else if(el.complete) reveal(); else el.addEventListener('load',reveal,{once:true});
   }
-  go(0,true);
+  els.forEach(function(el){ if(el.tagName==='VIDEO') el.addEventListener('timeupdate',function(){   // 끝나기 직전에 다음 것 재생 시작
+    if(el===els[cur] && !el._next && el.duration && el.duration-el.currentTime<FADE/1000+0.3){ el._next=true; next(); } }); });
+  show(0);
 }
 function initSpaceCarousel(){
   const track=document.getElementById('spaceTrack'); if(!track)return;
@@ -1255,7 +1253,7 @@ function initEffects(){
         return {list:list, idx:idx}; }
       var cf=hit.closest('.concept-figure');   // 컨셉: 저장된 미디어 목록 전체를 이전/다음으로
       if(cf){ var cl=(((getSettings().site||{}).conceptList)||[]).filter(Boolean);
-        if(cl.length>1){ var cur=mediaSrc(hit.querySelector('img,video')); var ix=0;
+        if(cl.length>1){ var cur=mediaSrc(hit.querySelector('.on')||hit.querySelector('img,video')); var ix=0;
           for(var z=0;z<cl.length;z++){ if(cur&&(cur===cl[z]||cur.indexOf(cl[z])>=0||cl[z].indexOf(cur)>=0)){ix=z;break;} }
           return {list:cl.map(function(u){return {src:u,cap:''};}), idx:ix}; } }
       var im2=hit.querySelector('img,video'); return {list:[{src:mediaSrc(im2),cap:''}], idx:0};
