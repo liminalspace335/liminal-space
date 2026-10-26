@@ -559,7 +559,9 @@ function renderConcept(){
     clearTimeout(seq.t);
     seq.i=((idx%list.length)+list.length)%list.length;
     function swap(){
+      box.style.minHeight=box.offsetHeight+'px'; box.style.minWidth=box.offsetWidth+'px';   // 새 미디어 로드 전 0으로 접혀 아래 내용이 튀는 것 방지(모바일)
       box.innerHTML=tag(list[seq.i]); var el=box.firstChild;
+      if(el) el.addEventListener(el.tagName==='VIDEO'?'loadedmetadata':'load',function(){ box.style.minHeight=''; box.style.minWidth=''; },{once:true});
       if(el && el.tagName==='VIDEO'){
         el.muted=true;
         el.addEventListener('ended',function(){ go(seq.i+1,true); });
