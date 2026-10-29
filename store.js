@@ -54,7 +54,7 @@
   /* ---------- 조립: 테이블 rows → settings 객체 / apps 배열 ---------- */
   function assemble(t){
     var branchById={}, classById={}; // id→{branch,nameKo}
-    var settings={ branches:[], branchClasses:[], classDetails:[], defaultSchedule:{}, schedule:{}, site:{}, gallery:[], partners:[], galleryFolders:[], space:[], spaceFolders:[] };
+    var settings={ branches:[], branchClasses:[], classDetails:[], defaultSchedule:{}, schedule:{}, site:{}, gallery:[], partners:[], galleryFolders:[], space:[], spaceFolders:[], pageDesc:{} };
     (t.branches||[]).sort(function(a,b){return (a.sort||0)-(b.sort||0);}).forEach(function(b){
       branchById[b.id]=b.name;
       settings.branches.push({ id:b.id, name:b.name, nameI18n:{ko:b.name||'',en:b.name_en||'',vi:b.name_vi||'',ru:b.name_ru||''}, contact:b.contact||'', link:b.link||'',
@@ -71,6 +71,7 @@
       try{ settings.galleryFolders=JSON.parse(si.galleryfolders_json||'[]')||[]; }catch(e){ settings.galleryFolders=[]; }
       try{ settings.space=JSON.parse(si.space_json||'[]')||[]; }catch(e){ settings.space=[]; }
       try{ settings.spaceFolders=JSON.parse(si.spacefolders_json||'[]')||[]; }catch(e){ settings.spaceFolders=[]; }
+      try{ settings.pageDesc=JSON.parse(si.page_desc_json||'{}')||{}; }catch(e){ settings.pageDesc={}; }   // 서브페이지 설명(site 밖에 둠: 관리자 '사이트 저장'이 site를 통째로 새로 만들기 때문)
       try{ settings.linkHub=normalizeLinkHub(JSON.parse(si.linkhub_json||'{}')); }catch(e){ settings.linkHub=normalizeLinkHub({}); } }
     if(!settings.linkHub) settings.linkHub=normalizeLinkHub({});
     (t.classes||[]).sort(function(a,b){return (a.sort||0)-(b.sort||0);}).forEach(function(c){
@@ -128,7 +129,7 @@
       concept_json:JSON.stringify((_si.conceptList||[]).filter(Boolean).slice(0,5)),
       concept_media:((_si.conceptList&&_si.conceptList.filter(Boolean)[0])||_si.conceptMedia||''),
       gallery_json:JSON.stringify(s.gallery||[]), partners_json:JSON.stringify(s.partners||[]), galleryfolders_json:JSON.stringify(s.galleryFolders||[]),
-      space_json:JSON.stringify(s.space||[]), spacefolders_json:JSON.stringify(s.spaceFolders||[]),
+      space_json:JSON.stringify(s.space||[]), spacefolders_json:JSON.stringify(s.spaceFolders||[]), page_desc_json:JSON.stringify(s.pageDesc||{}),
       linkhub_json:JSON.stringify(normalizeLinkHub(s.linkHub||{})) };
     var classRows=(s.branchClasses||[]).map(function(c,i){ var k=classKey(c.branch,ko(c.name)); var id=classIdByKey[k]||rid('cl'); clKeyToId[k]=id;
       return { id:id, branch_id:brNameToId[c.branch]||null, sort:(c.order!=null?c.order:i),

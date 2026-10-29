@@ -463,7 +463,7 @@ function renderSpaceFolderChips(){
   if(!folders.length){ box.innerHTML=''; box.style.display='none'; spaceFolder=''; return; }
   box.style.display='';
   var allLabel=tr({en:'All',vi:'Tất cả',ru:'Все',ko:'전체'},lang);
-  function chip(fid,name,cover){return '<button class="folder-chip '+(spaceFolder===fid?'active':'')+'" data-fid="'+esc(fid)+'"><span class="fc-thumb" style="background-image:url(\''+esc(cover)+'\')"></span><span class="fc-name">'+esc(name)+'</span></button>';}
+  function chip(fid,name,cover){return '<button class="folder-chip '+(spaceFolder===fid?'active':'')+'" data-fid="'+esc(fid)+'"><span class="fc-name">'+esc(name)+'</span></button>';}
   var html=chip('',allLabel,(sortGal(spaceItemsAll())[0]||{}).img||'');   // 전체 = 모든 공간 사진 중 첫 번째(대표 우선)
   folders.forEach(function(f){ html+=chip(f.id,Lval(f.name,lang),spaceCover(f.id)); });
   box.innerHTML=html;
@@ -472,13 +472,19 @@ function renderSpaceFolderChips(){
 /* 공간 캐러셀 — 연속 흐름 마퀴(공간 사진) */
 /* 미디어(이미지/영상) 공용 — URL 확장자로 영상 판별, view=true면 컨트롤바(라이트박스용) */
 function isVideoUrl(u){return /\.(mp4|webm|ogg|ogv|mov|m4v)(\?|#|$)/i.test(u||'');}
+/* Supabase Storage 사진은 원본(수 MB PNG) 대신 화면 크기에 맞춘 사본(WebP 자동 변환)을 받음 — Storage 이미지 변환(render) 사용.
+   원본 파일은 그대로 두고, 변환 실패 시 imgFallback()이 원본으로 다시 불러옴 */
+function imgUrl(u,w){ if(!u||!/\/storage\/v1\/object\/public\/[^?#]+\.(png|jpe?g|webp)(\?|#|$)/i.test(u)) return u;
+  return u.split('?')[0].replace('/storage/v1/object/public/','/storage/v1/render/image/public/')+'?width='+w+'&height='+w+'&resize=contain&quality=75'; }   // 가로·세로 모두 w 안에 비율 유지(width만 주면 원본 높이로 잘림)
+function imgFallback(el){ var o=el.getAttribute('data-orig'); if(o&&el.getAttribute('src')!==o) el.src=o; }
+function imgTag(url,w,alt,extra){ return '<img src="'+esc(imgUrl(url,w))+'" data-orig="'+esc(url)+'" onerror="imgFallback(this)" alt="'+esc(alt)+'"'+(extra||'')+'>'; }
 function mediaHTML(url,alt,view){
   var u=esc(url||'');
   if(isVideoUrl(url)){
     return view ? '<video src="'+u+'" controls playsinline preload="metadata"></video>'
                 : '<video src="'+u+'" muted loop playsinline preload="metadata" tabindex="0"></video>';   // 카드: 음소거·호버 시 재생
   }
-  return '<img src="'+u+'" alt="'+esc(alt||'LIMINAL SPACE')+'" loading="lazy" decoding="async">';
+  return imgTag(url,800,alt||'LIMINAL SPACE',' loading="lazy" decoding="async"');
 }
 /* 히어로 로고 — 어드민에서 이미지 설정 시 텍스트 대신 이미지(좌측정렬 유지) */
 function renderHero(){
@@ -511,13 +517,13 @@ function renderConcept(){
   if(list.length===1){
     var url=list[0];
     if(isVideoUrl(url)){ var auto=!!st.conceptAutoplay; fig.innerHTML='<video src="'+esc(url)+'" '+(auto?'autoplay ':'')+'muted loop playsinline preload="metadata" tabindex="0" data-hover="'+(auto?'pause':'play')+'"></video>'; }
-    else fig.innerHTML='<img src="'+esc(url)+'" alt="LIMINAL SPACE — Eau de Parfum" loading="lazy">';
+    else fig.innerHTML=imgTag(url,1400,'LIMINAL SPACE — Eau de Parfum',' loading="lazy"');
     return;
   }
   // 다중(2~5개): 전부 미리 겹쳐 로드해 두고, 다음 미디어가 실제 재생되기 시작하면 위로 크로스페이드
   //  → 이전 것이 아래에 계속 보이므로 회색 로딩 화면이 없음. 박스 크기는 첫 미디어가 정함(전환 시 높이 변화 없음)
   var FADE=600, IMG_MS=5000, seq={t:0}; fig._seq=seq;
-  function tag(u){ return isVideoUrl(u) ? '<video src="'+esc(u)+'" muted playsinline preload="auto" tabindex="0" data-hover="pause"></video>' : '<img src="'+esc(u)+'" alt="LIMINAL SPACE — Eau de Parfum" decoding="async">'; }
+  function tag(u){ return isVideoUrl(u) ? '<video src="'+esc(u)+'" muted playsinline preload="auto" tabindex="0" data-hover="pause"></video>' : imgTag(u,1400,'LIMINAL SPACE — Eau de Parfum',' decoding="async"'); }
   fig.innerHTML='<div class="concept-seq">'+list.map(tag).join('')+'</div>';
   var els=[].slice.call(fig.querySelectorAll('.concept-seq > *')), cur=-1, z=1;
   function next(){ show((cur+1)%els.length); }
@@ -578,7 +584,7 @@ function renderSpaceGrid(){
 /* 서브페이지 상단 '페이지 설명' — 값이 있을 때만 표시(비어 있으면 영역 전체 숨김), 줄바꿈은 문단으로 */
 function renderPageDesc(){
   var box=document.getElementById('pageDesc'); if(!box)return;
-  var pd=((getSettings().site||{}).pageDesc||{})[box.dataset.page];
+  var pd=(getSettings().pageDesc||{})[box.dataset.page];
   var txt=(pd?Lval(pd):'').trim();
   if(!txt){ box.hidden=true; box.innerHTML=''; return; }
   box.innerHTML='<span class="sec-label">ABOUT THIS '+esc(box.dataset.en)+'</span><div class="page-desc-body">'+txt.split(/\n+/).map(function(p){return '<p>'+esc(p)+'</p>';}).join('')+'</div>';
@@ -595,7 +601,7 @@ function renderFolderChips(){
   if(!folders.length){ box.innerHTML=''; box.style.display='none'; galleryFolder=''; return; }
   if(!galleryFolder || !folders.some(function(f){return f.id===galleryFolder;})) galleryFolder=folders[0].id;   // '전체' 제거 → 첫 폴더 기본 선택
   box.style.display='';
-  function chip(fid,name,cover){return '<button class="folder-chip '+(galleryFolder===fid?'active':'')+'" data-fid="'+esc(fid)+'"><span class="fc-thumb" style="background-image:url(\''+esc(cover)+'\')"></span><span class="fc-name">'+esc(name)+'</span></button>';}
+  function chip(fid,name,cover){return '<button class="folder-chip '+(galleryFolder===fid?'active':'')+'" data-fid="'+esc(fid)+'"><span class="fc-name">'+esc(name)+'</span></button>';}
   var html='';
   folders.forEach(function(f){ html+=chip(f.id,Lval(f.name,lang),folderCover(f.id)); });
   box.innerHTML=html;
@@ -620,7 +626,7 @@ function renderPartners(){
   const logos=(getSettings().partners||[]).filter(p=>p&&p.logo);
   if(!logos.length){ box.hidden=true; box.innerHTML=''; return; }
   let base=[]; while(base.length<12) base=base.concat(logos);   // 로고가 적어도 한 줄을 채울 때까지 반복 → 두 벌 이어 붙여 끊김 없이 흐름
-  box.innerHTML='<div class="partners-track">'+base.concat(base).map((p,i)=>`<div class="partners-item"><img src="${esc(p.logo)}" alt="${i<logos.length?esc(p.name||''):''}" loading="lazy"></div>`).join('')+'</div>';
+  box.innerHTML='<div class="partners-track">'+base.concat(base).map((p,i)=>`<div class="partners-item">${imgTag(p.logo,320,i<logos.length?(p.name||''):'',' loading="lazy"')}</div>`).join('')+'</div>';
   box.hidden=false;
 }
 /* 모바일 하단 CTA 금액: 신청 가능한 클래스 용량 중 최저가 + '~' */
@@ -884,7 +890,7 @@ function branchHTML(mob){
     const attr=`data-pick="branch" data-val="${esc(b.name)}" role="button" tabindex="0" aria-pressed="${sel}"`;
     if(mob) return `<div class="opt ${sel?'sel':''}" ${attr}><div class="mid"><div class="ti">${esc(branchLabel(b.name))}</div>${loc?`<div class="de">${esc(loc)}</div>`:''}${hrs?`<div class="de2">${esc(hrs)}</div>`:''}</div>`
       +(b.link?`<a class="map-a" href="${esc(b.link)}" target="_blank" rel="noopener">${esc(tr(AM.map))} ↗</a>`:'')+`</div>`;
-    return `<div class="w-branch ${sel?'sel':''} ${ph?'':'nophoto'}" ${attr}>${ph?`<div class="wb-ph" style="background-image:url('${esc(ph)}')"></div>`:''}<div class="wb-in">`
+    return `<div class="w-branch ${sel?'sel':''} ${ph?'':'nophoto'}" ${attr}>${ph?`<div class="wb-ph" style="background-image:url('${esc(imgUrl(ph,600))}')"></div>`:''}<div class="wb-in">`
       +`<div class="wb-top"><span>BRANCH ${String(i+1).padStart(2,'0')}</span>${sel?'<span class="ck">✓</span>':''}</div><div class="wb-name">${esc(branchLabel(b.name))}</div><div class="wb-hr"></div>`
       +(loc?`<div class="wb-row"><span>ADDRESS</span><b>${esc(loc)}</b></div>`:'')+(hrs?`<div class="wb-row"><span>HOURS</span><b>${esc(hrs)}</b></div>`:'')
       +(b.link?`<a class="wb-map" href="${esc(b.link)}" target="_blank" rel="noopener">${esc(tr(AM.mapview))} ↗</a>`:'')+`</div></div>`;
@@ -1416,10 +1422,10 @@ function initEffects(){
     function lbShow(i){ if(!lbList.length)return; lbIdx=(i+lbList.length)%lbList.length; var it=lbList[lbIdx];
       var v=lbVidEl();
       if(isVideoUrl(it.src)){ lbImg.style.display='none'; lbImg.removeAttribute('src'); v.style.display=''; v.src=it.src; v.muted=false; try{v.play();}catch(e){} }   // 라이트박스: 소리 켜기 가능
-      else { v.pause&&v.pause(); v.removeAttribute('src'); v.style.display='none'; lbImg.style.display=''; lbImg.src=it.src; }
+      else { v.pause&&v.pause(); v.removeAttribute('src'); v.style.display='none'; lbImg.style.display=''; lbImg.setAttribute('data-orig',it.src); lbImg.onerror=function(){imgFallback(lbImg);}; lbImg.src=imgUrl(it.src,1600); }
       lbCap.textContent=it.cap||''; }
     function lbClose(){lb.classList.remove('open');document.body.style.overflow='';lbImg.removeAttribute('src');var v=lb.querySelector('video.lb-vid');if(v){v.pause();v.removeAttribute('src');v.style.display='none';}lbList=[];}
-    function mediaSrc(el){return el?(el.currentSrc||el.src||el.getAttribute('src')||''):'';}
+    function mediaSrc(el){return el?(el.getAttribute('data-orig')||el.currentSrc||el.src||el.getAttribute('src')||''):'';}
     function buildList(hit){
       var grid=hit.closest('#galleryGrid')||hit.closest('#spaceGrid');
       if(grid){ var ns=[].slice.call(grid.querySelectorAll('.gitem'));

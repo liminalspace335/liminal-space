@@ -405,6 +405,7 @@
           <button class="subtab" data-sub="notify">알림관리</button>
           <button class="subtab" data-sub="media">갤러리·협업</button>
           <button class="subtab" data-sub="spacephotos">공간</button>
+          <button class="subtab" data-sub="pagedesc">페이지 설명</button>
         </div>
 
         <div class="subpanel active" id="sub-branch">
@@ -528,6 +529,14 @@
             <div class="gen-row gl-row head-row"><div>이미지</div><div>제목</div><div>설명</div><div>폴더</div><div>대표</div><div>순서</div><div>링크</div><div></div></div>
             <div id="spList"></div>
             <div class="save-row"><button class="btn ghost sm" id="spAdd">+ 사진 추가</button><button class="btn sm" id="spSave">저장</button><span class="saved" id="spSaved">저장됨 ✓</span></div>
+          </div>
+        </div>
+
+        <div class="subpanel" id="sub-pagedesc">
+          <div class="box" style="max-width:900px">
+            <h3>페이지 설명</h3><p class="desc">서브페이지(소개·공간·클래스·갤러리·위치) 제목 아래에 표시되는 설명입니다(현재 입력 언어). 비워 두면 해당 영역 전체가 보이지 않으며, 줄바꿈은 문단으로 나뉩니다. 공간 사진별 설명은 '공간' 탭의 사진 '설명' 칸을 사용합니다.</p>
+            <div class="dgrid" id="pdList"></div>
+            <div class="save-row"><button class="btn sm" id="pdSave">저장</button><span class="saved" id="pdSaved">저장됨 ✓</span></div>
           </div>
         </div>
       </div>
@@ -738,7 +747,7 @@ const ACTION_MAP={
   glAdd:['settings','create'], glSave:['settings','update'],
   lgAdd:['settings','create'], lgSave:['settings','update'],
   sfAdd:['settings','create'], sfSave:['settings','update'],
-  spAdd:['settings','create'], spSave:['settings','update'],
+  spAdd:['settings','create'], spSave:['settings','update'], pdSave:['settings','update'],
   lhProfileSave:['settings','update'], lhIconSave:['settings','update'],
   lhLinkAdd:['settings','create'], lhLinkSave:['settings','update']
 };
@@ -1170,7 +1179,12 @@ function renderAdmLang(){
   const h=document.getElementById('lhAdmLangTabs');
   if(h){h.innerHTML=tabs(LANGS,lhLang);h.querySelectorAll('.pill-tab').forEach(b=>b.addEventListener('click',()=>{lhLang=b.dataset.l;renderLinkHub();}));}
 }
-function renderSettings(){renderAdmLang();renderBranches();renderBranchClasses();renderClassDetails();renderDefaults();renderGalleryFolders();renderGalleryItems();renderPartnerItems();renderSpaceFolders();renderSpaceItems();dimBlockedButtons();}
+function renderSettings(){renderAdmLang();renderBranches();renderBranchClasses();renderClassDetails();renderDefaults();renderGalleryFolders();renderGalleryItems();renderPartnerItems();renderSpaceFolders();renderSpaceItems();renderPageDescs();dimBlockedButtons();}
+/* ===== 서브페이지 설명(언어별, 비우면 사이트에서 영역 숨김) — site 밖 pageDesc에 저장('사이트 저장'이 site를 새로 만들어도 유지) ===== */
+const PAGE_DESC=[['brand','소개'],['space','공간'],['classes','클래스'],['gallery','갤러리'],['location','위치']];
+function renderPageDescs(){const box=document.getElementById('pdList');if(!box)return;const pd=loadSettings().pageDesc||{};
+  box.innerHTML=PAGE_DESC.map(([k,n])=>`<div class="df full"><label>${n} (${admLang})</label><textarea rows="4" data-pd="${k}" placeholder="비워 두면 표시되지 않습니다">${esc(txObj(pd[k])[admLang]||'')}</textarea></div>`).join('');}
+document.getElementById('pdSave').addEventListener('click',()=>{const s=loadSettings();const pd=Object.assign({},s.pageDesc||{});document.querySelectorAll('#pdList [data-pd]').forEach(t=>{const o=Object.assign({},txObj(pd[t.dataset.pd]));o[admLang]=t.value.trim();pd[t.dataset.pd]=o;});s.pageDesc=pd;saveSettings(s);toast('pdSaved');});
 /* ===== 공간(사진+폴더) — 갤러리와 동일 구조 ===== */
 function spaceFolderOpts(cur){const s=loadSettings();const fs=(s.spaceFolders||[]).slice().sort((a,b)=>(+a.order||999)-(+b.order||999));return '<option value="">(폴더 없음)</option>'+fs.map(f=>`<option value="${esc(f.id)}" ${f.id===cur?'selected':''}>${esc(Lval(f.name,admLang))}</option>`).join('');}
 function renderSpaceFolders(){
