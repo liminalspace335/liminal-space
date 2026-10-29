@@ -15,6 +15,11 @@
   // 직접 in-place로 미리 mutate해버리기 때문에(같은 객체 참조를 공유), cache.settings를 그대로 "old" 기준으로 쓰면
   // old와 new가 항상 같아져서 diff가 항상 "변경 없음"으로 오판한다. 그래서 별도로 깊은 복사본을 들고 있는다.
   var _lastSchedule=null, _lastDefaultSchedule=null;
+  // 저장 보호: 설정 표를 하나라도 못 불러왔거나, 이 화면을 연 뒤 다른 곳(다른 탭·관리자·SQL)에서 설정이 바뀌었으면 저장하지 않는다.
+  //  → 빈 값/옛 값으로 site_info(zalo_on·confirm_mail_on 등)·지점·클래스를 덮어써 Zalo/메일 발송이 꺼지는 사고 방지
+  var SETTINGS_TABLES=['branches','classes','class_details','default_slots','schedule_slots','schedule_days','site_info'];
+  var GUARD_TABLES=['site_info','branches','classes','class_details'];   // 저장할 때마다 통째로 다시 쓰는 표
+  var _base=null, _needReload=false;   // _base: 이 탭이 마지막으로 확인한 DB 상태 / _needReload: 한 번 막히면 새로고침 전까지 계속 막음
   function deepClone(o){ try{ return JSON.parse(JSON.stringify(o||{})); }catch(e){ return {}; } }
 
   function lsGet(k,f){ try{ return JSON.parse(localStorage.getItem(k)||f); }catch(e){ return JSON.parse(f); } }
@@ -350,6 +355,7 @@
         if(failed.length) console.warn('일부 테이블 로드 실패(재시도 후에도):', failed);
         var a=assemble(res); cache.settings=a.settings; cache.apps=a.apps;
         _lastSchedule=deepClone(a.settings.schedule); _lastDefaultSchedule=deepClone(a.settings.defaultSchedule);
+        _base={}; GUARD_TABLES.forEach(function(t){ _base[t]=res[t]||[]; });
       }catch(e){ console.warn('Supabase init failed → localStorage', e); useRemote=false; }
     }
     if(!useRemote){ cache.settings=lsGet(KEY_SET,'{}'); cache.apps=lsGet(KEY_APPS,'[]'); }
@@ -361,15 +367,40 @@
   // 두 저장이 겹치면(비동기라 순서 보장이 없음) 늦게 끝나는 쪽(옛 데이터일 수 있음)이 이겨서 방금 저장한 걸 덮어써버린다.
   // 그래서 pushPlan 실행 자체를 큐에 넣어 항상 한 번에 하나씩, 호출 순서대로만 실행되게 한다.
   var _saveChain = Promise.resolve();
+  // 관리자가 실제로 쓰는 컬럼만 비교(예: DB 예약작업이 매일 쓰는 site_info.zalo_remind_last_sent_date 등은 제외)
+  function rowsSig(rows,keys){ return JSON.stringify((rows||[]).map(function(r){ var o={}; keys.forEach(function(k){ o[k]=(r[k]===undefined?null:r[k]); }); return o; })
+    .sort(function(a,b){ return String(a.id)<String(b.id)?-1:String(a.id)>String(b.id)?1:0; })); }
+  function guardKeys(p){ return { site_info:Object.keys(p.siteRow), branches:Object.keys(p.branchRows[0]||{id:1}), classes:Object.keys(p.classRows[0]||{id:1}), class_details:Object.keys(p.detailRows[0]||{id:1}) }; }
+  async function fetchGuard(){
+    var rs=await Promise.all(GUARD_TABLES.map(function(t){ return fetchTableWithRetry(t); })), out={};
+    for(var i=0;i<GUARD_TABLES.length;i++){ if(!rs[i]||rs[i].error||!rs[i].data) return null; out[GUARD_TABLES[i]]=rs[i].data; }
+    return out;
+  }
+  function blockSave(msg){ _needReload=true; return [msg+'\n→ 새로고침(F5) 후 다시 입력·저장해 주세요. 새로고침 전까지는 저장이 계속 막힙니다.']; }
   function setSettings(v){
     if(useRemote){
+      var lf=(cache.loadError||[]).filter(function(t){ return SETTINGS_TABLES.indexOf(t)>=0; });
+      if(_needReload||lf.length||!_base){
+        _report(_needReload?['이전 저장이 보호 장치로 막혀 이후 저장도 막았습니다.\n→ 새로고침(F5) 후 다시 입력·저장해 주세요.']
+          :blockSave('화면을 열 때 일부 데이터를 불러오지 못해 저장을 막았습니다(빈 값으로 덮어쓰기 방지). 실패한 표: '+lf.join(', ')));
+        return;
+      }
       // schedule/defaultSchedule만 보호된 스냅샷(_lastSchedule/_lastDefaultSchedule)으로 old를 대체 —
       // cache.settings.schedule은 화면 코드가 이미 in-place로 새 값을 넣어놓은 상태라 old 기준으로 못 씀(위 주석 참고).
       // branches/classes/details는 기존 방식(자연키 매칭) 그대로 cache.settings를 사용.
       var oldForPlan=Object.assign({}, cache.settings||{}, { schedule:_lastSchedule||{}, defaultSchedule:_lastDefaultSchedule||{} });
       var p=plan(oldForPlan, v); applyIds(v,p);
       _lastSchedule=deepClone(v.schedule); _lastDefaultSchedule=deepClone(v.defaultSchedule);
-      _saveChain = _saveChain.then(function(){ return pushPlan(p); }).then(_report, function(e){ _report([String(e&&e.message||e)]); });
+      _saveChain = _saveChain.then(async function(){
+        if(_needReload) return blockSave('이전 저장이 보호 장치로 막혀 이 저장도 반영하지 않았습니다.');
+        var now=await fetchGuard();
+        if(!now) return blockSave('저장 직전 최신 데이터를 확인하지 못해 저장하지 않았습니다.');
+        var keys=guardKeys(p), changed=GUARD_TABLES.filter(function(t){ return rowsSig(_base[t],keys[t])!==rowsSig(now[t],keys[t]); });
+        if(changed.length) return blockSave('이 화면을 연 뒤 다른 곳(다른 탭·다른 관리자·SQL)에서 설정이 바뀌어, 덮어쓰지 않도록 저장을 막았습니다. 바뀐 표: '+changed.join(', '));
+        var errs=await pushPlan(p);
+        var after=await fetchGuard(); if(after) _base=after;   // 방금 저장한 상태를 새 기준으로
+        return errs;
+      }).then(_report, function(e){ _report([String(e&&e.message||e)]); });
     }
     else { lsSet(KEY_SET, v); }
     cache.settings = v;   // 안정 ID가 주입된 객체를 캐시 (다음 분해의 기준)
