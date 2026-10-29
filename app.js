@@ -470,9 +470,12 @@ function renderMap(){
 }
 /* 공간 폴더 칩 (갤러리와 동일 구조) */
 var spaceFolder='';
+/* 데이터(Supabase) 로드 전에는 갤러리·공간을 그리지 않음 — 안 그러면 예시 사진(GALLERY_PLACEHOLDER)이 잠깐 깜빡였다가 실제 사진으로 바뀜 */
+var dataReady=false;
 function spaceItemsAll(){var it=(getSettings().space||[]).filter(function(g){return g&&g.img;});if(!it.length)it=GALLERY_PLACEHOLDER;return it;}
 function spaceCover(fid){var inf=sortGal(spaceItemsAll().filter(function(g){return (g.folder||'')===fid;}));return inf[0]?inf[0].img:'';}
 function renderSpaceFolderChips(){
+  if(!dataReady)return;
   var box=document.getElementById('spaceFolders'); if(!box)return;
   var lang=curLang();
   var folders=(getSettings().spaceFolders||[]).slice().sort(function(a,b){return (Number(a.order)||999)-(Number(b.order)||999);});
@@ -562,6 +565,7 @@ function renderConcept(){
 }
 /* 홈 06 SPACE — 공간 사진 가로 스크롤(라운드 3:4), 폴더 필터 + 대표/순서 정렬 */
 function initSpaceCarousel(){
+  if(!dataReady)return;
   const track=document.getElementById('spaceTrack'); if(!track)return;
   const sec=document.getElementById('space');
   let items=spaceItemsAll();
@@ -584,6 +588,7 @@ var GALLERY_PLACEHOLDER=(function(){var a=[];var d=tri(
   for(var i=1;i<=20;i++){a.push({img:'assets/gallery-'+i+'.jpg',title:tri('',''),desc:d});}return a;})();
 /* 공간 페이지(space.html): 사진 그리드 + 사진별 번호·설명(관리자 › 공간 사진의 제목/설명, 비어 있으면 사진만). 설명은 alt에도 넣음 */
 function renderSpaceGrid(){
+  if(!dataReady)return;
   var grid=document.getElementById('spaceGrid'); if(!grid)return;
   var lang=curLang();
   var items=spaceItemsAll();
@@ -611,6 +616,7 @@ function sortGal(arr){return arr.slice().sort(function(a,b){var fa=a.featured?0:
 function galItems(){var it=(getSettings().gallery||[]).filter(function(g){return g&&g.img;});if(!it.length)it=GALLERY_PLACEHOLDER;return it;}
 function folderCover(fid){var inf=sortGal(galItems().filter(function(g){return (g.folder||'')===fid;}));return inf[0]?inf[0].img:'';}
 function renderFolderChips(){
+  if(!dataReady)return;
   var box=document.getElementById('galleryFolders'); if(!box)return;
   var lang=curLang();
   var folders=(getSettings().galleryFolders||[]).slice().sort(function(a,b){return (Number(a.order)||999)-(Number(b.order)||999);});
@@ -624,6 +630,7 @@ function renderFolderChips(){
   box.querySelectorAll('.folder-chip').forEach(function(b){b.addEventListener('click',function(){galleryFolder=b.dataset.fid||'';renderFolderChips();renderGallery();});});
 }
 function renderGallery(){
+  if(!dataReady)return;
   const grid=document.getElementById('galleryGrid'); if(!grid)return;
   const lang=curLang();
   let items=galItems();
@@ -1393,6 +1400,7 @@ function renderNavSocials(){
 }
 /* 데이터 로드(Supabase 또는 localStorage) 후 초기 렌더 */
 (window.LS ? LS.init() : Promise.resolve()).then(function(){
+  dataReady=true;
   applyActiveStates();
   renderClasses();
   renderLocation();
