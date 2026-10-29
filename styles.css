@@ -77,6 +77,14 @@ section[id],footer[id]{scroll-margin-top:80px}
   .nav-links a{padding:12px 16px}
   .menu-toggle{display:inline-flex}
 }
+/* 폭이 900px보다 넓어도 메뉴가 안 들어가면(분할 화면·긴 언어 문구) app.js fitHeader()가 단계적으로 축약:
+   nosub(부제 숨김) → compact(메뉴를 ≡로) → nocta(헤더 신청 버튼 숨김) */
+.hdr.nosub .brand-sep,.hdr.nosub .brand-sub,.hdr.nocta .hdr-cta{display:none}
+.hdr.compact .nav-links{display:none;position:absolute;top:64px;left:0;right:0;flex-direction:column;gap:2px;padding:8px;border-radius:22px;font-size:14px;
+  background:rgba(244,244,245,.96);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.8);box-shadow:0 14px 30px -12px rgba(0,0,0,.35)}
+.hdr.compact .nav-links.open{display:flex}
+.hdr.compact .nav-links a{padding:12px 16px}
+.hdr.compact .menu-toggle{display:inline-flex}
 @media(max-width:640px){
   .hdr{padding-left:18px}
   .hdr-cta{display:none}
