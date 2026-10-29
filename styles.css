@@ -33,9 +33,9 @@ section[id],footer[id]{scroll-margin-top:80px}
   .lift-ink:hover{transform:translateY(-4px);box-shadow:var(--glow-ink)}
 }
 
-/* ---------- 헤더 (상단 고정 글라스 pill) ---------- */
+/* ---------- 헤더 (상단 고정 글라스 pill) — 3열 그리드: 좌(로고)·가운데(메뉴)·우(SNS·언어·신청). SNS가 늦게 그려져도 메뉴 위치 고정 ---------- */
 .hdr-wrap{position:sticky;top:0;z-index:50;height:0;padding:12px clamp(12px,2cqw,24px) 0;overflow:visible}
-.hdr{position:relative;height:56px;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:0 10px 0 22px;border-radius:999px;
+.hdr{position:relative;height:56px;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:16px;padding:0 10px 0 22px;border-radius:999px;
   background:rgba(244,244,245,.72);-webkit-backdrop-filter:blur(22px) saturate(1.2);backdrop-filter:blur(22px) saturate(1.2);
   border:1px solid rgba(255,255,255,.75);box-shadow:0 10px 30px -14px rgba(0,0,0,.3)}
 .brand{display:flex;align-items:center;gap:10px;font-size:12px;font-weight:700;letter-spacing:.2em;white-space:nowrap}
@@ -46,7 +46,7 @@ section[id],footer[id]{scroll-margin-top:80px}
 .nav-links a{padding:8px 14px;border-radius:999px;color:var(--ink-soft);white-space:nowrap;transition:background .25s,color .25s}
 .nav-links a:hover{background:rgba(255,255,255,.8);color:var(--ink)}
 .nav-links a.active{background:var(--ink);color:#fff;font-weight:600}
-.hdr-r{display:flex;align-items:center;gap:8px}
+.hdr-r{grid-column:3;justify-self:end;display:flex;align-items:center;gap:8px}
 .icon-btn{flex:none;width:36px;height:36px;border-radius:50%;border:0;background:rgba(255,255,255,.7);color:var(--ink-soft);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;
   transition:transform .35s var(--ease),box-shadow .35s,background .25s,color .25s}
 .icon-btn .ic{width:16px;height:16px;display:block}
@@ -96,7 +96,11 @@ section[id],footer[id]{scroll-margin-top:80px}
 
 /* ---------- 히어로 ---------- */
 .hero{margin:0 clamp(12px,2cqw,24px);padding:clamp(128px,calc(145.26px - 1.348cqw),140px) clamp(20px,6cqw,96px) clamp(36px,5cqw,64px);
-  display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-end;height:100vh;height:100dvh;min-height:520px}
+  display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-end;height:100vh;height:100dvh;min-height:520px;position:relative;isolation:isolate}
+/* 기존 사이트 히어로의 메탈·마블 그라데이션 + 세로 결(동일 값) — 1120 폭 밖까지 화면 전체로 */
+.hero::before,.hero::after{content:"";position:absolute;top:0;bottom:0;left:50%;width:100vw;margin-left:-50vw;z-index:-1;pointer-events:none}
+.hero::before{background:radial-gradient(120% 90% at 30% 20%,#fbfbfc 0%,transparent 45%),linear-gradient(105deg,#cfd0d4 0%,#e5e6e8 18%,#b6b8bd 34%,#eceded 52%,#c2c4c9 70%,#dedfe2 88%,#b9bbc0 100%)}
+.hero::after{opacity:.5;mix-blend-mode:overlay;background:repeating-linear-gradient(90deg,rgba(255,255,255,0) 0 2px,rgba(255,255,255,.06) 2px 3px)}
 .eyebrow{font-size:11px;letter-spacing:.28em;color:var(--ink-soft);text-transform:uppercase}
 .hero-mark{display:flex;flex-direction:column;width:fit-content;max-width:100%;margin-top:14px}
 .hero h1{font-size:clamp(34px,7.4cqw,104px);line-height:.95;font-weight:700;letter-spacing:-.02em;white-space:nowrap}
@@ -136,8 +140,11 @@ section[id],footer[id]{scroll-margin-top:80px}
 
 /* ---------- 01 CONCEPT ---------- */
 .concept-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr));gap:clamp(12px,1.4cqw,18px)}
-.concept-figure{position:relative;min-height:360px;border-radius:28px;overflow:hidden;background:var(--metal-1);cursor:zoom-in}
-.concept-figure>img,.concept-figure>video,.concept-seq,.concept-seq>*{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+/* 컨셉 미디어: 자르지 않고 원본 비율 그대로(세로 영상 포함) — 박스가 미디어 크기에 맞춰짐 */
+.concept-figure{position:relative;width:fit-content;max-width:100%;justify-self:center;align-self:center;border-radius:28px;overflow:hidden;background:var(--metal-1);cursor:zoom-in;line-height:0}
+.concept-figure>img,.concept-figure>video,.concept-seq>:first-child{display:block;width:auto;height:auto;max-width:100%;max-height:min(72vh,720px)}
+.concept-seq{position:relative}
+.concept-seq>:not(:first-child){position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
 .concept-seq>*{opacity:0;transition:opacity .6s ease}
 .concept-seq>.on{opacity:1}
 .concept-copy{border-radius:28px;background:rgba(255,255,255,.62);padding:clamp(24px,3cqw,40px);display:flex;flex-direction:column;gap:28px;justify-content:space-between}

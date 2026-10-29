@@ -206,6 +206,7 @@ function setLang(lang){
   if(typeof renderSpaceFolderChips==='function') renderSpaceFolderChips(); // 공간 폴더 칩 언어 재적용
   if(typeof initSpaceCarousel==='function') initSpaceCarousel();   // 공간 마퀴 캡션 언어 재적용
   if(typeof renderSpaceGrid==='function') renderSpaceGrid();       // 공간 그리드(space.html) 캡션 언어 재적용
+  if(typeof renderNavSocials==='function') renderNavSocials();     // 첫 호출(페이지 로드 직후)엔 지난번 저장한 SNS를 즉시 그림 → 메뉴 밀림 방지
   if(typeof renderSiteInfo==='function') renderSiteInfo();         // 푸터 사업자정보 라벨 언어 재적용
 }
 document.querySelectorAll('.lang button[data-lang]').forEach(b=>{   // data-lang 있는 실제 언어 버튼만(토글 버튼은 data-lang이 없어서 제외됨)
