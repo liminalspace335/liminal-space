@@ -207,6 +207,7 @@ function setLang(lang){
   if(typeof initSpaceCarousel==='function') initSpaceCarousel();   // 공간 마퀴 캡션 언어 재적용
   if(typeof renderSpaceGrid==='function') renderSpaceGrid();       // 공간 그리드(space.html) 캡션 언어 재적용
   if(typeof renderNavSocials==='function') renderNavSocials();     // 첫 호출(페이지 로드 직후)엔 지난번 저장한 SNS를 즉시 그림 → 메뉴 밀림 방지
+  if(typeof fitHeader==='function') fitHeader();                   // 언어별 메뉴 문구 길이에 맞춰 헤더 축약 여부 다시 판단
   if(typeof renderSiteInfo==='function') renderSiteInfo();         // 푸터 사업자정보 라벨 언어 재적용
 }
 document.querySelectorAll('.lang button[data-lang]').forEach(b=>{   // data-lang 있는 실제 언어 버튼만(토글 버튼은 data-lang이 없어서 제외됨)
@@ -259,6 +260,20 @@ function renderFooterSocial(){
   el.innerHTML=links.join('');
 }
 
+/* ---------- 헤더 맞춤: 메뉴가 로고·오른쪽 버튼과 겹치거나 헤더 밖으로 넘치면 단계적으로 축약(CSS .hdr.nosub/.compact/.nocta) ---------- */
+function fitHeader(){
+  var h=document.querySelector('.hdr'); if(!h)return;
+  var nav=document.getElementById('navLinks'), br=h.querySelector('.brand'), rt=h.querySelector('.hdr-r'), steps=['nosub','compact','nocta'];
+  steps.forEach(function(c){ h.classList.remove(c); });
+  function tight(){
+    var hb=h.getBoundingClientRect(), a=br.getBoundingClientRect(), c=rt.getBoundingClientRect(), n=nav.getBoundingClientRect(), g=8;
+    if(c.right>hb.right-4||c.left<a.right+g) return true;                                   // 오른쪽 버튼이 넘치거나 로고와 겹침
+    return getComputedStyle(nav).position!=='absolute'&&n.width>0&&(n.left<a.right+g||n.right>c.left-g);   // 가운데 메뉴가 양옆과 겹침
+  }
+  for(var i=0;i<steps.length&&tight();i++) h.classList.add(steps[i]);
+}
+(function(){ var t=0; window.addEventListener('resize',function(){ cancelAnimationFrame(t); t=requestAnimationFrame(fitHeader); });
+  try{ if(document.fonts&&document.fonts.ready) document.fonts.ready.then(fitHeader); }catch(e){} })();
 /* ---------- mobile menu ---------- */
 document.getElementById('menuToggle').addEventListener('click',()=>{
   document.getElementById('navLinks').classList.toggle('open');
@@ -1374,6 +1389,7 @@ function renderNavSocials(){
   drop.classList.add('has-items');
   if(!box){ box=document.createElement('div'); box.className='socials'; box.id='navSocials'; drop.appendChild(box); }
   box.innerHTML=html;
+  fitHeader();
 }
 /* 데이터 로드(Supabase 또는 localStorage) 후 초기 렌더 */
 (window.LS ? LS.init() : Promise.resolve()).then(function(){
