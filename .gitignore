@@ -15,3 +15,8 @@ supabase/sql/admin_allowlist.sql
 supabase/sql/admin_permissions.sql
 supabase/sql/admin_master.sql
 supabase/sql/zalo_remind.sql
+# 실제 웹훅 시크릿 값이 들어있음 — 공개 저장소 커밋 금지
+supabase/sql/zalo_send.sql
+# 로컬 Claude 설정
+.claude/
+KakaoTalk_Photo_*.png
