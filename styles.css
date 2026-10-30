@@ -148,13 +148,13 @@ section[id],footer[id]{scroll-margin-top:80px}
 
 /* ---------- 01 CONCEPT ---------- */
 .concept-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr));gap:clamp(12px,1.4cqw,18px)}
-/* 컨셉 미디어: 자르지 않고 원본 비율 그대로(세로 영상 포함) — 박스가 미디어 크기에 맞춰짐 */
-.concept-figure{position:relative;width:fit-content;max-width:100%;justify-self:center;align-self:center;border-radius:28px;overflow:hidden;background:var(--metal-1);cursor:zoom-in;line-height:0}
-.concept-figure>img,.concept-figure>video,.concept-seq>:first-child{display:block;width:auto;height:auto;max-width:100%;max-height:min(72vh,720px)}
-.concept-seq{position:relative}
-.concept-seq>:not(:first-child){position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
+/* 컨셉 미디어: 자르지 않고 원본 비율 그대로. 데이터·영상이 오기 전부터 같은 크기 칸을 잡아 둠(--ar 기본 9:16, 실제 비율은 app.js가 기억)
+   → 오른쪽 카드가 작았다 커지지 않음. 한 열(모바일 등)에서는 오른쪽 카드와 같은 전체 폭 */
+.concept-figure{--ar:9 / 16;position:relative;aspect-ratio:var(--ar);height:min(72vh,720px);width:auto;max-width:100%;justify-self:center;align-self:center;border-radius:28px;overflow:hidden;background:var(--metal-1);cursor:zoom-in}
+.concept-figure img,.concept-figure video,.concept-seq{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:block}
 .concept-seq>*{opacity:0;transition:opacity .6s ease}
 .concept-seq>.on{opacity:1}
+@container (max-width:800px){.concept-figure{width:100%;height:auto}}
 .concept-copy{border-radius:28px;background:rgba(255,255,255,.62);padding:clamp(24px,3cqw,40px);display:flex;flex-direction:column;gap:28px;justify-content:space-between}
 .m-lead{font-size:clamp(15px,1.35cqw,18px);line-height:1.9;color:#2a2b2f;text-wrap:pretty}
 .pillars{display:flex;flex-direction:column;gap:6px}
@@ -181,6 +181,8 @@ section[id],footer[id]{scroll-margin-top:80px}
 }
 
 /* ---------- 03 PROGRAMS ---------- */
+.class-grid:empty{min-height:360px}
+@container (max-width:640px){.class-grid:empty{min-height:510px}}   /* 데이터 오기 전에도 자리를 잡아 아래 '진행 순서'가 먼저 올라와 보이지 않게 */
 .class-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:clamp(10px,1.2cqw,16px)}
 .class-empty{color:var(--ink-soft);font-size:14px;padding:20px 0}
 .sig-card{grid-column:1/-1;border-radius:28px;background:var(--ink);color:#fff;padding:clamp(22px,3cqw,36px);display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));
@@ -522,7 +524,7 @@ section[id],footer[id]{scroll-margin-top:80px}
 .ff input,.ff select,.ff textarea{width:100%;min-width:0;height:42px;border-radius:12px;border:0;background:#fff;padding:0 12px;font:inherit;font-size:13px;color:var(--ink);outline:none}
 .ff select{-webkit-appearance:none;appearance:none;padding-right:28px;
   background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%237a7c82' stroke-width='1.4'/%3E%3C/svg%3E") no-repeat right 12px center}
-.ff textarea{height:64px;padding:10px 12px;resize:vertical;line-height:1.5}
+.ff textarea{height:auto;min-height:64px;padding:10px 12px;resize:vertical;line-height:1.5}   /* 높이는 rows로(문의 전용은 기본 문구가 다 보이게 더 크게) */
 .ff input::placeholder,.ff textarea::placeholder{color:var(--mute)}
 .ff input:focus,.ff select:focus,.ff textarea:focus{box-shadow:inset 0 0 0 1.5px var(--ink)}
 .phone-row,.email-row{display:flex;gap:6px}
@@ -633,6 +635,8 @@ html[lang=vi] .srow .k,html[lang=ru] .srow .k,html[lang=en] .srow .k{width:76px;
   .am-toast{left:14px;right:14px;top:12px}
   .conf-card{margin-top:14px}
   .ff input,.ff select,.ff textarea{font-size:16px}   /* iOS 입력 확대 방지 */
+  .ppl .k{font-size:14px}
+  .ppl .r{font-size:13px}   /* 잔여석 잘 보이게 */
 }
 /* 웹 전용 값 */
 @media(min-width:641px){
