@@ -444,7 +444,7 @@ function renderLocation(){
   const box=document.getElementById('locInfo'); if(!box)return;
   const brs=(getSettings().branches||[]).filter(b=>b&&b.name); if(!brs.length)return;
   const lang=curLang();
-  const L=tr({en:{addr:'Address',hours:'Hours',contact:'Contact',map:'View on map ↗'},vi:{addr:'Địa chỉ',hours:'Giờ mở cửa',contact:'Liên hệ',map:'Xem bản đồ ↗'},
+  const L=tr({en:{addr:'Address',hours:'Hours',contact:'Contact',map:'View on map ↗'},vi:{addr:'Địa chỉ',hours:'Giờ mở cửa',contact:'Liên hệ',map:'Mở trong Google Maps ↗'},
     ru:{addr:'Адрес',hours:'Часы работы',contact:'Контакты',map:'Открыть карту ↗'},ko:{addr:'Address',hours:'Hours',contact:'Contact',map:'지도에서 보기 ↗'}},lang);
   const row=(k,v)=>`<div><div class="loc-k">${k}</div><div class="loc-v">${esc(v)}</div></div>`;
   box.innerHTML=brs.map((b,i)=>{
@@ -772,44 +772,44 @@ const AM={
     {ko:'프로그램',en:'Program',vi:'Chương trình',ru:'Программа'},
     {ko:'용량',en:'Volume',vi:'Dung tích',ru:'Объём'},
     {ko:'방문 정보',en:'Visit',vi:'Thông tin ghé thăm',ru:'Визит'},
-    {ko:'신청자 정보',en:'Your details',vi:'Thông tin của bạn',ru:'Ваши данные'}],
+    {ko:'신청자 정보',en:'Your details',vi:'Thông tin người đăng ký',ru:'Ваши данные'}],
   q:[null,
     {ko:'방문할 지점을 선택해 주세요.',en:'Please choose a branch to visit.',vi:'Vui lòng chọn chi nhánh bạn muốn đến.',ru:'Выберите филиал, который хотите посетить.'},
     {ko:'어떤 프로그램을 신청할까요?',en:'Which program would you like?',vi:'Bạn muốn đăng ký chương trình nào?',ru:'Какую программу вы выбираете?'},
     {ko:'완성할 향수 용량을 골라주세요.',en:'Choose your perfume volume.',vi:'Chọn dung tích nước hoa hoàn thiện.',ru:'Выберите объём духов.'},
     {ko:'방문 정보를 알려주세요.',en:'Tell us your visit details.',vi:'Cho chúng tôi biết thông tin ghé thăm.',ru:'Укажите детали визита.'},
     {ko:'신청자 정보를 입력하고 확인해 주세요.',en:'Enter your details and confirm.',vi:'Nhập thông tin và xác nhận.',ru:'Введите свои данные и подтвердите.'}],
-  edit:{ko:'변경',en:'Edit',vi:'Sửa',ru:'Изменить'},
+  edit:{ko:'변경',en:'Edit',vi:'Thay đổi',ru:'Изменить'},
   fold:{ko:'접기',en:'Collapse',vi:'Thu gọn',ru:'Свернуть'},
-  typing:{ko:'입력 중',en:'In progress',vi:'Đang nhập',ru:'Заполняется'},
+  typing:{ko:'입력 중',en:'In progress',vi:'Đang điền',ru:'Заполняется'},
   kept:{ko:'유지됨',en:'Kept',vi:'Giữ nguyên',ru:'Без изменений'},
-  editing:{ko:'변경 중',en:'Editing',vi:'Đang sửa',ru:'Изменение'},
-  current:{ko:'현재',en:'current',vi:'hiện tại',ru:'текущий'},
+  editing:{ko:'변경 중',en:'Editing',vi:'Đang thay đổi',ru:'Изменение'},
+  current:{ko:'현재',en:'current',vi:'đang chọn',ru:'текущий'},
   curSel:{ko:'현재 선택',en:'CURRENT',vi:'ĐANG CHỌN',ru:'ТЕКУЩИЙ'},
   cancel:{ko:'취소',en:'Cancel',vi:'Hủy',ru:'Отмена'},
   saveback:{ko:'저장하고 돌아가기',en:'Save & return',vi:'Lưu và quay lại',ru:'Сохранить и вернуться'},
-  editdesc:{ko:'저장하면 진행 중이던 단계로 바로 돌아갑니다.',en:'Saving takes you straight back to where you left off.',vi:'Lưu xong sẽ quay lại ngay bước bạn đang làm.',ru:'После сохранения вы сразу вернётесь к текущему шагу.'},
+  editdesc:{ko:'저장하면 진행 중이던 단계로 바로 돌아갑니다.',en:'Saving takes you straight back to where you left off.',vi:'Sau khi lưu, bạn sẽ quay lại ngay bước đang thực hiện.',ru:'После сохранения вы сразу вернётесь к текущему шагу.'},
   back:{ko:'이전',en:'Back',vi:'Quay lại',ru:'Назад'},
   next:{ko:'다음',en:'Next',vi:'Tiếp theo',ru:'Далее'},
   finish:{ko:'신청완료',en:'Confirm & apply',vi:'Hoàn tất đăng ký',ru:'Подтвердить запись'},
   ok:{ko:'확인',en:'Close',vi:'Đóng',ru:'Закрыть'},
   inqtag:{ko:'가격 문의',en:'Inquire for price',vi:'Liên hệ báo giá',ru:'Цена по запросу'},
-  inqnote:{ko:'가격 문의 프로그램은 용량 선택 없이 문의로 접수됩니다.',en:'Price-on-inquiry programs are sent as an inquiry, without choosing a volume.',vi:'Chương trình liên hệ báo giá được gửi dưới dạng yêu cầu, không cần chọn dung tích.',ru:'Программы с ценой по запросу отправляются как запрос, без выбора объёма.'},
+  inqnote:{ko:'가격 문의 프로그램은 용량 선택 없이 문의로 접수됩니다.',en:'Price-on-inquiry programs are sent as an inquiry, without choosing a volume.',vi:'Với chương trình liên hệ báo giá, bạn không cần chọn dung tích — chúng tôi sẽ liên hệ lại sau khi nhận yêu cầu.',ru:'Программы с ценой по запросу отправляются как запрос, без выбора объёма.'},
   soon:{ko:' · 오픈 준비중',en:' · Opening soon',vi:' · Sắp mở',ru:' · Скоро открытие'},
   map:{ko:'지도',en:'Map',vi:'Bản đồ',ru:'Карта'},
-  mapview:{ko:'지도에서 보기',en:'View on map',vi:'Xem bản đồ',ru:'Открыть карту'},
+  mapview:{ko:'지도에서 보기',en:'View on map',vi:'Mở trong Google Maps',ru:'Открыть карту'},
   pickdate:{ko:'날짜를 먼저 선택',en:'Select a date first',vi:'Chọn ngày trước',ru:'Сначала выберите дату'},
   people:{ko:'인원',en:'People',vi:'Số người',ru:'Гости'},
   low:{ko:'잔여 적음',en:'Few left',vi:'Còn ít chỗ',ru:'Мало мест'},
-  closed:{ko:'휴무',en:'Closed',vi:'Nghỉ',ru:'Выходной'},
-  full:{ko:'마감',en:'Full',vi:'Hết chỗ',ru:'Мест нет'},
+  closed:{ko:'휴무',en:'Closed',vi:'Ngày nghỉ',ru:'Выходной'},
+  full:{ko:'마감',en:'Full',vi:'Kín chỗ',ru:'Мест нет'},
   passed:{ko:'지난 시간',en:'Passed',vi:'Đã qua',ru:'Прошло'},
   amount:{ko:'결제 예정 금액',en:'Estimated payment',vi:'Số tiền dự kiến',ru:'Ориентировочная сумма'},
-  perOne:{ko:'1인 기준',en:'per person',vi:'mỗi người',ru:'за 1 человека'},
+  perOne:{ko:'1인 기준',en:'per person',vi:'cho 1 người',ru:'за 1 человека'},
   booking:{ko:'예약 정보',en:'Booking',vi:'Thông tin đặt lịch',ru:'Запись'},
   date:{ko:'날짜',en:'date',vi:'ngày',ru:'дата'},
   time:{ko:'시간',en:'time',vi:'giờ',ru:'время'},
-  keptMsg:{ko:'나머지 선택은 그대로 유지됩니다.',en:'Your other choices are kept.',vi:'Các lựa chọn khác được giữ nguyên.',ru:'Остальные данные сохранены.'},
+  keptMsg:{ko:'나머지 선택은 그대로 유지됩니다.',en:'Your other choices are kept.',vi:'Các lựa chọn khác vẫn được giữ nguyên.',ru:'Остальные данные сохранены.'},
   resetMsg:{ko:'다시 선택해 주세요: ',en:'Please choose again: ',vi:'Vui lòng chọn lại: ',ru:'Выберите заново: '}
 };
 const ERR={sel:{ko:'항목을 선택해 주세요.',en:'Please select an option.',vi:'Vui lòng chọn một mục.',ru:'Пожалуйста, выберите вариант.'},
@@ -827,7 +827,7 @@ function wdName(ds){const p=ymdParts(ds);return (WD[curLang()]||WD.ko)[new Date(
 function fmtDay(ds){if(!ds)return '';const p=ymdParts(ds);return p[1]+'.'+p[2]+' '+wdName(ds);}
 function fmtDate(ds){if(!ds)return '-';return ds.replace(/-/g,'.')+' ('+wdName(ds)+')';}
 function fmtDayLong(ds){const p=ymdParts(ds),loc={ko:'ko-KR',en:'en-US',vi:'vi-VN',ru:'ru-RU'}[curLang()]||'ko-KR';let w;try{w=new Intl.DateTimeFormat(loc,{weekday:'long',timeZone:'UTC'}).format(new Date(Date.UTC(p[0],p[1]-1,p[2])));}catch(e){w=wdName(ds);}return p[1]+'.'+p[2]+' '+w;}
-function monthLabel(y,m){const l=curLang();if(l==='ko')return y+'년 '+m+'월';if(l==='vi')return 'Tháng '+m+', '+y;
+function monthLabel(y,m){const l=curLang();if(l==='ko')return y+'년 '+m+'월';if(l==='vi')return 'Tháng '+m+' năm '+y;
   try{const s=new Intl.DateTimeFormat(l==='ru'?'ru-RU':'en-US',{month:'long',year:'numeric',timeZone:'UTC'}).format(new Date(Date.UTC(y,m-1,1)));return s.charAt(0).toUpperCase()+s.slice(1);}catch(e){return y+'.'+m;}}
 function addDays(ds,n){const p=ymdParts(ds),d=new Date(Date.UTC(p[0],p[1]-1,p[2]+n));return d.getUTCFullYear()+'-'+String(d.getUTCMonth()+1).padStart(2,'0')+'-'+String(d.getUTCDate()).padStart(2,'0');}
 function addMonths(ym,n){const p=ym.split('-'),d=new Date(Date.UTC(+p[0],+p[1]-1+n,1));return d.getUTCFullYear()+'-'+String(d.getUTCMonth()+1).padStart(2,'0');}
@@ -929,7 +929,7 @@ function branchHTML(mob){
       +(b.link?`<a class="map-a" href="${esc(b.link)}" target="_blank" rel="noopener">${esc(tr(AM.map))} ↗</a>`:'')+`</div>`;
     return `<div class="w-branch ${sel?'sel':''} ${ph?'':'nophoto'}" ${attr}>${ph?`<div class="wb-ph" style="background-image:url('${esc(imgUrl(ph,600))}')"></div>`:''}<div class="wb-in">`
       +`<div class="wb-top"><span>BRANCH ${String(i+1).padStart(2,'0')}</span>${sel?'<span class="ck">✓</span>':''}</div><div class="wb-name">${esc(branchLabel(b.name))}</div><div class="wb-hr"></div>`
-      +(loc?`<div class="wb-row"><span>ADDRESS</span><b>${esc(loc)}</b></div>`:'')+(hrs?`<div class="wb-row"><span>HOURS</span><b>${esc(hrs)}</b></div>`:'')
+      +(loc?`<div class="wb-row"><span>${esc(tr({ko:'ADDRESS',en:'ADDRESS',vi:'Địa chỉ',ru:'Адрес'}))}</span><b>${esc(loc)}</b></div>`:'')+(hrs?`<div class="wb-row"><span>${esc(tr({ko:'HOURS',en:'HOURS',vi:'Giờ mở cửa',ru:'Часы работы'}))}</span><b>${esc(hrs)}</b></div>`:'')
       +(b.link?`<a class="wb-map" href="${esc(b.link)}" target="_blank" rel="noopener">${esc(tr(AM.mapview))} ↗</a>`:'')+`</div></div>`;
   }).join('')+(mob?'</div>':'');
 }
@@ -1023,7 +1023,7 @@ function doneRow(s){
 }
 function pendRow(s){return `<div class="spend"><span class="num">${s}</span><span class="t">${esc(tr(AM.step[s]))}</span></div>`;}
 function stackCard(n,isEdit){
-  const t=tr(AM.step[n]), title=isEdit?tr({ko:t+' 변경',en:'Edit · '+t,vi:'Sửa · '+t,ru:'Изменить · '+t}):t;
+  const t=tr(AM.step[n]), title=isEdit?tr({ko:t+' 변경',en:'Edit · '+t,vi:'Thay đổi '+t.toLowerCase(),ru:'Изменить · '+t}):t;
   return `<div class="scard"><div class="scard-h"><span class="num-o">${n}</span><span class="scard-t">${esc(title)}</span>${isEdit?`<button type="button" class="scard-x" data-act="cancel">${esc(tr(AM.cancel))}</button>`:''}</div><div class="am-content">${stepHTML(n,true)}</div></div>`;
 }
 function mobileHTML(){
@@ -1075,7 +1075,7 @@ function panelHTML(){
   if(cur===6) return confirmHTML(false);
   if(cur===7) return doneHTML(false);
   const n=editing||cur;
-  const eb=editing?`STEP 0${n} · ${esc(tr(AM.edit))} <span class="am-badge">${esc(tr(AM.editing))}</span>`:`STEP 0${n} / 05`;
+  const eb=editing?`${tr({ko:`STEP 0${n}`,en:`STEP 0${n}`,vi:`BƯỚC ${n}`,ru:`ШАГ ${n}`})} · ${esc(tr(AM.edit))} <span class="am-badge">${esc(tr(AM.editing))}</span>`:tr({ko:`STEP 0${n} / 05`,en:`STEP 0${n} / 05`,vi:`BƯỚC ${n} / 5`,ru:`ШАГ ${n} / 5`});
   return `<div class="am-eyebrow">${eb}</div><h3 class="am-title">${esc(tr(AM.q[n]))}</h3>${editing?`<p class="am-desc">${esc(tr(AM.editdesc))}</p>`:''}<div class="am-content">${stepHTML(n,false)}</div>`;
 }
 function renderFoot(mob){
