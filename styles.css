@@ -110,11 +110,11 @@ section[id],footer[id]{scroll-margin-top:80px}
 .hero::before{background:radial-gradient(120% 90% at 30% 20%,#fbfbfc 0%,transparent 45%),linear-gradient(105deg,#cfd0d4 0%,#e5e6e8 18%,#b6b8bd 34%,#eceded 52%,#c2c4c9 70%,#dedfe2 88%,#b9bbc0 100%)}
 .hero::after{opacity:.5;mix-blend-mode:overlay;background:repeating-linear-gradient(90deg,rgba(255,255,255,0) 0 2px,rgba(255,255,255,.06) 2px 3px)}
 .eyebrow{font-size:11px;letter-spacing:.28em;color:var(--ink-soft);text-transform:uppercase}
-.hero-mark{display:flex;flex-direction:column;width:fit-content;max-width:100%;margin-top:14px}
-.hero h1{font-size:clamp(34px,7.4cqw,104px);line-height:.95;font-weight:700;letter-spacing:-.02em;white-space:nowrap}
+.hero-mark{--h1:clamp(34px,7.4cqw,104px);display:flex;flex-direction:column;width:fit-content;max-width:100%;margin-top:14px}
+.hero h1{font-size:var(--h1);line-height:.95;font-weight:700;letter-spacing:-.02em;white-space:nowrap}
 .hero h1.has-logo{line-height:0;white-space:normal}
 .hero h1 .hero-logo{display:block;width:100%;height:auto;max-width:min(96%,1040px);max-height:56vh}
-.hero-coord{display:flex;justify-content:space-between;margin-top:8px;font-size:clamp(18px,3cqw,40px);font-weight:500;color:#2c2d31;font-variant-numeric:tabular-nums}
+.hero-coord{display:flex;justify-content:space-between;width:0;min-width:100%;margin-top:8px;font-size:calc(var(--h1) * .4);font-weight:500;color:#2c2d31;font-variant-numeric:tabular-nums}
 .hero-coord span{display:inline-block;white-space:pre}
 .hero .sub{margin-top:22px;max-width:520px;font-size:15px;line-height:1.7;color:#2c2d31;text-wrap:pretty}
 .hero .meta{display:flex;gap:6px;flex-wrap:wrap;margin-top:28px}
@@ -156,7 +156,11 @@ section[id],footer[id]{scroll-margin-top:80px}
 .concept-seq>.on{opacity:1}
 @container (max-width:800px){.concept-figure{width:100%;height:auto}}
 .concept-copy{border-radius:28px;background:rgba(255,255,255,.62);padding:clamp(24px,3cqw,40px);display:flex;flex-direction:column;gap:28px;justify-content:space-between}
-.m-lead{font-size:clamp(15px,1.35cqw,18px);line-height:1.9;color:#2a2b2f;text-wrap:pretty}
+.m-lead{font-size:clamp(15px,1.35cqw,18px);line-height:1.9;color:#2a2b2f}
+html[lang=ko] .m-lead,html[lang=ko] .hero .sub{word-break:keep-all}
+/* 모바일 전용 줄바꿈(문장 단위) */
+.m-br{display:none}
+@media(max-width:640px){.m-br{display:inline}}
 .pillars{display:flex;flex-direction:column;gap:6px}
 .pillar{display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:16px;background:linear-gradient(165deg,#f4f4f5,#e3e3e5);border:1px solid rgba(255,255,255,.9)}
 .pillar .n{width:26px;height:26px;flex:none;border-radius:50%;border:1.5px solid var(--ink);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700}
