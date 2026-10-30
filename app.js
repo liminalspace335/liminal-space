@@ -369,6 +369,10 @@ function renderClasses(){
   const wrap=document.querySelector('#classes .class-grid'); if(!wrap)return;
   const tabs=document.getElementById('classTabs');
   const lang=curLang();
+  if(!dataReady){   // 데이터 로드 전: 지난번 그린 카드를 바로 보여 줌(늦게 끼어들며 아래 섹션이 밀리지 않게), 데이터가 오면 새로 그림
+    try{ const c=JSON.parse(localStorage.getItem('ls_cls_'+lang)||'null'); if(c){ wrap.innerHTML=c.g; if(tabs)tabs.innerHTML=c.t; } }catch(e){}
+    return;
+  }
   const L=tr({en:{inq:'Inquire for price',cta:'Apply',soon:'Opening soon',none:'No programs registered yet.'},
     vi:{inq:'Liên hệ báo giá',cta:'Đăng ký',soon:'Sắp mở',none:'Chưa có chương trình nào.'},
     ru:{inq:'Цена по запросу',cta:'Записаться',soon:'Скоро открытие',none:'Программы пока не добавлены.'},
@@ -397,6 +401,7 @@ function renderClasses(){
     const inner=`<div><div class="inq-t">${name}</div>${desc?`<div class="inq-d">${desc}</div>`:''}</div><span class="tag">${active?L.inq:L.soon}</span>`;
     return active?`<button type="button" class="inq-card lift" ${open}>${inner}</button>`:`<div class="inq-card is-soon">${inner}</div>`;
   }).join('');
+  try{ localStorage.setItem('ls_cls_'+lang,JSON.stringify({g:wrap.innerHTML,t:tabs?tabs.innerHTML:''})); }catch(e){}
 }
 /* 사이트 정보(브랜드명·연도)를 히어로 EST·푸터에 반영 */
 function renderSiteInfo(){
@@ -472,6 +477,13 @@ function renderMap(){
 var spaceFolder='';
 /* 데이터(Supabase) 로드 전에는 갤러리·공간을 그리지 않음 — 안 그러면 예시 사진(GALLERY_PLACEHOLDER)이 잠깐 깜빡였다가 실제 사진으로 바뀜 */
 var dataReady=false;
+/* 컨셉 칸 비율: 지난번 실제 영상/사진 비율을 기억해 두었다가 페이지가 열리자마자 적용 → 영상이 오기 전부터 같은 크기 */
+function fitConceptBox(fig){
+  var m=fig.querySelector('img,video'); if(!m)return;
+  function set(){ var w=m.videoWidth||m.naturalWidth, h=m.videoHeight||m.naturalHeight; if(!w||!h)return; var ar=w+' / '+h; fig.style.setProperty('--ar',ar); try{localStorage.setItem('ls_concept_ar',ar);}catch(e){} }
+  if(m.videoWidth||m.naturalWidth) set(); else m.addEventListener(m.tagName==='VIDEO'?'loadedmetadata':'load',set,{once:true});
+}
+(function(){ var f=document.querySelector('.concept-figure'), ar=null; try{ar=localStorage.getItem('ls_concept_ar');}catch(e){} if(f&&ar) f.style.setProperty('--ar',ar); })();
 function spaceItemsAll(){var it=(getSettings().space||[]).filter(function(g){return g&&g.img;});if(!it.length)it=GALLERY_PLACEHOLDER;return it;}
 function spaceCover(fid){var inf=sortGal(spaceItemsAll().filter(function(g){return (g.folder||'')===fid;}));return inf[0]?inf[0].img:'';}
 function renderSpaceFolderChips(){
@@ -537,6 +549,7 @@ function renderConcept(){
     var url=list[0];
     if(isVideoUrl(url)){ var auto=!!st.conceptAutoplay; fig.innerHTML='<video src="'+esc(url)+'" '+(auto?'autoplay ':'')+'muted loop playsinline preload="metadata" tabindex="0" data-hover="'+(auto?'pause':'play')+'"></video>'; }
     else fig.innerHTML=imgTag(url,1400,'LIMINAL SPACE — Eau de Parfum',' loading="lazy"');
+    fitConceptBox(fig);
     return;
   }
   // 다중(2~5개): 전부 미리 겹쳐 로드해 두고, 다음 미디어가 실제 재생되기 시작하면 위로 크로스페이드
@@ -544,6 +557,7 @@ function renderConcept(){
   var FADE=600, IMG_MS=5000, seq={t:0}; fig._seq=seq;
   function tag(u){ return isVideoUrl(u) ? '<video src="'+esc(u)+'" muted playsinline preload="auto" tabindex="0" data-hover="pause"></video>' : imgTag(u,1400,'LIMINAL SPACE — Eau de Parfum',' decoding="async"'); }
   fig.innerHTML='<div class="concept-seq">'+list.map(tag).join('')+'</div>';
+  fitConceptBox(fig);
   var els=[].slice.call(fig.querySelectorAll('.concept-seq > *')), cur=-1, z=1;
   function next(){ show((cur+1)%els.length); }
   function show(i){
@@ -1000,7 +1014,7 @@ function formHTML(){
     +`<div class="ff full"><label for="af-email">${L.email}</label><div class="email-row"><input id="af-email" type="email" data-field="email" autocomplete="email" value="${v('email')}"><select class="email-domain" aria-label="email domain">${emailDomainOptions()}</select></div></div>`
     +`<div class="ff"><label for="af-fb">${L.fb}</label><input id="af-fb" type="text" data-field="facebook" placeholder="${esc(L.pfb)}" value="${v('facebook')}"></div>`
     +`<div class="ff"><label for="af-ig">${L.ig}</label><input id="af-ig" type="text" data-field="instagram" placeholder="${esc(L.pig)}" value="${v('instagram')}"></div>`
-    +`<div class="ff full"><label for="af-msg">${L.msg}</label><textarea id="af-msg" data-field="msg" rows="2">${v('msg')}</textarea></div>`
+    +`<div class="ff full"><label for="af-msg">${L.msg}</label><textarea id="af-msg" data-field="msg" rows="${isInquiry()?6:3}">${v('msg')}</textarea></div>`
     +'</div>'+errHTML('contact',ERR.contact);
 }
 /* ---- 모바일: 스택 스텝 (끝낸 단계 → 완료 행 · 4단계부터 요약 행 · 현재 단계 카드 · 대기 행) ---- */
