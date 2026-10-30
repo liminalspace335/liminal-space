@@ -453,10 +453,27 @@
         if(blob && blob.size && blob.size<file.size){ upFile=blob; ext='jpg'; }
       }
       var path=(prefix||'img')+'/'+Date.now()+'_'+Math.random().toString(36).slice(2,8)+'.'+ext;
-      var up=await client.storage.from('images').upload(path, upFile, { upsert:false, contentType:upFile.type||'image/jpeg' });
-      if(up.error) return { error:(up.error.message||'업로드 실패') };
-      var pub=client.storage.from('images').getPublicUrl(path);
-      return { url:(pub && pub.data && pub.data.publicUrl)||'' };
+      var r=await uploadBlob(path, upFile);
+      if(r.error) return r;
+      // 갤러리·공간 사진은 화면용 작은 사본(800px)도 함께 저장 — 사이트가 유료 이미지 변환(장수 기준) 없이 바로 사용. 사본 실패는 업로드 실패로 보지 않음
+      if(THUMB_KINDS[prefix] && file.type && file.type.indexOf('image/')===0){ var t=await uploadThumb(file, prefix); if(t.url) r.thumb=t.url; }
+      return r;
+    }catch(e){ return { error:String(e&&e.message||e) }; }
+  }
+  var THUMB_KINDS={ gallery:1, space:1 };
+  async function uploadBlob(path, blob){
+    var up=await client.storage.from('images').upload(path, blob, { upsert:false, contentType:blob.type||'image/jpeg' });
+    if(up.error) return { error:(up.error.message||'업로드 실패') };
+    var pub=client.storage.from('images').getPublicUrl(path);
+    return { url:(pub && pub.data && pub.data.publicUrl)||'' };
+  }
+  /* 화면용 작은 사본(최대 800px JPEG)만 만들어 저장 — 관리자 '기존 사진 최적화'도 사용 */
+  async function uploadThumb(file, prefix){
+    if(!useRemote || !client || !client.storage) return { error:'Supabase 연결이 필요합니다.' };
+    try{
+      var b=await compressImage(file, 800, 0.8);
+      if(!b || b===file) return { error:'사본 생성 실패' };   // compressImage는 실패하면 원본을 그대로 돌려줌
+      return await uploadBlob((prefix||'img')+'/thumb_'+Date.now()+'_'+Math.random().toString(36).slice(2,8)+'.jpg', b);
     }catch(e){ return { error:String(e&&e.message||e) }; }
   }
 
@@ -488,6 +505,7 @@
     resendZalo:resendZalo,                // 잘로 재발송
     // 얕은 복사본을 반환 — 호출부가 받은 객체를 직접 수정해도 pushApps의 변경감지(캐시와의 JSON 비교)가
     // 같은 참조를 비교하는 바람에 "변경 없음"으로 오판해 저장이 누락되는 문제를 방지
+    uploadThumb:uploadThumb,
     getApps:function(){ return Array.isArray(cache.apps)?cache.apps.map(function(a){return Object.assign({},a);}):[]; }, setApps:setApps,
     getSettings:function(){ return (cache.settings&&typeof cache.settings==='object')?cache.settings:{}; }, setSettings:setSettings,
     onError:function(fn){ onErr=fn; },   // 저장 실패 콜백 등록

@@ -498,6 +498,10 @@
 
         <div class="subpanel" id="sub-media">
           <div class="box" style="max-width:1400px">
+            <h3>사진 최적화</h3><p class="desc">갤러리·공간 사진에 화면용 작은 사본(800px)을 만들고, 1MB가 넘는 원본은 1600px로 줄여 새로 저장합니다. 사이트가 작은 사본을 바로 써서 빨라지고, 유료 이미지 변환을 쓰지 않습니다. <b>기존 원본 파일은 지우지 않습니다.</b> 사진 수에 따라 몇 분 걸릴 수 있으니 끝날 때까지 이 창을 닫지 마세요. (새로 올리는 사진은 업로드할 때 자동으로 처리됩니다.)</p>
+            <div class="save-row"><button class="btn sm" id="optPhotos">기존 사진 최적화</button><span class="desc" id="optStatus" style="margin:0 0 0 10px"></span></div>
+          </div>
+          <div class="box" style="max-width:1400px">
             <h3>갤러리 폴더</h3><p class="desc">인덱스·갤러리 상단에 칩으로 표시됩니다. 폴더명(현재 입력 언어)·순서를 등록하세요. 각 폴더의 '대표' 1번 사진이 폴더 커버가 됩니다.</p>
             <div class="gen-row gf-row head-row"><div>순서</div><div>폴더명</div><div></div></div>
             <div id="gfList"></div>
@@ -610,8 +614,8 @@
 </div></div>
 
 <script src="../vendor/supabase-js-2.118.0.js"></script>   <!-- 외부 CDN 대신 사이트 안 고정 버전(npm 공식 패키지 원본) -->
-<script src="../config.js?v=72"></script>
-<script src="../store.js?v=72"></script>
+<script src="../config.js?v=73"></script>
+<script src="../store.js?v=73"></script>
 <script>
 const STORE_KEY='liminal_applications';
 const SET_KEY='liminal_settings';
@@ -744,7 +748,7 @@ const ACTION_MAP={
   defAdd:['settings','create'], defSave:['settings','update'],
   siteSave:['settings','update'], notifySave:['settings','update'],
   gfAdd:['settings','create'], gfSave:['settings','update'],
-  glAdd:['settings','create'], glSave:['settings','update'],
+  glAdd:['settings','create'], glSave:['settings','update'], optPhotos:['settings','update'],
   lgAdd:['settings','create'], lgSave:['settings','update'],
   sfAdd:['settings','create'], sfSave:['settings','update'],
   spAdd:['settings','create'], spSave:['settings','update'], pdSave:['settings','update'],
@@ -1180,6 +1184,38 @@ function renderAdmLang(){
   if(h){h.innerHTML=tabs(LANGS,lhLang);h.querySelectorAll('.pill-tab').forEach(b=>b.addEventListener('click',()=>{lhLang=b.dataset.l;renderLinkHub();}));}
 }
 function renderSettings(){renderAdmLang();renderBranches();renderBranchClasses();renderClassDetails();renderDefaults();renderGalleryFolders();renderGalleryItems();renderPartnerItems();renderSpaceFolders();renderSpaceItems();renderPageDescs();dimBlockedButtons();}
+/* ===== 기존 사진 최적화: 사본이 없는 갤러리·공간 사진에 800px 사본 생성 + 1MB 넘는 원본은 1600px로 새로 저장(원본 파일은 남김) → 끝나면 한 번에 저장 ===== */
+document.getElementById('optPhotos').addEventListener('click',async()=>{
+  const btn=document.getElementById('optPhotos'), st=document.getElementById('optStatus');
+  if(!(window.LS&&LS.uploadThumb)){alert('Supabase 연결이 필요합니다.');return;}
+  const s=loadSettings();
+  const isVid=u=>/\.(mp4|webm|ogg|ogv|mov|m4v)(\?|#|$)/i.test(u||'');
+  const items=[].concat((s.gallery||[]).map(g=>[g,'gallery']),(s.space||[]).map(g=>[g,'space']))
+    .filter(([g])=>g&&g.img&&!g.thumb&&!isVid(g.img)&&/\/storage\/v1\/object\/public\//.test(g.img));
+  if(!items.length){alert('최적화할 사진이 없습니다. (모든 사진에 작은 사본이 있습니다)');return;}
+  if(!confirm('갤러리·공간 사진 '+items.length+'장을 최적화합니다.\n기존 원본 파일은 지우지 않으며, 끝나면 자동으로 저장됩니다.\n진행할까요?'))return;
+  btn.disabled=true; let ok=0,fail=0,shrunk=0;
+  for(let i=0;i<items.length;i++){
+    const g=items[i][0], kind=items[i][1];
+    st.textContent=(i+1)+' / '+items.length+' 처리 중…';
+    try{
+      const res=await fetch(g.img); if(!res.ok) throw new Error('HTTP '+res.status);
+      const blob=await res.blob();
+      const file=new File([blob],(g.img.split('?')[0].split('/').pop()||'photo'),{type:blob.type||'image/jpeg'});
+      if(blob.size>1024*1024){   // 큰 원본: 1600px로 줄여 새 파일로(사본도 함께 생성됨)
+        const r=await LS.uploadImage(file,kind); if(!r||!r.url) throw new Error((r&&r.error)||'업로드 실패');
+        g.img=r.url; shrunk++; if(r.thumb) g.thumb=r.thumb;
+      }
+      if(!g.thumb){ const t=await LS.uploadThumb(file,kind); if(!t||!t.url) throw new Error((t&&t.error)||'사본 생성 실패'); g.thumb=t.url; }
+      ok++;
+    }catch(e){ fail++; console.warn('사진 최적화 실패',g.img,e); }
+  }
+  if(ok) saveSettings(s);   // 한 번에 저장(다른 곳에서 바뀌었으면 저장 보호 장치가 막고 알림)
+  btn.disabled=false;
+  st.textContent='완료: '+ok+'장 (원본 축소 '+shrunk+'장)'+(fail?', 실패 '+fail+'장':'');
+  renderGalleryItems(); renderSpaceItems();
+  alert('사진 최적화 완료: '+ok+'장 (원본 축소 '+shrunk+'장)'+(fail?'\n실패 '+fail+'장 — 다시 누르면 실패한 사진만 다시 시도합니다.':''));
+});
 /* ===== 서브페이지 설명(언어별, 비우면 사이트에서 영역 숨김) — site 밖 pageDesc에 저장('사이트 저장'이 site를 새로 만들어도 유지) ===== */
 const PAGE_DESC=[['brand','소개'],['space','공간'],['classes','클래스'],['gallery','갤러리'],['location','위치']];
 function renderPageDescs(){const box=document.getElementById('pdList');if(!box)return;const pd=loadSettings().pageDesc||{};
@@ -1211,7 +1247,7 @@ function renderSpaceItems(){
   bindUploads(list);
 }
 document.getElementById('spAdd').addEventListener('click',()=>{const s=loadSettings();s.space=s.space||[];s.space.push({img:'',title:{},desc:{},link:'',folder:'',featured:false,order:s.space.length+1});saveSettings(s);renderSpaceItems();});
-document.getElementById('spSave').addEventListener('click',()=>{const s=loadSettings();const prev=s.space||[];s.space=[...document.querySelectorAll('#spList .gl-row')].map(r=>{const p=prev[+r.dataset.i]||{};const title=Object.assign({},txObj(p.title));title[admLang]=r.querySelector('.sp-title').value.trim();const desc=Object.assign({},txObj(p.desc));desc[admLang]=r.querySelector('.sp-desc').value.trim();return {img:r.querySelector('.sp-img').value.trim(),title,desc,link:r.querySelector('.sp-link').value.trim(),folder:r.querySelector('.sp-folder').value,featured:r.querySelector('.sp-feat').checked,order:+r.querySelector('.sp-order').value||0};}).filter(g=>g.img||Lval(g.title,admLang));saveSettings(s);toast('spSaved');renderSpaceItems();});
+document.getElementById('spSave').addEventListener('click',()=>{const s=loadSettings();const prev=s.space||[];s.space=[...document.querySelectorAll('#spList .gl-row')].map(r=>{const p=prev[+r.dataset.i]||{};const title=Object.assign({},txObj(p.title));title[admLang]=r.querySelector('.sp-title').value.trim();const desc=Object.assign({},txObj(p.desc));desc[admLang]=r.querySelector('.sp-desc').value.trim();const img=r.querySelector('.sp-img').value.trim();return {img,thumb:thumbFor(img,p),title,desc,link:r.querySelector('.sp-link').value.trim(),folder:r.querySelector('.sp-folder').value,featured:r.querySelector('.sp-feat').checked,order:+r.querySelector('.sp-order').value||0};}).filter(g=>g.img||Lval(g.title,admLang));saveSettings(s);toast('spSaved');renderSpaceItems();});
 /* 갤러리 폴더 */
 function folderOpts(cur){const s=loadSettings();const fs=(s.galleryFolders||[]).slice().sort((a,b)=>(+a.order||999)-(+b.order||999));return '<option value="">(폴더 없음)</option>'+fs.map(f=>`<option value="${esc(f.id)}" ${f.id===cur?'selected':''}>${esc(Lval(f.name,admLang))}</option>`).join('');}
 function renderGalleryFolders(){
@@ -1238,6 +1274,9 @@ function renderGalleryItems(){
   list.querySelectorAll('.gl-del').forEach(b=>b.addEventListener('click',e=>e.target.closest('.gl-row').remove()));
   bindUploads(list);
 }
+/* 갤러리·공간 사진의 화면용 작은 사본 주소: 업로드 직후 받은 값(THUMBS) 또는 이미지가 그대로면 기존 값 유지. 이미지 주소를 바꾸면 사본은 비움 */
+const THUMBS={};
+function thumbFor(img,p){return THUMBS[img]||((p&&p.img===img&&p.thumb)||'');}
 function bindUploads(listEl){
   listEl.querySelectorAll('.upfile').forEach(inp=>inp.addEventListener('change',async e=>{
     const file=e.target.files&&e.target.files[0]; if(!file)return;
@@ -1248,12 +1287,12 @@ function bindUploads(listEl){
     let r={error:'사용 불가'};
     try{ r=await (window.LS&&LS.uploadImage?LS.uploadImage(file,kind):Promise.resolve({error:'Supabase 필요'})); }catch(err){ r={error:String(err)}; }
     if(txt)txt.textContent='⬆';
-    if(r&&r.url){ tgt.value=r.url; } else { alert('업로드 실패: '+((r&&r.error)||'알 수 없음')+'\n\nSupabase에 \"images\" 공개 버킷과 업로드 정책이 있어야 합니다.'); }
+    if(r&&r.url){ tgt.value=r.url; if(r.thumb) THUMBS[r.url]=r.thumb; } else { alert('업로드 실패: '+((r&&r.error)||'알 수 없음')+'\n\nSupabase에 \"images\" 공개 버킷과 업로드 정책이 있어야 합니다.'); }
     e.target.value='';
   }));
 }
 document.getElementById('glAdd').addEventListener('click',()=>{const s=loadSettings();s.gallery=s.gallery||[];s.gallery.push({img:'',title:{},desc:{},link:'',folder:'',featured:false,order:s.gallery.length+1});saveSettings(s);renderGalleryItems();});
-document.getElementById('glSave').addEventListener('click',()=>{const s=loadSettings();const prev=s.gallery||[];s.gallery=[...document.querySelectorAll('#glList .gl-row')].map(r=>{const p=prev[+r.dataset.i]||{};const title=Object.assign({},txObj(p.title));title[admLang]=r.querySelector('.gl-title').value.trim();const desc=Object.assign({},txObj(p.desc));desc[admLang]=r.querySelector('.gl-desc').value.trim();return {img:r.querySelector('.gl-img').value.trim(),title,desc,link:r.querySelector('.gl-link').value.trim(),folder:r.querySelector('.gl-folder').value,featured:r.querySelector('.gl-feat').checked,order:+r.querySelector('.gl-order').value||0};}).filter(g=>g.img||Lval(g.title,admLang));saveSettings(s);toast('glSaved');renderGalleryItems();});
+document.getElementById('glSave').addEventListener('click',()=>{const s=loadSettings();const prev=s.gallery||[];s.gallery=[...document.querySelectorAll('#glList .gl-row')].map(r=>{const p=prev[+r.dataset.i]||{};const title=Object.assign({},txObj(p.title));title[admLang]=r.querySelector('.gl-title').value.trim();const desc=Object.assign({},txObj(p.desc));desc[admLang]=r.querySelector('.gl-desc').value.trim();const img=r.querySelector('.gl-img').value.trim();return {img,thumb:thumbFor(img,p),title,desc,link:r.querySelector('.gl-link').value.trim(),folder:r.querySelector('.gl-folder').value,featured:r.querySelector('.gl-feat').checked,order:+r.querySelector('.gl-order').value||0};}).filter(g=>g.img||Lval(g.title,admLang));saveSettings(s);toast('glSaved');renderGalleryItems();});
 /* 협업·언론 로고 */
 function renderPartnerItems(){
   const list=document.getElementById('lgList'); if(!list)return;
