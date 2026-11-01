@@ -186,10 +186,9 @@ html[lang=ko] .m-lead,html[lang=ko] .hero .sub,html[lang=ko] .sec-head h2,html[l
 }
 
 /* 홈 02 GALLERY: 폴더 카드 흐름 — 시작점은 제목 왼쪽 선과 같게(왼쪽은 제목 선에서 잘림, 오른쪽은 끝까지) */
-.gcar{margin:-12px 0 -24px clamp(20px,4cqw,56px);padding:12px 0 24px;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;cursor:grab;overscroll-behavior-x:contain}
-.gcar::-webkit-scrollbar{display:none}
+.gcar{margin:-12px 0 -24px clamp(20px,4cqw,56px);padding:12px 0 24px;overflow:hidden;cursor:grab;touch-action:pan-y}
 .gcar.dragging{cursor:grabbing;user-select:none}
-.gcar-track{display:flex;gap:clamp(10px,1.2cqw,16px);width:max-content}
+.gcar-track{display:flex;gap:clamp(10px,1.2cqw,16px);width:max-content;will-change:transform}
 .gcard{flex:none;width:clamp(240px,24cqw,290px);border-radius:24px;background:rgba(255,255,255,.62);overflow:hidden;display:flex;flex-direction:column;-webkit-user-drag:none;transition:transform .35s var(--ease),box-shadow .35s}
 @media(hover:hover){.gcard:hover{transform:translateY(-4px);box-shadow:var(--glow)}}
 .gcard-ph{aspect-ratio:4/5;background:var(--metal-1);overflow:hidden}

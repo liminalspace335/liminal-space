@@ -571,14 +571,16 @@ function renderConcept(){
     }
     if(el.tagName==='VIDEO'){
       el.muted=true; el.currentTime=0; el._next=false;
-      el.addEventListener('playing',reveal,{once:true});
-      try{ var p=el.play(); if(p&&p.catch)p.catch(function(){}); }catch(e){}
+      if(!prev) reveal(); else el.addEventListener('playing',reveal,{once:true});   // 첫 미디어는 바로 보이게(아래 깔린 것이 없음, 숨긴 채로는 폰이 재생을 미루기도 함)
+      try{ var p=el.play(); if(p&&p.catch)p.catch(function(){ if(cur!==i) reveal(); }); }catch(e){}   // 자동재생이 막혀도(저전력 모드 등) 화면은 넘기고, 첫 터치 때 재생
     } else if(el.complete) reveal(); else el.addEventListener('load',reveal,{once:true});
   }
   els.forEach(function(el){ if(el.tagName==='VIDEO') el.addEventListener('timeupdate',function(){   // 끝나기 직전에 다음 것 재생 시작
     if(el===els[cur] && !el._next && el.duration && el.duration-el.currentTime<FADE/1000+0.3){ el._next=true; next(); } }); });
   show(0);
 }
+// 저전력 모드·데이터 절약 등으로 자동재생이 막힌 폰: 화면을 처음 터치할 때 컨셉 영상 재생
+document.addEventListener('touchend',function(){ document.querySelectorAll('.concept-figure > video[autoplay], .concept-seq > video.on').forEach(function(v){ if(v.paused){ try{ var p=v.play(); if(p&&p.catch)p.catch(function(){}); }catch(e){} } }); },{passive:true});
 /* 홈 06 SPACE — 공간 사진 가로 스크롤(라운드 3:4), 폴더 필터 + 대표/순서 정렬 */
 function initSpaceCarousel(){
   if(!dataReady)return;
@@ -629,12 +631,15 @@ function renderPageDesc(){
 }
 var galleryFolder=(function(){ try{ return new URLSearchParams(location.search).get('folder')||''; }catch(e){ return ''; } })();   // 활성 폴더 id — 홈 갤러리 카드에서 ?folder=로 넘어오면 그 폴더부터
 function sortGal(arr){return arr.slice().sort(function(a,b){var fa=a.featured?0:1,fb=b.featured?0:1;if(fa!==fb)return fa-fb;return (Number(a.order)||999)-(Number(b.order)||999);});}
-function galItems(){var it=(getSettings().gallery||[]).filter(function(g){return g&&g.img;});if(!it.length)it=GALLERY_PLACEHOLDER;return it;}
+var galCache=null; try{ galCache=JSON.parse(localStorage.getItem('ls_gal')||'null'); }catch(e){}   // 지난번 갤러리 데이터 → DB 응답 전에 바로 그림
+function galReady(){ return dataReady||!!galCache; }
+function galSrc(){ return (dataReady||!galCache)?{gallery:getSettings().gallery||[],folders:getSettings().galleryFolders||[]}:galCache; }
+function galItems(){var it=(galSrc().gallery||[]).filter(function(g){return g&&g.img;});if(!it.length)it=GALLERY_PLACEHOLDER;return it;}
 function renderFolderChips(){
-  if(!dataReady)return;
+  if(!galReady())return;
   var box=document.getElementById('galleryFolders'); if(!box)return;
   var lang=curLang();
-  var folders=(getSettings().galleryFolders||[]).slice().sort(function(a,b){return (Number(a.order)||999)-(Number(b.order)||999);});
+  var folders=(galSrc().folders||[]).slice().sort(function(a,b){return (Number(a.order)||999)-(Number(b.order)||999);});
   if(!folders.length){ box.innerHTML=''; box.style.display='none'; galleryFolder=''; return; }
   if(!galleryFolder || !folders.some(function(f){return f.id===galleryFolder;})) galleryFolder=folders[0].id;   // '전체' 제거 → 첫 폴더 기본 선택
   box.style.display='';
@@ -649,9 +654,9 @@ function renderFolderChips(){
    왼쪽으로 천천히 흐르고(마우스를 올리면 멈춤), 마우스 드래그·휠·터치로 넘김. 카드를 누르면 갤러리 페이지의 그 폴더 */
 function renderGalleryCarousel(){
   const el=document.getElementById('galleryCarousel'), track=document.getElementById('galleryCarTrack');
-  if(!el||!track||!dataReady)return;
+  if(!el||!track||!galReady())return;
   const lang=curLang(), all=galItems();
-  const folders=(getSettings().galleryFolders||[]).filter(f=>f&&f.home!==false).sort((a,b)=>(Number(a.order)||999)-(Number(b.order)||999));
+  const folders=(galSrc().folders||[]).filter(f=>f&&f.home!==false).sort((a,b)=>(Number(a.order)||999)-(Number(b.order)||999));
   let cards=folders.map(f=>{ const its=sortGal(all.filter(g=>(g.folder||'')===f.id)); return its.length?{name:Lval(f.name,lang),cover:its[0],n:its.length,href:'gallery.html?folder='+encodeURIComponent(f.id)}:null; }).filter(Boolean);
   if(!cards.length) cards=sortGal(all).slice(0,12).map(g=>({name:Lval(g.title,lang),cover:g,n:0,href:'gallery.html'}));   // 폴더가 없으면 사진 자체로
   const sec=document.getElementById('gallery'); if(sec) sec.style.display=cards.length?'':'none';
@@ -663,29 +668,29 @@ function renderGalleryCarousel(){
 function startCarousel(el){
   if(el._car){ el._car.measure(); return; }
   const track=el.firstElementChild, reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  let pos=0, w=0, hover=false, hold=false, idleUntil=0, last=0, ours=false, sx=0, sp=0, moved=false;
+  let pos=0, w=0, hover=false, hold=false, pid=null, idleUntil=0, last=0, sx=0, sp=0, moved=false;
   const SPEED=28;   // px/초
-  function set(){ ours=true; el.scrollLeft=pos; }
+  // 네이티브 스크롤 대신 transform으로 이동 — 아이폰 Safari에서 scrollLeft 자동 이동이 멈추던 문제
+  function set(){ track.style.transform='translate3d('+(-pos)+'px,0,0)'; }
   function norm(){ if(w){ while(pos<w) pos+=w; while(pos>=2*w) pos-=w; } }
   function measure(){ w=track.scrollWidth/3; if(w){ pos=w; set(); } }   // 처음엔 가운데 벌의 첫 카드가 제목 선에 오게
   function idle(){ idleUntil=performance.now()+1500; }
-  el.addEventListener('scroll',function(){ if(ours){ ours=false; return; } pos=el.scrollLeft; const b=pos; norm(); if(pos!==b) set(); idle(); },{passive:true});   // 터치·트랙패드 스크롤 동기화
   el.addEventListener('wheel',function(e){ const d=Math.abs(e.deltaX)>Math.abs(e.deltaY)?e.deltaX:e.deltaY; if(!d)return; e.preventDefault(); pos+=d; norm(); set(); idle(); },{passive:false});   // 세로 휠도 가로로
-  el.addEventListener('pointerdown',function(e){ if(e.pointerType!=='mouse'||e.button!==0)return; hold=true; moved=false; sx=e.clientX; sp=pos; });
-  window.addEventListener('pointermove',function(e){ if(!hold)return; const dx=e.clientX-sx; if(!moved&&Math.abs(dx)>5){ moved=true; el.classList.add('dragging'); } if(moved){ pos=sp-dx; norm(); set(); } });
-  window.addEventListener('pointerup',function(){ if(!hold)return; hold=false; el.classList.remove('dragging'); idle(); });
+  // 마우스·손가락 끌기 공통(CSS touch-action:pan-y → 세로로 밀면 페이지 스크롤, 가로로 밀면 카드 이동)
+  el.addEventListener('pointerdown',function(e){ if(e.pointerType==='mouse'&&e.button!==0)return; hold=true; pid=e.pointerId; moved=false; sx=e.clientX; sp=pos; });
+  window.addEventListener('pointermove',function(e){ if(!hold||e.pointerId!==pid)return; const dx=e.clientX-sx; if(!moved&&Math.abs(dx)>5){ moved=true; el.classList.add('dragging'); } if(moved){ pos=sp-dx; norm(); set(); } });
+  function up(e){ if(!hold||e.pointerId!==pid)return; hold=false; el.classList.remove('dragging'); idle(); }
+  window.addEventListener('pointerup',up); window.addEventListener('pointercancel',up);   // cancel: 세로 스크롤로 넘어간 경우
   el.addEventListener('click',function(e){ if(moved){ e.preventDefault(); e.stopPropagation(); moved=false; } },true);   // 끌었으면 카드 링크로 이동하지 않음
   el.addEventListener('pointerenter',function(e){ if(e.pointerType==='mouse') hover=true; });
   el.addEventListener('pointerleave',function(e){ if(e.pointerType==='mouse') hover=false; });
-  el.addEventListener('touchstart',function(){ hold=true; },{passive:true});
-  el.addEventListener('touchend',function(){ hold=false; idle(); },{passive:true});
   function tick(t){ const dt=last?Math.min(.05,(t-last)/1000):0; last=t; if(!reduce&&!hover&&!hold&&w&&t>idleUntil){ pos+=SPEED*dt; norm(); set(); } requestAnimationFrame(tick); }
   el._car={measure:measure};
   window.addEventListener('resize',measure);
   measure(); requestAnimationFrame(tick);
 }
 function renderGallery(){
-  if(!dataReady)return;
+  if(!galReady())return;
   const grid=document.getElementById('galleryGrid'); if(!grid)return;
   const lang=curLang();
   let items=galItems();
@@ -1456,6 +1461,7 @@ function renderNavSocials(){
 /* 데이터 로드(Supabase 또는 localStorage) 후 초기 렌더 */
 (window.LS ? LS.init() : Promise.resolve()).then(function(){
   dataReady=true;
+  try{ localStorage.setItem('ls_gal',JSON.stringify(galSrc())); }catch(e){}
   applyActiveStates();
   renderClasses();
   renderLocation();
@@ -1547,11 +1553,11 @@ function initEffects(){
   //   PAUSE_ON_HOVER: 컨셉 자동재생/순차영상 → 호버 시 정지 / 벗어나면 재생
   var PLAY_ON_HOVER='#galleryGrid video, #spaceGrid video, #spaceMarquee video, .concept-figure video[data-hover="play"]';
   var PAUSE_ON_HOVER='.concept-figure video[data-hover="pause"]';
-  document.addEventListener('mouseover',function(e){
+  document.addEventListener('pointerover',function(e){ if(e.pointerType!=='mouse')return;   // 폰에서 탭하면 호버로 잡혀 영상이 멈춰 버리던 문제
     var p=e.target.closest&&e.target.closest(PLAY_ON_HOVER); if(p){p.muted=true;try{p.play();}catch(_){}}
     var q=e.target.closest&&e.target.closest(PAUSE_ON_HOVER); if(q){try{q.pause();}catch(_){}}
   });
-  document.addEventListener('mouseout',function(e){
+  document.addEventListener('pointerout',function(e){ if(e.pointerType!=='mouse')return;
     var p=e.target.closest&&e.target.closest(PLAY_ON_HOVER); if(p){try{p.pause();}catch(_){}}
     var q=e.target.closest&&e.target.closest(PAUSE_ON_HOVER); if(q){try{q.play();}catch(_){}}
   });
