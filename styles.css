@@ -185,6 +185,28 @@ html[lang=ko] .m-lead,html[lang=ko] .hero .sub,html[lang=ko] .sec-head h2,html[l
   .gitem:hover .cap{opacity:1}
 }
 
+/* 홈 02 GALLERY: 폴더 카드 흐름 — 시작점은 제목 왼쪽 선과 같게(왼쪽은 제목 선에서 잘림, 오른쪽은 끝까지) */
+.gcar{margin:-12px 0 -24px clamp(20px,4cqw,56px);padding:12px 0 24px;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;cursor:grab;overscroll-behavior-x:contain}
+.gcar::-webkit-scrollbar{display:none}
+.gcar.dragging{cursor:grabbing;user-select:none}
+.gcar-track{display:flex;gap:clamp(10px,1.2cqw,16px);width:max-content}
+.gcard{flex:none;width:clamp(240px,24cqw,290px);border-radius:24px;background:rgba(255,255,255,.62);overflow:hidden;display:flex;flex-direction:column;-webkit-user-drag:none;transition:transform .35s var(--ease),box-shadow .35s}
+@media(hover:hover){.gcard:hover{transform:translateY(-4px);box-shadow:var(--glow)}}
+.gcard-ph{aspect-ratio:4/5;background:var(--metal-1);overflow:hidden}
+.gcard-ph img,.gcard-ph video{width:100%;height:100%;object-fit:cover;display:block;pointer-events:none;-webkit-user-drag:none}
+.gcard-b{padding:16px 18px 18px;display:flex;flex-direction:column;gap:6px}
+.gcard-t{font-size:16px;font-weight:600;letter-spacing:-.01em;line-height:1.3}
+.gcard-m{font-family:var(--mono);font-size:10px;color:var(--coord)}
+
+/* 갤러리 페이지: 그룹 버튼(이름 + 사진 수) → 그 그룹 사진 */
+.gchips{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 clamp(24px,3cqw,40px)}
+.gchips .folder-chip{height:44px;padding:0 18px;gap:10px;border-radius:999px;background:rgba(255,255,255,.7);color:var(--ink);font-size:13px;font-weight:600;transition:background .25s,color .25s}
+.gchips .folder-chip .fc-n{font-family:var(--mono);font-size:10px;font-weight:400;color:var(--coord)}
+.gchips .folder-chip.active{background:var(--ink);color:#fff}
+.gchips .folder-chip.active .fc-n{color:var(--mute)}
+@media(hover:hover){.gchips .folder-chip:not(.active):hover{background:#fff}}
+@media(max-width:640px){.gchips{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin-right:-20px;padding-right:20px}.gchips::-webkit-scrollbar{display:none}.gchips .folder-chip{flex:none}}   /* 모바일: 그룹 버튼 한 줄 가로 넘김 */
+
 /* ---------- 03 PROGRAMS ---------- */
 .class-grid:empty{min-height:360px}
 @container (max-width:640px){.class-grid:empty{min-height:510px}}   /* 데이터 오기 전에도 자리를 잡아 아래 '진행 순서'가 먼저 올라와 보이지 않게 */
