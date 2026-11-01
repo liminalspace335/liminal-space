@@ -462,7 +462,7 @@
   }
   var THUMB_KINDS={ gallery:1, space:1 };
   async function uploadBlob(path, blob){
-    var up=await client.storage.from('images').upload(path, blob, { upsert:false, contentType:blob.type||'image/jpeg' });
+    var up=await client.storage.from('images').upload(path, blob, { upsert:false, contentType:blob.type||'image/jpeg', cacheControl:'31536000' });
     if(up.error) return { error:(up.error.message||'업로드 실패') };
     var pub=client.storage.from('images').getPublicUrl(path);
     return { url:(pub && pub.data && pub.data.publicUrl)||'' };
