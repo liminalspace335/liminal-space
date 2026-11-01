@@ -673,7 +673,7 @@ function startCarousel(el){
   // 네이티브 스크롤 대신 transform으로 이동 — 아이폰 Safari에서 scrollLeft 자동 이동이 멈추던 문제
   function set(){ track.style.transform='translate3d('+(-pos)+'px,0,0)'; }
   function norm(){ if(w){ while(pos<w) pos+=w; while(pos>=2*w) pos-=w; } }
-  function measure(){ w=track.scrollWidth/3; if(w){ pos=w; set(); } }   // 처음엔 가운데 벌의 첫 카드가 제목 선에 오게
+  function measure(){ const first=!w; w=track.scrollWidth/3; if(w){ if(first) pos=w; else norm(); set(); } }   // 처음엔 가운데 벌의 첫 카드가 제목 선에 오게. 그 뒤(폰 주소창이 접히며 생기는 resize, 데이터 갱신)엔 위치 유지
   function idle(){ idleUntil=performance.now()+1500; }
   el.addEventListener('wheel',function(e){ const d=Math.abs(e.deltaX)>Math.abs(e.deltaY)?e.deltaX:e.deltaY; if(!d)return; e.preventDefault(); pos+=d; norm(); set(); idle(); },{passive:false});   // 세로 휠도 가로로
   // 마우스·손가락 끌기 공통(CSS touch-action:pan-y → 세로로 밀면 페이지 스크롤, 가로로 밀면 카드 이동)
