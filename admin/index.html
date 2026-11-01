@@ -150,6 +150,7 @@
   .cd-row{grid-template-columns:1fr 1fr 82px .58fr .58fr .58fr 82px 70px 1fr 56px}
   #sub-detail .box{max-width:1500px}
   .gf-row{grid-template-columns:64px 1fr 44px}
+  .gf-row.gfh{grid-template-columns:64px 1fr 72px 44px}
   .gl-row{grid-template-columns:1.2fr .85fr 1fr .8fr 46px 54px .7fr 38px}
   .lg-row{grid-template-columns:1fr 1.4fr 46px 54px 1fr 38px}
   .lhi-row{grid-template-columns:110px 46px 1fr 70px}
@@ -502,8 +503,8 @@
             <div class="save-row"><button class="btn sm" id="optPhotos">기존 사진 최적화</button><span class="desc" id="optStatus" style="margin:0 0 0 10px"></span></div>
           </div>
           <div class="box" style="max-width:1400px">
-            <h3>갤러리 폴더</h3><p class="desc">인덱스·갤러리 상단에 칩으로 표시됩니다. 폴더명(현재 입력 언어)·순서를 등록하세요. 각 폴더의 '대표' 1번 사진이 폴더 커버가 됩니다.</p>
-            <div class="gen-row gf-row head-row"><div>순서</div><div>폴더명</div><div></div></div>
+            <h3>갤러리 폴더</h3><p class="desc">갤러리 페이지 상단 칩, 그리고 <b>홈 갤러리(왼쪽으로 흐르는 카드)</b>에 표시됩니다. 폴더명(현재 입력 언어)·순서를 등록하세요. 각 폴더의 '대표' 1번 사진이 폴더 커버가 됩니다. <b>홈 표시</b>를 끄면 홈 카드에서만 빠지고 갤러리 페이지에는 그대로 나옵니다.</p>
+            <div class="gen-row gf-row gfh head-row"><div>순서</div><div>폴더명</div><div>홈 표시</div><div></div></div>
             <div id="gfList"></div>
             <div class="save-row"><button class="btn ghost sm" id="gfAdd">+ 폴더 추가</button><button class="btn sm" id="gfSave">저장</button><span class="saved" id="gfSaved">저장됨 ✓</span></div>
           </div>
@@ -614,8 +615,8 @@
 </div></div>
 
 <script src="../vendor/supabase-js-2.118.0.js"></script>   <!-- 외부 CDN 대신 사이트 안 고정 버전(npm 공식 패키지 원본) -->
-<script src="../config.js?v=75"></script>
-<script src="../store.js?v=75"></script>
+<script src="../config.js?v=76"></script>
+<script src="../store.js?v=76"></script>
 <script>
 const STORE_KEY='liminal_applications';
 const SET_KEY='liminal_settings';
@@ -1256,11 +1257,11 @@ function folderOpts(cur){const s=loadSettings();const fs=(s.galleryFolders||[]).
 function renderGalleryFolders(){
   const list=document.getElementById('gfList'); if(!list)return;
   const s=loadSettings();const fs=(s.galleryFolders||[]).slice().sort((a,b)=>(+a.order||999)-(+b.order||999));
-  list.innerHTML=fs.map((f,i)=>`<div class="gen-row gf-row" data-id="${f.id}"><input type="number" class="gf-order" value="${f.order??(i+1)}" /><input class="gf-name" value="${esc(Lval(f.name,admLang))}" placeholder="폴더명 (${admLang})" /><button class="icon-btn gf-del">삭제</button></div>`).join('');
+  list.innerHTML=fs.map((f,i)=>`<div class="gen-row gf-row gfh" data-id="${f.id}"><input type="number" class="gf-order" value="${f.order??(i+1)}" /><input class="gf-name" value="${esc(Lval(f.name,admLang))}" placeholder="폴더명 (${admLang})" /><label class="ck" title="홈 갤러리 카드에 표시"><input type="checkbox" class="gf-home" ${f.home!==false?'checked':''} /></label><button class="icon-btn gf-del">삭제</button></div>`).join('');
   list.querySelectorAll('.gf-del').forEach(b=>b.addEventListener('click',e=>e.target.closest('.gf-row').remove()));
 }
 document.getElementById('gfAdd').addEventListener('click',()=>{const s=loadSettings();s.galleryFolders=s.galleryFolders||[];s.galleryFolders.push({id:'f_'+Date.now().toString(36),name:{},order:s.galleryFolders.length+1});saveSettings(s);renderGalleryFolders();renderGalleryItems();});
-document.getElementById('gfSave').addEventListener('click',()=>{const s=loadSettings();const prev=s.galleryFolders||[];s.galleryFolders=[...document.querySelectorAll('#gfList .gf-row')].map(r=>{const id=r.dataset.id||('f_'+Date.now().toString(36)+Math.random().toString(36).slice(2,5));const p=prev.find(x=>x.id===r.dataset.id)||{};const name=Object.assign({},txObj(p.name));name[admLang]=r.querySelector('.gf-name').value.trim();return {id,name,order:+r.querySelector('.gf-order').value||0};}).filter(f=>Lval(f.name,admLang)).sort((a,b)=>a.order-b.order);saveSettings(s);toast('gfSaved');renderGalleryFolders();renderGalleryItems();});
+document.getElementById('gfSave').addEventListener('click',()=>{const s=loadSettings();const prev=s.galleryFolders||[];s.galleryFolders=[...document.querySelectorAll('#gfList .gf-row')].map(r=>{const id=r.dataset.id||('f_'+Date.now().toString(36)+Math.random().toString(36).slice(2,5));const p=prev.find(x=>x.id===r.dataset.id)||{};const name=Object.assign({},txObj(p.name));name[admLang]=r.querySelector('.gf-name').value.trim();const hm=r.querySelector('.gf-home');return {id,name,order:+r.querySelector('.gf-order').value||0,home:hm?hm.checked:(p.home!==false)};}).filter(f=>Lval(f.name,admLang)).sort((a,b)=>a.order-b.order);saveSettings(s);toast('gfSaved');renderGalleryFolders();renderGalleryItems();});
 /* 갤러리 항목 (랜딩 05) */
 function renderGalleryItems(){
   const list=document.getElementById('glList'); if(!list)return;

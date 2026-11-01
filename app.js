@@ -202,6 +202,7 @@ function setLang(lang){
   if(typeof renderMap==='function') renderMap();                  // 지도(언어별 위치 텍스트) 재적용
   if(typeof renderFolderChips==='function') renderFolderChips();  // 폴더 칩 언어 재적용
   if(typeof renderGallery==='function') renderGallery();          // 갤러리 캡션 언어 재적용
+  if(typeof renderGalleryCarousel==='function') renderGalleryCarousel();
   if(typeof renderPartners==='function') renderPartners();
   if(typeof renderSpaceFolderChips==='function') renderSpaceFolderChips(); // 공간 폴더 칩 언어 재적용
   if(typeof initSpaceCarousel==='function') initSpaceCarousel();   // 공간 마퀴 캡션 언어 재적용
@@ -626,7 +627,7 @@ function renderPageDesc(){
   box.innerHTML='<span class="sec-label">ABOUT THIS '+esc(box.dataset.en)+'</span><div class="page-desc-body">'+txt.split(/\n+/).map(function(p){return '<p>'+esc(p)+'</p>';}).join('')+'</div>';
   box.hidden=false;
 }
-var galleryFolder='';   // 활성 폴더 id ('' = 전체)
+var galleryFolder=(function(){ try{ return new URLSearchParams(location.search).get('folder')||''; }catch(e){ return ''; } })();   // 활성 폴더 id — 홈 갤러리 카드에서 ?folder=로 넘어오면 그 폴더부터
 function sortGal(arr){return arr.slice().sort(function(a,b){var fa=a.featured?0:1,fb=b.featured?0:1;if(fa!==fb)return fa-fb;return (Number(a.order)||999)-(Number(b.order)||999);});}
 function galItems(){var it=(getSettings().gallery||[]).filter(function(g){return g&&g.img;});if(!it.length)it=GALLERY_PLACEHOLDER;return it;}
 function folderCover(fid){var inf=sortGal(galItems().filter(function(g){return (g.folder||'')===fid;}));return inf[0]?inf[0].img:'';}
@@ -643,6 +644,45 @@ function renderFolderChips(){
   folders.forEach(function(f){ html+=chip(f.id,Lval(f.name,lang),folderCover(f.id)); });
   box.innerHTML=html;
   box.querySelectorAll('.folder-chip').forEach(function(b){b.addEventListener('click',function(){galleryFolder=b.dataset.fid||'';renderFolderChips();renderGallery();});});
+}
+/* 홈 02 GALLERY — 관리자 '홈 표시'가 켜진 갤러리 폴더(순서대로)를 카드로. 커버는 폴더의 대표/첫 사진.
+   왼쪽으로 천천히 흐르고(마우스를 올리면 멈춤), 마우스 드래그·휠·터치로 넘김. 카드를 누르면 갤러리 페이지의 그 폴더 */
+function renderGalleryCarousel(){
+  const el=document.getElementById('galleryCarousel'), track=document.getElementById('galleryCarTrack');
+  if(!el||!track||!dataReady)return;
+  const lang=curLang(), all=galItems();
+  const folders=(getSettings().galleryFolders||[]).filter(f=>f&&f.home!==false).sort((a,b)=>(Number(a.order)||999)-(Number(b.order)||999));
+  let cards=folders.map(f=>{ const its=sortGal(all.filter(g=>(g.folder||'')===f.id)); return its.length?{name:Lval(f.name,lang),cover:its[0],n:its.length,href:'gallery.html?folder='+encodeURIComponent(f.id)}:null; }).filter(Boolean);
+  if(!cards.length) cards=sortGal(all).slice(0,12).map(g=>({name:Lval(g.title,lang),cover:g,n:0,href:'gallery.html'}));   // 폴더가 없으면 사진 자체로
+  const sec=document.getElementById('gallery'); if(sec) sec.style.display=cards.length?'':'none';
+  const one=cards.map(c=>`<a class="gcard" href="${esc(c.href)}" draggable="false"><div class="gcard-ph">${mediaHTML(c.cover.img,c.name||'LIMINAL SPACE',false,c.cover.thumb)}</div>`
+    +`<div class="gcard-b">${c.name?`<div class="gcard-t">${esc(c.name)}</div>`:''}${c.n?`<span class="gcard-m">PHOTOS ${c.n}</span>`:''}</div></a>`).join('');
+  track.innerHTML=one+one+one;   // 끊김 없이 돌도록 3벌(가운데 벌에서 시작)
+  startCarousel(el);
+}
+function startCarousel(el){
+  if(el._car){ el._car.measure(); return; }
+  const track=el.firstElementChild, reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let pos=0, w=0, hover=false, hold=false, idleUntil=0, last=0, ours=false, sx=0, sp=0, moved=false;
+  const SPEED=28;   // px/초
+  function set(){ ours=true; el.scrollLeft=pos; }
+  function norm(){ if(w){ while(pos<w) pos+=w; while(pos>=2*w) pos-=w; } }
+  function measure(){ w=track.scrollWidth/3; if(w){ pos=w; set(); } }   // 처음엔 가운데 벌의 첫 카드가 제목 선에 오게
+  function idle(){ idleUntil=performance.now()+1500; }
+  el.addEventListener('scroll',function(){ if(ours){ ours=false; return; } pos=el.scrollLeft; const b=pos; norm(); if(pos!==b) set(); idle(); },{passive:true});   // 터치·트랙패드 스크롤 동기화
+  el.addEventListener('wheel',function(e){ const d=Math.abs(e.deltaX)>Math.abs(e.deltaY)?e.deltaX:e.deltaY; if(!d)return; e.preventDefault(); pos+=d; norm(); set(); idle(); },{passive:false});   // 세로 휠도 가로로
+  el.addEventListener('pointerdown',function(e){ if(e.pointerType!=='mouse'||e.button!==0)return; hold=true; moved=false; sx=e.clientX; sp=pos; });
+  window.addEventListener('pointermove',function(e){ if(!hold)return; const dx=e.clientX-sx; if(!moved&&Math.abs(dx)>5){ moved=true; el.classList.add('dragging'); } if(moved){ pos=sp-dx; norm(); set(); } });
+  window.addEventListener('pointerup',function(){ if(!hold)return; hold=false; el.classList.remove('dragging'); idle(); });
+  el.addEventListener('click',function(e){ if(moved){ e.preventDefault(); e.stopPropagation(); moved=false; } },true);   // 끌었으면 카드 링크로 이동하지 않음
+  el.addEventListener('pointerenter',function(e){ if(e.pointerType==='mouse') hover=true; });
+  el.addEventListener('pointerleave',function(e){ if(e.pointerType==='mouse') hover=false; });
+  el.addEventListener('touchstart',function(){ hold=true; },{passive:true});
+  el.addEventListener('touchend',function(){ hold=false; idle(); },{passive:true});
+  function tick(t){ const dt=last?Math.min(.05,(t-last)/1000):0; last=t; if(!reduce&&!hover&&!hold&&w&&t>idleUntil){ pos+=SPEED*dt; norm(); set(); } requestAnimationFrame(tick); }
+  el._car={measure:measure};
+  window.addEventListener('resize',measure);
+  measure(); requestAnimationFrame(tick);
 }
 function renderGallery(){
   if(!dataReady)return;
@@ -1430,6 +1470,7 @@ function renderNavSocials(){
   renderSpaceGrid();
   renderFolderChips();
   renderGallery();
+  renderGalleryCarousel();
   renderPartners();
   renderMctaPrice();
   renderPageDesc();
