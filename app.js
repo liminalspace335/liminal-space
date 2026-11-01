@@ -509,12 +509,13 @@ function imgUrl(u,w){ if(!u||!/\/storage\/v1\/object\/public\/[^?#]+\.(png|jpe?g
   return u.split('?')[0].replace('/storage/v1/object/public/','/storage/v1/render/image/public/')+'?width='+w+'&height='+w+'&resize=contain&quality=75'; }   // 가로·세로 모두 w 안에 비율 유지(width만 주면 원본 높이로 잘림)
 function imgFallback(el){ var o=el.getAttribute('data-orig'); if(o&&el.getAttribute('src')!==o) el.src=o; }
 function imgTag(url,w,alt,extra){ return '<img src="'+esc(imgUrl(url,w))+'" data-orig="'+esc(url)+'" onerror="imgFallback(this)" alt="'+esc(alt)+'"'+(extra||'')+'>'; }
-function mediaHTML(url,alt,view){
+function mediaHTML(url,alt,view,thumb){   // thumb: 관리자에서 만든 화면용 작은 사본(있으면 이미지 변환 없이 그대로 사용)
   var u=esc(url||'');
   if(isVideoUrl(url)){
     return view ? '<video src="'+u+'" controls playsinline preload="metadata"></video>'
                 : '<video src="'+u+'" muted loop playsinline preload="metadata" tabindex="0"></video>';   // 카드: 음소거·호버 시 재생
   }
+  if(thumb) return '<img src="'+esc(thumb)+'" data-orig="'+esc(url)+'" data-opt="1" onerror="imgFallback(this)" alt="'+esc(alt||'LIMINAL SPACE')+'" loading="lazy" decoding="async">';
   return imgTag(url,800,alt||'LIMINAL SPACE',' loading="lazy" decoding="async"');
 }
 /* 히어로 로고 — 어드민에서 이미지 설정 시 텍스트 대신 이미지(좌측정렬 유지) */
@@ -590,7 +591,7 @@ function initSpaceCarousel(){
   const lang=curLang();
   track.innerHTML=items.map(g=>{
     const t=Lval(g.title,lang), d=Lval(g.desc,lang);
-    return `<div class="mcard"><div class="mc-img">${mediaHTML(g.img,t||d||'LIMINAL SPACE')}</div>`
+    return `<div class="mcard"><div class="mc-img">${mediaHTML(g.img,t||d||'LIMINAL SPACE',false,g.thumb)}</div>`
       +((t||d)?`<div class="mc-cap">${t?`<div class="mc-t">${esc(t)}</div>`:''}${d?`<div class="mc-d">${esc(d)}</div>`:''}</div>`:'')+`</div>`;
   }).join('');
 }
@@ -610,7 +611,7 @@ function renderSpaceGrid(){
   items=sortGal(items);
   grid.innerHTML=items.map(function(g,i){
     var t=Lval(g.title,lang).trim(), d=Lval(g.desc,lang).trim(), cap=[t,d].filter(Boolean).join(' — ');
-    var media=mediaHTML(g.img,cap||'LIMINAL SPACE');
+    var media=mediaHTML(g.img,cap||'LIMINAL SPACE',false,g.thumb);
     var box=g.link?'<a class="gitem" href="'+esc(g.link)+'" target="_blank" rel="noopener">'+media+'</a>':'<div class="gitem" data-cap="'+esc(cap)+'">'+media+'</div>';
     var fc=cap?'<figcaption class="space-cap"><span class="n">'+String(i+1).padStart(2,'0')+'</span><span class="t">'+(t?'<b>'+esc(t)+'</b>'+(d?' ':''):'')+esc(d)+'</span></figcaption>':'';
     return '<figure class="space-fig">'+box+fc+'</figure>';
@@ -653,7 +654,7 @@ function renderGallery(){
   if(!grid.hasAttribute('data-full')) items=items.slice(0,8);   // 홈은 8개, 갤러리 페이지(data-full)는 전체
   grid.innerHTML=items.map(g=>{
     const t=esc(Lval(g.title,lang)), d=esc(Lval(g.desc,lang));
-    const inner=`${mediaHTML(g.img,(t||'LIMINAL SPACE'))}${(t||d)?`<div class="cap">${t?`<div class="gcap-t">${t}</div>`:''}${d?`<div class="gcap-d">${d}</div>`:''}</div>`:''}`;
+    const inner=`${mediaHTML(g.img,(t||'LIMINAL SPACE'),false,g.thumb)}${(t||d)?`<div class="cap">${t?`<div class="gcap-t">${t}</div>`:''}${d?`<div class="gcap-d">${d}</div>`:''}</div>`:''}`;
     return g.link?`<a class="gitem" href="${esc(g.link)}" target="_blank" rel="noopener">${inner}</a>`:`<div class="gitem">${inner}</div>`;
   }).join('');
 }
@@ -917,7 +918,7 @@ function stepHTML(n,mob){
   if(n===4) return visitHTML(mob);
   return formHTML();
 }
-function spacePhoto(){const g=sortGal(spaceItemsAll()).find(x=>x.img&&!isVideoUrl(x.img));return g?g.img:'';}
+function spacePhoto(){const g=sortGal(spaceItemsAll()).find(x=>x.img&&!isVideoUrl(x.img));return g?(g.thumb||imgUrl(g.img,600)):'';}
 function branchHTML(mob){
   const brs=(getSettings().branches||[]).filter(b=>b&&b.name);
   if(!brs.length) return (window.LS&&LS.hadLoadError&&LS.hadLoadError())?loadErrorHTML():'';
@@ -927,7 +928,7 @@ function branchHTML(mob){
     const attr=`data-pick="branch" data-val="${esc(b.name)}" role="button" tabindex="0" aria-pressed="${sel}"`;
     if(mob) return `<div class="opt ${sel?'sel':''}" ${attr}><div class="mid"><div class="ti">${esc(branchLabel(b.name))}</div>${loc?`<div class="de">${esc(loc)}</div>`:''}${hrs?`<div class="de2">${esc(hrs)}</div>`:''}</div>`
       +(b.link?`<a class="map-a" href="${esc(b.link)}" target="_blank" rel="noopener">${esc(tr(AM.map))} ↗</a>`:'')+`</div>`;
-    return `<div class="w-branch ${sel?'sel':''} ${ph?'':'nophoto'}" ${attr}>${ph?`<div class="wb-ph" style="background-image:url('${esc(imgUrl(ph,600))}')"></div>`:''}<div class="wb-in">`
+    return `<div class="w-branch ${sel?'sel':''} ${ph?'':'nophoto'}" ${attr}>${ph?`<div class="wb-ph" style="background-image:url('${esc(ph)}')"></div>`:''}<div class="wb-in">`
       +`<div class="wb-top"><span>BRANCH ${String(i+1).padStart(2,'0')}</span>${sel?'<span class="ck">✓</span>':''}</div><div class="wb-name">${esc(branchLabel(b.name))}</div><div class="wb-hr"></div>`
       +(loc?`<div class="wb-row"><span>${esc(tr({ko:'ADDRESS',en:'ADDRESS',vi:'Địa chỉ',ru:'Адрес'}))}</span><b>${esc(loc)}</b></div>`:'')+(hrs?`<div class="wb-row"><span>${esc(tr({ko:'HOURS',en:'HOURS',vi:'Giờ mở cửa',ru:'Часы работы'}))}</span><b>${esc(hrs)}</b></div>`:'')
       +(b.link?`<a class="wb-map" href="${esc(b.link)}" target="_blank" rel="noopener">${esc(tr(AM.mapview))} ↗</a>`:'')+`</div></div>`;
@@ -1461,18 +1462,18 @@ function initEffects(){
     function lbShow(i){ if(!lbList.length)return; lbIdx=(i+lbList.length)%lbList.length; var it=lbList[lbIdx];
       var v=lbVidEl();
       if(isVideoUrl(it.src)){ lbImg.style.display='none'; lbImg.removeAttribute('src'); v.style.display=''; v.src=it.src; v.muted=false; try{v.play();}catch(e){} }   // 라이트박스: 소리 켜기 가능
-      else { v.pause&&v.pause(); v.removeAttribute('src'); v.style.display='none'; lbImg.style.display=''; lbImg.setAttribute('data-orig',it.src); lbImg.onerror=function(){imgFallback(lbImg);}; lbImg.src=imgUrl(it.src,1600); }
+      else { v.pause&&v.pause(); v.removeAttribute('src'); v.style.display='none'; lbImg.style.display=''; lbImg.setAttribute('data-orig',it.src); lbImg.onerror=function(){imgFallback(lbImg);}; lbImg.src=it.opt?it.src:imgUrl(it.src,1600); }
       lbCap.textContent=it.cap||''; }
     function lbClose(){lb.classList.remove('open');document.body.style.overflow='';lbImg.removeAttribute('src');var v=lb.querySelector('video.lb-vid');if(v){v.pause();v.removeAttribute('src');v.style.display='none';}lbList=[];}
     function mediaSrc(el){return el?(el.getAttribute('data-orig')||el.currentSrc||el.src||el.getAttribute('src')||''):'';}
     function buildList(hit){
       var grid=hit.closest('#galleryGrid')||hit.closest('#spaceGrid');
       if(grid){ var ns=[].slice.call(grid.querySelectorAll('.gitem'));
-        var list=ns.map(function(n){var im=n.querySelector('img,video');var t=n.querySelector('.gcap-t');return {src:mediaSrc(im),cap:n.dataset.cap||(t?t.textContent:'')};});
+        var list=ns.map(function(n){var im=n.querySelector('img,video');var t=n.querySelector('.gcap-t');return {src:mediaSrc(im),opt:!!(im&&im.hasAttribute('data-opt')),cap:n.dataset.cap||(t?t.textContent:'')};});
         return {list:list, idx:Math.max(0,ns.indexOf(hit.closest('.gitem')))}; }
       var mq=hit.closest('#spaceMarquee');
       if(mq){ var cards=[].slice.call(mq.querySelectorAll('.mcard')); var seen={}, list=[]; var csrc=mediaSrc(hit.querySelector('img,video'));
-        cards.forEach(function(c){var im=c.querySelector('img,video');if(!im)return;var src=mediaSrc(im);if(seen[src])return;seen[src]=1;var t=c.querySelector('.mc-t')||c.querySelector('.mc-d');list.push({src:src,cap:t?t.textContent:''});});
+        cards.forEach(function(c){var im=c.querySelector('img,video');if(!im)return;var src=mediaSrc(im);if(seen[src])return;seen[src]=1;var t=c.querySelector('.mc-t')||c.querySelector('.mc-d');list.push({src:src,opt:im.hasAttribute('data-opt'),cap:t?t.textContent:''});});
         var idx=0; for(var k=0;k<list.length;k++){if(list[k].src===csrc){idx=k;break;}}
         return {list:list, idx:idx}; }
       var cf=hit.closest('.concept-figure');   // 컨셉: 저장된 미디어 목록 전체를 이전/다음으로
