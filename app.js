@@ -505,7 +505,7 @@ function renderSpaceFolderChips(){
 function isVideoUrl(u){return /\.(mp4|webm|ogg|ogv|mov|m4v)(\?|#|$)/i.test(u||'');}
 /* Supabase Storage 사진은 원본(수 MB PNG) 대신 화면 크기에 맞춘 사본(WebP 자동 변환)을 받음 — Storage 이미지 변환(render) 사용.
    원본 파일은 그대로 두고, 변환 실패 시 imgFallback()이 원본으로 다시 불러옴 */
-function imgUrl(u,w){ if(!u||!/\/storage\/v1\/object\/public\/[^?#]+\.(png|jpe?g|webp)(\?|#|$)/i.test(u)) return u;
+function imgUrl(u,w){ if(!u||!/\/storage\/v1\/object\/public\/[^?#]+\.(png|jpe?g|webp|heic|heif)(\?|#|$)/i.test(u)) return u;   // HEIC(아이폰 사진)는 크롬·안드로이드가 못 그려서 반드시 변환(WebP/JPEG)으로
   return u.split('?')[0].replace('/storage/v1/object/public/','/storage/v1/render/image/public/')+'?width='+w+'&height='+w+'&resize=contain&quality=75'; }   // 가로·세로 모두 w 안에 비율 유지(width만 주면 원본 높이로 잘림)
 function imgFallback(el){ var o=el.getAttribute('data-orig'); if(o&&el.getAttribute('src')!==o) el.src=o; }
 function imgTag(url,w,alt,extra){ return '<img src="'+esc(imgUrl(url,w))+'" data-orig="'+esc(url)+'" onerror="imgFallback(this)" alt="'+esc(alt)+'"'+(extra||'')+'>'; }
