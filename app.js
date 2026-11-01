@@ -644,6 +644,7 @@ function renderFolderChips(){
   folders.forEach(function(f){ html+=chip(f.id,Lval(f.name,lang)); });
   box.innerHTML=html;
   box.querySelectorAll('.folder-chip').forEach(function(b){b.addEventListener('click',function(){galleryFolder=b.dataset.fid||'';renderFolderChips();renderGallery();});});
+  var on=box.querySelector('.folder-chip.active'); if(on&&box.scrollWidth>box.clientWidth) box.scrollLeft=on.offsetLeft-20;   // 모바일 한 줄: 선택된 그룹이 보이게
 }
 /* 홈 02 GALLERY — 관리자 '홈 표시'가 켜진 갤러리 폴더(순서대로)를 카드로. 커버는 폴더의 대표/첫 사진.
    왼쪽으로 천천히 흐르고(마우스를 올리면 멈춤), 마우스 드래그·휠·터치로 넘김. 카드를 누르면 갤러리 페이지의 그 폴더 */

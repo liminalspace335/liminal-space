@@ -214,6 +214,7 @@ html[lang=ko] .m-lead,html[lang=ko] .hero .sub,html[lang=ko] .sec-head h2,html[l
 .gchips .folder-chip.active{background:var(--ink);color:#fff}
 .gchips .folder-chip.active .fc-n{color:var(--mute)}
 @media(hover:hover){.gchips .folder-chip:not(.active):hover{background:#fff}}
+@media(max-width:640px){.gchips{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin-right:-20px;padding-right:20px}.gchips::-webkit-scrollbar{display:none}.gchips .folder-chip{flex:none}}   /* 모바일: 그룹 버튼 한 줄 가로 넘김 */
 
 /* ---------- 03 PROGRAMS ---------- */
 .class-grid:empty{min-height:360px}
