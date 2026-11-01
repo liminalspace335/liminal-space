@@ -157,7 +157,8 @@ section[id],footer[id]{scroll-margin-top:80px}
 @container (max-width:800px){.concept-figure{width:100%;height:auto}}
 .concept-copy{border-radius:28px;background:rgba(255,255,255,.62);padding:clamp(24px,3cqw,40px);display:flex;flex-direction:column;gap:28px;justify-content:space-between}
 .m-lead{font-size:clamp(15px,1.35cqw,18px);line-height:1.9;color:#2a2b2f}
-html[lang=ko] .m-lead,html[lang=ko] .hero .sub{word-break:keep-all}
+html[lang=ko] .m-lead,html[lang=ko] .hero .sub,html[lang=ko] .sec-head h2,html[lang=ko] .page-head h1{word-break:keep-all}
+.sec-head h2{text-wrap:balance}   /* 긴 제목이 두 줄이면 고르게 */
 /* 모바일 전용 줄바꿈(문장 단위) */
 .m-br{display:none}
 @media(max-width:640px){.m-br{display:inline}}

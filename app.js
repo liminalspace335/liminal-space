@@ -77,7 +77,7 @@ const I18N = {
     "hero.sub":"Hương thơm của khoảnh khắc giữa hai ranh giới. <br class=\"m-br\">Lớp học tự pha chế và mang về một chai nước hoa của riêng bạn.",
     "hero.tag1":"Completely new experience","hero.tag2":"Eau de Parfum",
     "hero.cta":"Đăng ký lớp học","hero.cta2":"Xem lớp học",
-    "concept.title":"Mùi hương bắt đầu từ ngưỡng cửa",
+    "concept.title":"Ngay khi cánh cửa mở ra, hương thơm bắt đầu lan tỏa.",
     "concept.pa.t":"Hơn 100 loại hương","concept.pa.d":"Tự mình ngửi và khám phá mùi hương bạn chưa từng biết.",
     "concept.pb.t":"1:1 cùng Scent Designer","concept.pb.d":"Khoảng thời gian sâu lắng diễn đạt cảm giác và cảm xúc thành ngôn từ.",
     "concept.pc.t":"Mùi hương độc nhất","concept.pc.d":"Đặt tên và hoàn thiện thành dấu ấn của riêng bạn.",
