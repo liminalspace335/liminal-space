@@ -1240,13 +1240,18 @@ function confirmHTML(mob){
   if(data.instagram) who.push(['ig',data.instagram]);
   if(data.msg) who.push(['msg',data.msg]);
   const amt=inq?'':expectedAmountStr();
-  const row=([k,v])=>`<div class="cr ${k==='email'?'em':k==='amount'?'amt':k==='msg'?'msg':''}"><span class="k">${esc(L[k])}</span><span class="v">${esc(v)}</span></div>`;
+  /* 알림이 가는 연락처·이메일은 강조, 연락처 아래엔 잘로 발송 조건 안내 */
+  const zaloHint=`<div class="cr-hint">${esc(tr({ko:'잘로(Zalo) 안내는 베트남 번호(+84)로만 발송됩니다.',
+    en:'Booking notices are sent via Zalo only to Vietnamese numbers (+84).',
+    vi:'Thông báo đặt lịch qua Zalo chỉ được gửi đến số điện thoại Việt Nam (+84).',
+    ru:'Уведомления о записи в Zalo отправляются только на вьетнамские номера (+84).'},lang))}</div>`;
+  const row=([k,v])=>`<div class="cr ${k==='email'||k==='phone'?'em':k==='amount'?'amt':k==='msg'?'msg':''}"><span class="k">${esc(L[k])}</span><span class="v">${esc(v)}</span></div>${k==='phone'?zaloHint:''}`;
   const amtRow=amt?row(['amount',amt]):'';
   const head=`<div class="am-eyebrow">${esc(tr({ko:'CONFIRM',en:'CONFIRM',vi:'XÁC NHẬN',ru:'ПРОВЕРКА'},lang))}</div><h3 class="am-title">${esc(tr({ko:'입력하신 내용을 확인해 주세요.',en:'Please review your details.',vi:'Vui lòng kiểm tra thông tin của bạn.',ru:'Пожалуйста, проверьте данные.'},lang))}</h3>`;
-  const note=`<p class="conf-note">${esc(tr({ko:'이메일 주소가 정확한지 다시 한번 확인해 주세요. 정보가 잘못되면 예약 확정 안내를 받지 못할 수 있습니다. 확인 후 신청완료를 눌러 주세요.',
-    en:'Please double-check your email address. If your information is incorrect, you may not receive the booking confirmation. Review your details before tapping Submit.',
-    vi:'Vui lòng kiểm tra lại địa chỉ email của bạn. Nếu thông tin sai, bạn có thể không nhận được xác nhận đặt lịch. Hãy kiểm tra kỹ trước khi nhấn Hoàn tất.',
-    ru:'Пожалуйста, ещё раз проверьте адрес email. Если данные указаны неверно, вы можете не получить подтверждение записи. Проверьте всё перед отправкой.'},lang))}</p>`;
+  const note=`<p class="conf-note">${esc(tr({ko:'연락처와 이메일 주소가 정확한지 다시 한번 확인해 주세요. 예약 안내는 이메일과 잘로(베트남 번호인 경우)로 발송되며, 정보가 잘못되면 안내를 받지 못할 수 있습니다. 확인 후 신청완료를 눌러 주세요.',
+    en:'Please double-check your phone number and email address. Booking notices are sent by email and via Zalo (Vietnamese numbers only). If your information is incorrect, you may not receive them. Review your details before tapping Submit.',
+    vi:'Vui lòng kiểm tra lại số điện thoại và địa chỉ email. Thông báo đặt lịch được gửi qua email và Zalo (chỉ với số Việt Nam). Nếu thông tin sai, bạn có thể không nhận được thông báo. Hãy kiểm tra kỹ trước khi nhấn Hoàn tất.',
+    ru:'Пожалуйста, ещё раз проверьте номер телефона и адрес email. Уведомления о записи отправляются по email и в Zalo (только для вьетнамских номеров). Если данные указаны неверно, вы можете их не получить. Проверьте всё перед отправкой.'},lang))}</p>`;
   if(mob) return head+`<div class="conf-card">${book.map(row).join('')}${who.map(row).join('')}${amtRow}</div>`+note;
   return head+`<div class="am-content conf-cols"><div class="conf-card"><h5>${esc(tr(AM.booking))}</h5>${book.map(row).join('')}${amtRow}</div><div class="conf-card"><h5>${esc(tr(AM.step[5]))}</h5>${who.map(row).join('')}</div></div>`+note;
 }
