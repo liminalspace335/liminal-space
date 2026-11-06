@@ -478,6 +478,11 @@ function renderMap(){
 var spaceFolder='';
 /* 데이터(Supabase) 로드 전에는 갤러리·공간을 그리지 않음 — 안 그러면 예시 사진(GALLERY_PLACEHOLDER)이 잠깐 깜빡였다가 실제 사진으로 바뀜 */
 var dataReady=false;
+/* 지점 대표사진 미리 받기 — Supabase 저장소가 느리고(첫 응답 1~3초) 캐시도 안 타서, 예약 창을 열기 전에 받아 둔다.
+ * 지난 방문 때 주소를 기억해 두었다가 데이터 로드 전부터 받기 시작. 같은 페이지의 <img>는 받은 사진을 재요청 없이 바로 씀. */
+var _bphImg=null;
+function preloadBranchPhoto(u){ if(!u||(_bphImg&&_bphImg.src===u))return; _bphImg=new Image(); _bphImg.decoding='async'; _bphImg.src=u; try{localStorage.setItem('ls_bph',u);}catch(e){} }
+try{ preloadBranchPhoto(localStorage.getItem('ls_bph')); }catch(e){}
 /* 컨셉 칸 비율: 지난번 실제 영상/사진 비율을 기억해 두었다가 페이지가 열리자마자 적용 → 영상이 오기 전부터 같은 크기 */
 function fitConceptBox(fig){
   var m=fig.querySelector('img,video'); if(!m)return;
@@ -908,7 +913,9 @@ function resetApplyData(preClass,preBranch){
   }
 }
 function defaultSize(){var vols=volumesForName(data.branch,data.class);if(vols.length){var v30=vols.find(function(v){return String(v.volume)==='30';});data.size=((v30?v30.volume:vols[0].volume))+'ml';}else data.size='';}
+var lastOpenArgs=['',''];   // 데이터 로드 전에 창을 열었으면, 데이터가 온 뒤 같은 인자로 다시 초기화
 function openModal(preClass,preBranch){
+  lastOpenArgs=[preClass||'',preBranch||''];
   resetApplyData(preClass||'',preBranch||'');     // 매번 기본값으로 초기화
   submitErr='';
   goto(1);
@@ -966,6 +973,7 @@ function stepHTML(n,mob){
 function spacePhoto(){const g=sortGal(spaceItemsAll()).find(x=>x.img&&!isVideoUrl(x.img));return g?(g.thumb||imgUrl(g.img,600)):'';}
 function branchHTML(mob){
   const brs=(getSettings().branches||[]).filter(b=>b&&b.name);
+  if(!brs.length&&!dataReady) return `<p class="am-loading">${esc(tr({ko:'지점 정보를 불러오는 중입니다…',en:'Loading branches…',vi:'Đang tải chi nhánh…',ru:'Загрузка филиалов…'}))}</p>`;
   if(!brs.length) return (window.LS&&LS.hadLoadError&&LS.hadLoadError())?loadErrorHTML():'';
   const lang=curLang(), ph=mob?'':spacePhoto();
   return (mob?'<div class="opt-list">':'')+brs.map((b,i)=>{
@@ -973,7 +981,7 @@ function branchHTML(mob){
     const attr=`data-pick="branch" data-val="${esc(b.name)}" role="button" tabindex="0" aria-pressed="${sel}"`;
     if(mob) return `<div class="opt ${sel?'sel':''}" ${attr}><div class="mid"><div class="ti">${esc(branchLabel(b.name))}</div>${loc?`<div class="de">${esc(loc)}</div>`:''}${hrs?`<div class="de2">${esc(hrs)}</div>`:''}</div>`
       +(b.link?`<a class="map-a" href="${esc(b.link)}" target="_blank" rel="noopener">${esc(tr(AM.map))} ↗</a>`:'')+`</div>`;
-    return `<div class="w-branch ${sel?'sel':''} ${ph?'':'nophoto'}" ${attr}>${ph?`<div class="wb-ph" style="background-image:url('${esc(ph)}')"></div>`:''}<div class="wb-in">`
+    return `<div class="w-branch ${sel?'sel':''} ${ph?'':'nophoto'}" ${attr}>${ph?`<div class="wb-ph"><img src="${esc(ph)}" alt="" decoding="async"></div>`:''}<div class="wb-in">`
       +`<div class="wb-top"><span>BRANCH ${String(i+1).padStart(2,'0')}</span>${sel?'<span class="ck">✓</span>':''}</div><div class="wb-name">${esc(branchLabel(b.name))}</div><div class="wb-hr"></div>`
       +(loc?`<div class="wb-row"><span>${esc(tr({ko:'ADDRESS',en:'ADDRESS',vi:'Địa chỉ',ru:'Адрес'}))}</span><b>${esc(loc)}</b></div>`:'')+(hrs?`<div class="wb-row"><span>${esc(tr({ko:'HOURS',en:'HOURS',vi:'Giờ mở cửa',ru:'Часы работы'}))}</span><b>${esc(hrs)}</b></div>`:'')
       +(b.link?`<a class="wb-map" href="${esc(b.link)}" target="_blank" rel="noopener">${esc(tr(AM.mapview))} ↗</a>`:'')+`</div></div>`;
@@ -1466,6 +1474,9 @@ function renderNavSocials(){
 /* 데이터 로드(Supabase 또는 localStorage) 후 초기 렌더 */
 (window.LS ? LS.init() : Promise.resolve()).then(function(){
   dataReady=true;
+  try{ preloadBranchPhoto(spacePhoto()); }catch(e){}
+  // 데이터가 오기 전에 예약 창을 열었으면(지점 목록이 빈 채로 그려짐) 지금 데이터로 다시 초기화해서 그림
+  if(modal.classList.contains('open')&&cur===1&&!editing){ resetApplyData(lastOpenArgs[0],lastOpenArgs[1]); renderModal(true); }
   try{ localStorage.setItem('ls_gal',JSON.stringify(galSrc())); }catch(e){}
   applyActiveStates();
   renderClasses();
