@@ -1,0 +1,32 @@
+# 매일 KST 03:00 DB 백업 → 암호화 파일로 Actions 아티팩트에 15일 보관.
+# 공개 저장소라 평문은 절대 업로드하지 않음(암호화된 .enc 만 업로드).
+# 필요한 Secrets: SUPABASE_SERVICE_KEY, BACKUP_PASSPHRASE
+# 복원: 아티팩트 zip 받아 풀고 →
+#   openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -in db-backup.tar.gz.enc | tar xz
+name: DB backup
+on:
+  schedule:
+    - cron: "0 18 * * *"  # UTC 18:00 = KST 03:00
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 supabase/backup_db.py
+        env:
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+      - name: encrypt
+        env:
+          P: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          test -n "$P"
+          tar czf - backups | openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -salt -pass env:P -out db-backup.tar.gz.enc
+          rm -rf backups
+      - uses: actions/upload-artifact@v4
+        with:
+          name: db-backup-${{ github.run_id }}
+          path: db-backup.tar.gz.enc
+          retention-days: 15
