@@ -3,7 +3,7 @@
 
 지난 오류 기록이 아니라 "지금 정상 운영 중인가"를 본다. 신청 등록·알림 발송 등 운영에 영향을 주는 동작은 하지 않음.
 
-키: 환경변수 SUPABASE_SERVICE_KEY 또는 ~/.liminal_backup_key
+키: 환경변수 SUPABASE_SERVICE_KEY 또는 ~/.liminal_backup_key (둘 다 없으면 클라우드 네트워크 시크릿이 붙여 준다고 보고 헤더 없이 요청)
 출력: 보통 1통. 아주 길어질 때만 '-----' 줄로 나눠 여러 통.
   python3 supabase/health_check.py          실제 점검
   python3 supabase/health_check.py --demo   가짜 데이터로 자기검사 + 카톡 양식 샘플 출력
@@ -48,8 +48,10 @@ def probe(url, headers=None):
 
 
 def fetch(now):
-    key = os.environ.get("SUPABASE_SERVICE_KEY") or (Path.home() / ".liminal_backup_key").read_text().strip()
-    h = {"apikey": key, "Authorization": f"Bearer {key}"}
+    kf = Path.home() / ".liminal_backup_key"
+    key = os.environ.get("SUPABASE_SERVICE_KEY") or (kf.read_text().strip() if kf.exists() else "")
+    # 키가 없으면 헤더 없이 보냄 — 클라우드 루틴은 '네트워크 시크릿' 프록시가 Supabase 요청에 키를 붙여 줌(작업 안에선 키가 안 보임)
+    h = {"apikey": key, "Authorization": f"Bearer {key}"} if key else {}
     T = now.date().isoformat()
     T7 = (now + timedelta(days=7)).date().isoformat()
     W = (now - timedelta(days=7)).astimezone(ZoneInfo("UTC")).strftime("%Y-%m-%dT%H:%M:%SZ")
