@@ -465,7 +465,9 @@ html[lang=ko] .m-lead,html[lang=ko] .hero .sub,html[lang=ko] .sec-head h2,html[l
 .w-branch{display:grid;grid-template-columns:220px 1fr;border-radius:20px;overflow:hidden;background:var(--metal);border:1px solid rgba(255,255,255,.9);cursor:pointer;transition:background .2s,color .2s}
 .w-branch.nophoto{grid-template-columns:1fr}
 .w-branch+.w-branch{margin-top:10px}
-.wb-ph{min-height:200px;background:var(--metal-1) center/cover no-repeat}
+.wb-ph{min-height:200px;background:var(--metal-1);position:relative;overflow:hidden}
+.wb-ph img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+.am-loading{font-size:13px;color:var(--ink-soft);padding:24px 4px}
 .wb-in{padding:24px 26px;display:flex;flex-direction:column;gap:6px;min-width:0}
 .wb-top{display:flex;justify-content:space-between;align-items:center;font-size:10px;letter-spacing:.2em;color:var(--coord);min-height:22px}
 .wb-top .ck{width:22px;height:22px;background:#fff;color:var(--ink)}
