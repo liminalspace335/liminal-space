@@ -27,7 +27,7 @@ SUPA = "https://euhuiktqoslmndozqpsr.supabase.co/rest/v1"
 FUNC = "https://euhuiktqoslmndozqpsr.functions.supabase.co"
 SITE = "https://liminalspace335.github.io/liminal-space/"
 ANON = "sb_publishable_FrEHlpTzQpDmBh8Z8_2o_w_CKQomC2A"  # config.js 의 공개 키 — 고객 브라우저와 같은 조건으로 조회
-GH = "https://api.github.com/repos/liminalspace335/liminal-space/actions/workflows/db-backup.yml/runs?per_page=5"
+GH = "https://api.github.com/repos/liminalspace335/liminal-space/actions"
 VN = ZoneInfo("Asia/Ho_Chi_Minh")
 INACTIVE = {"cancel", "refund", "refunddep"}  # 자리를 차지하지 않는 상태
 # 카톡 나에게 보내기: 도구 설명은 200자지만 266자 한 통이 끝까지 정상 수신됨(2026-11-06 확인) → 한 통 기준을 넉넉히
@@ -86,9 +86,17 @@ def fetch(now):
     # 재알림 로그의 신청(예약일 기준이라 7일보다 오래된 신청일 수 있음) 전화번호
     ids = sorted({l["app_id"] for l in d["zlog"] if l.get("app_id")} - {a["id"] for a in d["recent"]})
     d["logapps"] = get(f"applications?select=id,phone&id=in.({','.join(map(str, ids))})") if ids else []
-    try:
-        with urllib.request.urlopen(GH, timeout=20) as r:
-            d["backups"] = json.load(r)["workflow_runs"]
+    def gh(path):
+        with urllib.request.urlopen(f"{GH}/{path}", timeout=20) as r:
+            return json.load(r)
+    try:  # 공개 저장소라 키 없이 조회됨. 백업 실행 기록 + 실제 보관 중인 암호화 파일(아티팩트)
+        j = gh("workflows/db-backup.yml/runs?per_page=30")
+        d["backups"] = j["workflow_runs"]
+        # 실행 기록을 전부 받았으면 첫 백업 날짜를 알 수 있음 → 백업 시작 전 날짜는 '누락'으로 안 셈
+        d["bk_first"] = min((ts(r["created_at"]).astimezone(VN).date() for r in d["backups"]), default=None) \
+            if j["total_count"] <= len(d["backups"]) else None
+        d["artifacts"] = [a for a in gh("artifacts?per_page=100")["artifacts"]
+                          if a["name"].startswith("db-backup-") and not a["expired"]]
     except Exception:
         d["backups"] = None
     return d
@@ -281,20 +289,40 @@ def check(d, now):
         mail_txt = tally("메일", rows)
     add(RED, "메일 알림", bad)
 
-    # 12 매일 백업 — 가장 최근 완료된 백업이 성공했고 하루 안쪽인지
-    runs = d["backups"]
-    done = [r for r in runs or [] if r.get("status") == "completed"]
-    if runs is None:
+    # 12 매일 백업 — 지난 7일 하루하루 백업이 성공했고, 그 암호화 파일이 실제로 보관돼 있는지
+    days = [now.date() - timedelta(days=i) for i in range(6, -1, -1)]
+    bk = f"💾 백업 ({days[0]:%m/%d}~{days[-1]:%m/%d})\n"
+    if d["backups"] is None:
         add(YEL, "백업 확인 불가", ["GitHub 조회 실패"])
-        bk = "확인 불가"
-    elif not done:
-        add(YEL, "백업", ["백업 기록 없음"])
-        bk = "기록 없음"
+        bk += "확인 불가 (GitHub 조회 실패)"
     else:
-        r0, t0 = done[0], ts(done[0]["created_at"])
-        okb = r0.get("conclusion") == "success" and now - t0 < timedelta(hours=30)
-        add(RED, "백업", [] if okb else [f"마지막 백업 {ago(now, t0)} {'성공' if r0.get('conclusion') == 'success' else '실패'}"])
-        bk = f"{ago(now, t0)} {'성공' if r0.get('conclusion') == 'success' else '실패'}"
+        saved = {a["workflow_run"]["id"]: a for a in d["artifacts"] if a["size_in_bytes"] > 10_000}  # 빈 파일 아님
+        byday = {}
+        for r in d["backups"]:
+            if r.get("status") == "completed":
+                day = ts(r["created_at"]).astimezone(VN).date()
+                byday[day] = byday.get(day) or (r.get("conclusion") == "success" and r["id"] in saved)
+        marks, bad = [], []
+        for day in days:
+            if d.get("bk_first") and day < d["bk_first"]:
+                m = "➖"                                    # 백업 시작 전
+            elif day in byday:
+                m = "✅" if byday[day] else "❌"
+            else:
+                m = "⏳" if day == now.date() else "❌"      # 오늘 건은 아직 도는 중일 수 있음
+            if m == "❌":
+                bad.append(f"{day:%m/%d} 백업 {'실패/파일 없음' if day in byday else '안 돌았음'}")
+            marks.append(f"{day:%m/%d}{m}")
+        add(RED, "백업", bad)
+        n = Counter(m[-1] for m in marks)
+        bk += f"정상 {n['✅']} / 실패 {n['❌']}" + (f" / 진행 중 {n['⏳']}" if n["⏳"] else "") + "\n"
+        bk += " ".join(marks[:4]) + "\n" + " ".join(marks[4:]) + "\n"
+        keep = sorted(saved.values(), key=lambda a: a["created_at"])
+        if keep:
+            f = lambda a: f"{ts(a['created_at']).astimezone(VN):%m/%d %H:%M}"
+            bk += f"보관 중 {len(keep)}개 (15일 보관)\n복원 가능: {f(keep[0])} ~ {f(keep[-1])} 시점"
+        else:
+            bk += "보관 중인 백업 파일 없음"
 
     st = Counter(a.get("status") for a in recent)
     live = [a for a in recent if a.get("status") not in INACTIVE]
@@ -310,8 +338,8 @@ def check(d, now):
     resv = (f"📋 예약 현황 (지난 7일)\n신청 {len(recent)}건 · 총 {sum(prod.values())}명\n"
             f"확정 {st['confirmed']} · 대기 {st['new']} · 완료 {st['done']} · 취소 {st['cancel'] + st['refund'] + st['refunddep']}\n"
             + " · ".join(f"{k} {n}명" for k, n in sorted(prod.items(), key=key)))
-    notif = f"📨 알림 발송 (신청 {len(recent)}건)\n{zalo_txt}\n{mail_txt}\n\n💾 백업 {bk}"
-    stats = [resv, notif]
+    notif = f"📨 알림 발송 (신청 {len(recent)}건)\n{zalo_txt}\n{mail_txt}"
+    stats = [resv, notif, bk]
     return issues, ok, stats
 
 
@@ -362,6 +390,8 @@ def demo():
         "id": i, "created_at": iso(hrs), "branch_id": B, "class_id": C, "want_date": dt, "want_time": tm,
         "people": ppl, "name": name, "phone": "0773052174", "email": "a@b.co", "status": status,
         "confirm_mail": "sent", "zalo_send": "sent", "msg": "", "size": "30ml", **kw}
+    run = lambda i, ok=True: {"id": i, "status": "completed", "conclusion": "success" if ok else "failure", "created_at": iso(7 + 24 * i)}
+    art = lambda i: {"workflow_run": {"id": i}, "size_in_bytes": 90000, "created_at": iso(7 + 24 * i)}
     up = (200, 0.4, 'url: "https://x.supabase.co"')
     # 잘로: 베트남 번호 발송 성공 + 해외번호 실패·문의 스킵은 오류 아님
     recent_ok = [app(11, "2026-11-12", "14:00"),
@@ -381,7 +411,8 @@ def demo():
             "conf": {"zalo_on": True, "confirm_mail_on": True, "zalo_remind_on": True, "zalo_remind_last_sent_date": "2026-11-08"},
             "token": [{"updated_at": iso(240)}], "recent": recent_ok, "zlog": zlog_ok,
             "logapps": [{"id": 99, "phone": "+1 415 555 0100"}], "T7": "2026-11-16",
-            "backups": [{"status": "completed", "conclusion": "success", "created_at": iso(7)}]}
+            # 11/04 부터 매일 01:00 백업(11/03 은 시작 전), 각 실행마다 암호화 파일 보관
+            "backups": [run(i) for i in range(6)], "artifacts": [art(i) for i in range(6)], "bk_first": now.date() - timedelta(days=5)}
 
     assert vn_phone("+84 0773052174") and vn_phone("0773052174") and vn_phone("84773052174") and vn_phone("773052174")
     assert not vn_phone("+82 10-1234-5678") and not vn_phone("010-1234-5678") and not vn_phone("+1 415 555 0100")
@@ -395,6 +426,8 @@ def demo():
     assert z in stats[1], stats[1]
     assert "메일: 정상 6 / 실제 오류 0 / 고객 오류 1\n └ 이메일 잘못 입력 1" in stats[1], stats[1]
     assert "신청 7건 · 총 14명" in stats[0] and stats[0].endswith("30ml 14명"), stats[0]
+    assert "정상 6 / 실패 0\n11/03➖ 11/04✅ 11/05✅ 11/06✅\n11/07✅ 11/08✅ 11/09✅" in stats[2], stats[2]
+    assert stats[2].endswith("보관 중 6개 (15일 보관)\n복원 가능: 11/04 01:00 ~ 11/09 01:00 시점"), stats[2]
     good = render(issues, ok, stats, now)
 
     bad = {**base,
@@ -406,12 +439,15 @@ def demo():
                                   app(17, "2026-11-13", "14:00", name="Tuan", zalo_send=None),          # 시도 없음
                                   app(19, "2026-11-13", "14:00", name="Lan", confirm_mail=None)],       # 확정메일 안 감
            "conf": {**base["conf"], "zalo_remind_last_sent_date": "2026-11-01"},
-           "backups": [{"status": "completed", "conclusion": "failure", "created_at": iso(7)}]}
+           # 오늘(0) 아직 안 돎, 11/07(2) 실패, 11/05(4) 안 돎, 11/03(6) 성공했지만 파일 없음
+           "backups": [run(1), run(2, False), run(3), run(5), run(6)], "artifacts": [art(1), art(3), art(5)], "bk_first": None}
     issues, ok, stats = check(bad, now)
     got = {t for _, t, _ in issues}
     assert got == {"초과예약", "처리 대기 신청", "잘로 알림", "잘로 재알림 멈춤", "메일 알림", "백업"}, got
     assert next(i for i in issues if i[1] == "초과예약")[2] == ["11/12 14:00 정원 4명 → 5명"]
     assert next(i for i in issues if i[1] == "잘로 알림")[2] == ["Minh(16) 발송 실패 -124 token", "Tuan(17) 발송 시도 없음"]
+    assert next(i for i in issues if i[1] == "백업")[2] == ["11/03 백업 실패/파일 없음", "11/05 백업 안 돌았음", "11/07 백업 실패/파일 없음"]
+    assert "정상 3 / 실패 3 / 진행 중 1" in stats[2] and "11/09⏳" in stats[2], stats[2]
     assert "잘로: 정상 2 / 실제 오류 2 / 고객 오류 3" in stats[1] and "메일: 정상 8 / 실제 오류 1" in stats[1], stats[1]
     msgs = render(issues, ok, stats, now)
     assert all(len(m) <= LIMIT for m in good + msgs), [len(m) for m in good + msgs]
