@@ -19,6 +19,9 @@ for f in index.html links.html brand.html classes.html gallery.html location.htm
   [ -f "$f" ] && sed -i '' -E "s/(styles\.css|config\.js|store\.js|app\.js|linkhub\.js)\?v=[0-9]+/\1?v=$next/g" "$f"
 done
 
+# 언어별 페이지(/vi /en /ru /ko)·sitemap을 위 HTML 기준으로 다시 생성
+node scripts/build_i18n.mjs
+
 msg="${1:-deploy}"
 git add -u                      # 추적 중인 코드 파일만 (큰 미디어 제외)
 git add config.js               # 버전 변경 포함

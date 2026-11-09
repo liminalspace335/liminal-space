@@ -1,0 +1,20 @@
+# 루트 HTML·번역을 고치고 언어별 페이지(/vi /en /ru /ko)를 다시 만들지 않으면 PR에서 실패시킨다.
+name: SEO pages check
+on:
+  pull_request:
+    paths:
+      - '*.html'
+      - 'app.js'
+      - 'scripts/build_i18n.mjs'
+      - 'vi/**'
+      - 'en/**'
+      - 'ru/**'
+      - 'ko/**'
+      - 'sitemap.xml'
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - run: node scripts/build_i18n.mjs --check
