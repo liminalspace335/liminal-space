@@ -169,7 +169,8 @@ const I18N = {
 };
 // 한국어 기본값을 DOM에서 수집해 저장
 document.querySelectorAll('[data-i18n]').forEach(el=>{
-  I18N.ko[el.getAttribute('data-i18n')] = el.innerHTML;
+  const k = el.getAttribute('data-i18n');
+  I18N.ko[k] = (window.LS_KO && LS_KO[k]!==undefined) ? LS_KO[k] : el.innerHTML;   // 언어별 페이지(/en/ 등)는 본문이 번역문이라 한국어 원문을 LS_KO로 받음
 });
 function i18nGet(lang,k){
   if(I18N[lang] && I18N[lang][k]!==undefined) return I18N[lang][k];
@@ -608,7 +609,7 @@ var GALLERY_PLACEHOLDER=(function(){var a=[];var d=tri(
   '리미널 스페이스에서 진행된 향수 워크숍의 한 장면입니다. 공간과 향이 어우러진 순간을 기록합니다. (임시 설명 — 실제 내용으로 교체 예정)',
   'A moment from a perfume workshop at LIMINAL SPACE, where space and scent meet. (Placeholder text — to be replaced.)',
   'Một khoảnh khắc trong workshop nước hoa tại LIMINAL SPACE, nơi không gian và hương gặp nhau. (Văn bản tạm thời — sẽ thay thế.)');
-  for(var i=1;i<=20;i++){a.push({img:'assets/gallery-'+i+'.jpg',title:tri('',''),desc:d});}return a;})();
+  for(var i=1;i<=20;i++){a.push({img:new URL('assets/gallery-'+i+'.jpg',document.currentScript.src).href,title:tri('',''),desc:d});}return a;})();
 /* 공간 페이지(space.html): 사진 그리드 + 사진별 번호·설명(관리자 › 공간 사진의 제목/설명, 비어 있으면 사진만). 설명은 alt에도 넣음 */
 function renderSpaceGrid(){
   if(!dataReady)return;
@@ -1592,5 +1593,5 @@ initEffects();
 (function(){var b=document.querySelector('header .brand'); var v=window.LS_VERSION||''; if(!b||!v)return;
   var s=document.createElement('span'); s.className='ver-badge'; s.textContent=v; b.appendChild(s);})();
 (function(){ var s=''; try{ s=localStorage.getItem('ls_lang')||''; }catch(e){}
-  setLang(I18N[s]?s:'vi'); })();   // 저장된 언어, 없으면 기본 베트남어 (모든 정의 이후 호출 — TDZ 회피)
+  setLang(I18N[s]?s:(window.LS_PAGE_LANG||'vi')); })();   // 저장된 언어, 없으면 페이지 언어(/en/ 등), 그것도 없으면 기본 베트남어 (모든 정의 이후 호출 — TDZ 회피)
 
