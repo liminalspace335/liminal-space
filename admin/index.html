@@ -31,6 +31,7 @@
   .sb-foot a{color:#9a9ca1;text-decoration:none;display:block;margin-bottom:8px}.sb-foot a:hover{color:#fff}
   .main{flex:1;min-width:0;display:flex;flex-direction:column}
   .topbar{background:var(--paper);border-bottom:1px solid var(--line);padding:20px 30px;display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap}
+  .topbar .tb-right{display:flex;align-items:center;gap:12px}
   .topbar h1{font-size:24px;font-weight:700}.topbar .coord{color:var(--coord);font-size:12px;letter-spacing:.06em}
   .content{padding:28px 30px 60px}
   .panel{display:none}.panel.active{display:block;animation:fade .2s ease}
@@ -318,7 +319,7 @@
   </aside>
 
   <div class="main">
-    <div class="topbar"><div><h1 id="pageTitle">소개</h1><div class="coord mono">10° 47' 27.49" N 106° 41' 36.89" E</div></div><div class="coord mono" id="lastUpdate"></div></div>
+    <div class="topbar"><div><h1 id="pageTitle">소개</h1><div class="coord mono">10° 47' 27.49" N 106° 41' 36.89" E</div></div><div class="tb-right"><div class="coord mono" id="lastUpdate"></div><button type="button" class="btn ghost sm" id="refreshBtn" title="서버에서 최신 데이터를 다시 불러옵니다(페이지 새로고침 없이)">↻ 새로고침</button></div></div>
     <div class="content">
 
       <!-- OVERVIEW -->
@@ -868,6 +869,21 @@ document.querySelectorAll('.sb-item').forEach(b=>b.addEventListener('click',()=>
   if(tab==='settings')renderSettings();
   if(tab==='accounts')renderAccounts();
 }));
+/* 우측 상단 '새로고침': 페이지는 그대로 두고 서버 데이터만 다시 불러와 현재 화면을 다시 그림 */
+async function refreshData(){
+  const btn=document.getElementById('refreshBtn');
+  if(l2Dirty&&!confirm('신청관리(리스트)에 저장하지 않은 변경이 있습니다.\n새로고침하면 사라집니다. 계속할까요?'))return;
+  if(document.getElementById('detail').classList.contains('open')){ if(!confirm('열려 있는 상세 창의 변경이 사라집니다. 계속할까요?'))return; closeDetail(); }
+  btn.disabled=true; const label=btn.textContent; btn.textContent='불러오는 중…';
+  try{
+    await LS.init();
+    l2Data=null; l2Sel=new Set(); l2Touched=new Set(); l2Dirty=false;
+    renderAll(); applyMenuVisibility();
+    if(LS.hadLoadError&&LS.hadLoadError()) alert('일부 데이터를 불러오지 못했습니다: '+LS.loadErrorTables().join(', ')+'\n잠시 후 다시 시도해 주세요.');
+  }catch(e){ alert('새로고침 실패: '+(e&&e.message||e)); }
+  finally{ btn.disabled=false; btn.textContent=label; }
+}
+document.getElementById('refreshBtn').addEventListener('click',refreshData);
 function renderAll(){populateFilters();renderOverview();renderList();renderList2();renderBooking();renderLinkHub();renderSettings();
   document.getElementById('lastUpdate').textContent='최종 조회 '+fmt(new Date().toISOString());}
 
