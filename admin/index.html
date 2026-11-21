@@ -64,7 +64,9 @@
   .l2-table tbody tr.current-row td:first-child{box-shadow:inset 3px 0 0 var(--ink)}
   .l2-table td.strong{color:var(--ink);font-weight:600}
   .l2-table td.nowrap{white-space:nowrap}
-  .l2-table td.memo{max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .l2-table td.memo{max-width:176px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .l2-table td.l2-name{max-width:160px;overflow:hidden;text-overflow:ellipsis}
+  .l2-table td.l2-email{max-width:208px;overflow:hidden;text-overflow:ellipsis}   /* 이름·이메일·메모: 기존 폭의 80%, 잘린 내용은 마우스 올리면 전체 표시 */
   .l2-table:not(.show-ext) .l2-ext{display:none}   /* 상세 내역 보기 꺼짐: 지점·클래스·신청일시 숨김 */
   .l2-toggle{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--ink-soft);cursor:pointer;user-select:none}
   .l2-toggle input{width:15px;height:15px;cursor:pointer}
@@ -1112,15 +1114,15 @@ function renderList2(){
       <td class="nowrap" style="text-align:center" title="${esc(srcLabel(src))}">${esc(srcShort(src))}</td>
       <td class="mono nowrap">${esc(a.date)||'-'}</td>
       <td class="mono nowrap">${esc(a.time)||'-'}</td>
-      <td class="strong">${esc(a.name)||'-'}</td>
+      <td class="strong l2-name" title="${esc(a.name)}">${esc(a.name)||'-'}</td>
       <td class="mono nowrap">${esc(a.phone)||'-'}</td>
-      <td class="nowrap">${esc(a.email)||'-'}</td>
+      <td class="nowrap l2-email" title="${esc(a.email)}">${esc(a.email)||'-'}</td>
       <td class="nowrap l2-ext">${esc(brLabelAdm(a.branch))||'-'}</td>
       <td class="l2-ext">${esc(a.class?clsLabelAdm(a.branch,a.class):'-')}</td>
       <td class="nowrap">${esc(a.size)||'-'}</td>
       <td class="mono">${esc(a.people)||'1'}</td>
       <td class="nowrap">${esc(natName(a.nationality))||'-'}</td>
-      <td class="memo" title="${esc(msg)}">${esc(msg.slice(0,24))}${msg.length>24?'…':''}</td>
+      <td class="memo" title="${esc(msg)}">${esc(msg)}</td>
       <td class="mono nowrap l2-ext">${esc(fmt(a.createdAt))}</td>
       <td class="mono nowrap">${esc(a.amount)||'-'}</td>
       <td><span class="badge ${st.cls}">${st.label}</span></td>
