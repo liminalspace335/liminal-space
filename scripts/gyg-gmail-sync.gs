@@ -63,8 +63,11 @@ function syncGygMails() {
 
   var done = JSON.parse(props.getProperty('DONE_IDS') || '[]');
   var threads = GmailApp.search('from:getyourguide.com newer_than:3d', 0, 50);
-  threads.forEach(function (th) {
-    th.getMessages().forEach(function (m) {
+  // 오래된 메일부터 처리 — 예약 메일보다 취소 메일을 먼저 처리하면 취소된 예약이 '확정'으로 들어가 버림
+  var msgs = [];
+  threads.forEach(function (th) { th.getMessages().forEach(function (m) { msgs.push(m); }); });
+  msgs.sort(function (a, b) { return a.getDate() - b.getDate(); });
+  msgs.forEach(function (m) {
       var id = m.getId();
       if (done.indexOf(id) >= 0) return;
       var body = m.getPlainBody();
@@ -90,7 +93,6 @@ function syncGygMails() {
       if (code >= 200 && code < 300) done.push(id);
       else if (code >= 400 && code < 500) { alertOnce(info.ref, '서버가 거절했어요: ' + text, m); done.push(id); }
       // 5xx(일시 오류)는 표시하지 않아 다음 실행 때 다시 시도
-    });
   });
   props.setProperty('DONE_IDS', JSON.stringify(done.slice(-500)));
 }
