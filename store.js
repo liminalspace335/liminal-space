@@ -19,6 +19,7 @@
   //  → 빈 값/옛 값으로 site_info(zalo_on·confirm_mail_on 등)·지점·클래스를 덮어써 Zalo/메일 발송이 꺼지는 사고 방지
   var SETTINGS_TABLES=['branches','classes','class_details','default_slots','schedule_slots','schedule_days','site_info'];
   var GUARD_TABLES=['site_info','branches','classes','class_details'];   // 저장할 때마다 통째로 다시 쓰는 표
+  var _lastRes=null, _appsSrc='applications_public', _win=null;   // 잔여석 재조회(refreshCapacity)용: 처음 받은 테이블·조회 대상·기간
   var _base=null, _needReload=false;   // _base: 이 탭이 마지막으로 확인한 DB 상태 / _needReload: 한 번 막히면 새로고침 전까지 계속 막음
   function deepClone(o){ try{ return JSON.parse(JSON.stringify(o||{})); }catch(e){ return {}; } }
 
@@ -354,6 +355,7 @@
         cache.loadError=failed.length?failed:null;   // 재시도까지 다 실패한 테이블 목록(없으면 null)
         if(failed.length) console.warn('일부 테이블 로드 실패(재시도 후에도):', failed);
         var a=assemble(res); cache.settings=a.settings; cache.apps=a.apps;
+        _lastRes=res; _appsSrc=appsSrc; _win=winTo?[winFrom,winTo]:null;
         _lastSchedule=deepClone(a.settings.schedule); _lastDefaultSchedule=deepClone(a.settings.defaultSchedule);
         _base={}; GUARD_TABLES.forEach(function(t){ _base[t]=res[t]||[]; });
       }catch(e){ console.warn('Supabase init failed → localStorage', e); useRemote=false; }
@@ -496,7 +498,34 @@
     }catch(e){ return { error:String(e&&e.message||e) }; }
   }
 
+  /* 잔여석만 다시 조회 — 신청 창의 날짜·시간 단계에서 새로고침 없이 최신 예약(다른 손님·GYG 등)을 반영.
+   * 정원 계산용 신청 목록 한 테이블만 받아(공개 페이지는 개인정보 없는 applications_public, 오늘~+N일) 교체한다.
+   * 화면은 기존 데이터로 먼저 그리고, 응답이 오면 다시 그리는 방식이라 대기 화면이 없다.
+   * 10초 안에 다시 부르면 건너뜀(force 제외), 동시에 여러 번 부르면 한 번만 조회. 바뀐 게 있으면 true. */
+  var _capBusy=null, _capAt=0;
+  function refreshCapacity(force){
+    if(!useRemote||!_lastRes) return Promise.resolve(false);
+    if(_capBusy&&Date.now()-_capAt<15000) return _capBusy;   // 진행 중이면 그 결과를 같이 기다림(응답이 15초 넘게 없으면 새로 조회)
+    if(!force&&Date.now()-_capAt<10000) return Promise.resolve(false);
+    _capAt=Date.now();
+    _capBusy=(async function(){
+      try{
+        var q=client.from(_appsSrc).select('*');
+        if(_win) q=q.gte('want_date',_win[0]).lte('want_date',_win[1]);
+        var r=await q;
+        if(r.error||!Array.isArray(r.data)) return false;
+        var before=JSON.stringify(cache.apps.map(function(a){return [a.id,a.date,a.time,a.people,a.status];}));
+        _lastRes.applications=r.data;
+        cache.apps=assemble(_lastRes).apps;
+        return JSON.stringify(cache.apps.map(function(a){return [a.id,a.date,a.time,a.people,a.status];}))!==before;
+      }catch(e){ return false; }
+      finally{ _capBusy=null; }
+    })();
+    return _capBusy;
+  }
+
   window.LS = {
+    refreshCapacity:refreshCapacity,      // 잔여석만 재조회(공개 신청 창)
     init:init, useRemote:function(){return useRemote;},
     getClient:function(){return client;}, // 어드민 로그인(Supabase Auth)용 — 데이터 호출과 같은 client 인스턴스를 공유해야 세션이 적용됨
     hadLoadError:function(){return !!(cache.loadError&&cache.loadError.length);}, // 재시도까지 실패한 테이블이 있었는지
