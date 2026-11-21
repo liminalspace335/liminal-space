@@ -1327,7 +1327,8 @@ function submitApplication(){
     size:inq?'':data.size,date:data.date,time:inq?'':data.time,people:inq?'':String(Math.max(1,parseInt(data.people)||1)),
     amount:inq?'':expectedAmountStr(),deposit:'',
     msg:data.msg,status:inq?'new':'confirmed',   // 결제 없음 → 클래스 신청은 접수 즉시 '확정'(문의는 '신규' 유지)
-    lang:curLang()};                              // 신청 당시 언어(확정메일 언어 결정)
+    lang:curLang(),                               // 신청 당시 언어(확정메일 언어 결정)
+    source:'home'};                               // 출처: 홈페이지
   submitErr='';
   try{const list=(window.LS?LS.getApps():[]).slice();list.push(entry);LS.setApps(list);}catch(err){console.warn('저장 실패',err);}
   goto(7);
