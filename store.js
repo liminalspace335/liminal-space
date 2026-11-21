@@ -364,7 +364,15 @@
     cache.settings.linkHub=normalizeLinkHub(cache.settings.linkHub);
   }
 
-  function _report(errs){ if(errs&&errs.length){ console.warn('save errors',errs); if(onErr)onErr(errs.join('\n')); } }
+  function _report(errs){ if(errs&&errs.length){ console.warn('save errors',errs); if(onErr)onErr(errs.join('\n')); } return errs||[]; }
+  // 진행 중인 서버 저장 추적 — 어드민 '저장 완료' 알림이 실제 저장이 끝난 뒤에 뜨도록(whenSaved)
+  var _inflight=[];
+  function track(pr){
+    var t=pr.then(function(e){ return e||[]; }, function(e){ return _report([String(e&&e.message||e)]); });
+    _inflight.push(t); t.then(function(){ _inflight=_inflight.filter(function(x){ return x!==t; }); });
+    return t;
+  }
+  function whenSaved(){ return Promise.all(_inflight.slice()).then(function(rs){ return [].concat.apply([], rs); }); }
   // schedule_slots/schedule_days 등은 저장할 때마다 테이블을 통째로 지웠다가 다시 쓰는 구조라,
   // 두 저장이 겹치면(비동기라 순서 보장이 없음) 늦게 끝나는 쪽(옛 데이터일 수 있음)이 이겨서 방금 저장한 걸 덮어써버린다.
   // 그래서 pushPlan 실행 자체를 큐에 넣어 항상 한 번에 하나씩, 호출 순서대로만 실행되게 한다.
@@ -383,8 +391,8 @@
     if(useRemote){
       var lf=(cache.loadError||[]).filter(function(t){ return SETTINGS_TABLES.indexOf(t)>=0; });
       if(_needReload||lf.length||!_base){
-        _report(_needReload?['이전 저장이 보호 장치로 막혀 이후 저장도 막았습니다.\n→ 새로고침(F5) 후 다시 입력·저장해 주세요.']
-          :blockSave('화면을 열 때 일부 데이터를 불러오지 못해 저장을 막았습니다(빈 값으로 덮어쓰기 방지). 실패한 표: '+lf.join(', ')));
+        track(Promise.resolve(_report(_needReload?['이전 저장이 보호 장치로 막혀 이후 저장도 막았습니다.\n→ 새로고침(F5) 후 다시 입력·저장해 주세요.']
+          :blockSave('화면을 열 때 일부 데이터를 불러오지 못해 저장을 막았습니다(빈 값으로 덮어쓰기 방지). 실패한 표: '+lf.join(', ')))));
         return;
       }
       // schedule/defaultSchedule만 보호된 스냅샷(_lastSchedule/_lastDefaultSchedule)으로 old를 대체 —
@@ -402,13 +410,14 @@
         var errs=await pushPlan(p);
         var after=await fetchGuard(); if(after) _base=after;   // 방금 저장한 상태를 새 기준으로
         return errs;
-      }).then(_report, function(e){ _report([String(e&&e.message||e)]); });
+      }).then(_report, function(e){ return _report([String(e&&e.message||e)]); });
+      track(_saveChain);
     }
     else { lsSet(KEY_SET, v); }
     cache.settings = v;   // 안정 ID가 주입된 객체를 캐시 (다음 분해의 기준)
   }
   function setApps(v){
-    if(useRemote){ pushApps(v).then(_report,function(e){_report([String(e&&e.message||e)]);}); }
+    if(useRemote){ track(pushApps(v).then(_report)); }
     else { lsSet(KEY_APPS, v); }
     cache.apps = v;
   }
@@ -525,7 +534,8 @@
   }
 
   window.LS = {
-    refreshCapacity:refreshCapacity,      // 잔여석만 재조회(공개 신청 창)
+    refreshCapacity:refreshCapacity,
+    whenSaved:whenSaved,                  // 진행 중인 저장이 모두 끝나면 오류 목록([]=성공)으로 resolve      // 잔여석만 재조회(공개 신청 창)
     init:init, useRemote:function(){return useRemote;},
     getClient:function(){return client;}, // 어드민 로그인(Supabase Auth)용 — 데이터 호출과 같은 client 인스턴스를 공유해야 세션이 적용됨
     hadLoadError:function(){return !!(cache.loadError&&cache.loadError.length);}, // 재시도까지 실패한 테이블이 있었는지
