@@ -46,6 +46,9 @@
   .cal-head [data-today]{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:600;letter-spacing:.02em}
   .cal-head [data-today]:hover{opacity:.85;border-color:var(--accent)}
   .spacer{flex:1}.sec-title{font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--coord);margin:30px 0 14px}
+  .save-toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,160%);z-index:9999;padding:13px 22px;border-radius:999px;color:#fff;font-size:14px;font-weight:600;letter-spacing:.02em;box-shadow:0 8px 24px rgba(0,0,0,.18);transition:transform .35s cubic-bezier(.2,.9,.3,1.2);pointer-events:none;white-space:nowrap}
+  .save-toast.show{transform:translate(-50%,0)}
+  .save-toast.saving{background:#3f3f46}.save-toast.ok{background:var(--confirmed)}.save-toast.fail{background:var(--cancel)}
   .saved{font-size:12px;color:var(--confirmed);opacity:0;transition:opacity .2s}.saved.show{opacity:1}
   .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin-bottom:12px}
   .stat{background:var(--paper);border:1px solid var(--line);padding:9px 12px}
@@ -625,8 +628,8 @@
 </div></div>
 
 <script src="../vendor/supabase-js-2.118.0.js"></script>   <!-- 외부 CDN 대신 사이트 안 고정 버전(npm 공식 패키지 원본) -->
-<script src="../config.js?v=69"></script>
-<script src="../store.js?v=69"></script>
+<script src="../config.js?v=70"></script>
+<script src="../store.js?v=70"></script>
 <script>
 const STORE_KEY='liminal_applications';
 const SET_KEY='liminal_settings';
@@ -699,7 +702,23 @@ function saveSettings(s){if(window.LS)LS.setSettings(s);}
 function ymd(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function fmt(iso){const d=new Date(iso);if(isNaN(d))return iso||'-';const p=n=>String(n).padStart(2,'0');return `${d.getFullYear()}.${p(d.getMonth()+1)}.${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;}
 function esc(s){return (s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
-function toast(id){const e=document.getElementById(id);if(!e)return;e.classList.add('show');setTimeout(()=>e.classList.remove('show'),1600);}
+function toast(id){const e=document.getElementById(id);if(e){e.classList.add('show');setTimeout(()=>e.classList.remove('show'),1600);}saveDone();}
+/* 화면 아래에서 올라왔다 사라지는 저장 알림 — 서버 저장이 실제로 끝난 뒤(LS.whenSaved) 완료/실패를 표시 */
+let saveToastT=0;
+function saveToast(state,msg,ms){
+  let el=document.getElementById('saveToast');
+  if(!el){el=document.createElement('div');el.id='saveToast';el.setAttribute('role','status');el.setAttribute('aria-live','polite');document.body.appendChild(el);}
+  el.className='save-toast '+state;el.textContent=msg;
+  requestAnimationFrame(()=>el.classList.add('show'));
+  clearTimeout(saveToastT);if(ms)saveToastT=setTimeout(()=>el.classList.remove('show'),ms);
+}
+function saveDone(){
+  saveToast('saving','저장 중…',0);
+  (window.LS&&LS.whenSaved?LS.whenSaved():Promise.resolve([])).then(errs=>{
+    if(errs&&errs.length) saveToast('fail','저장하지 못했습니다. 다시 시도해 주세요.',3500);
+    else saveToast('ok','저장이 완료되었습니다.',2200);
+  });
+}
 /* KPI 카드: 전체 + 상태별(STATUS 순) */
 function statsCardsHTML(list){const c={};Object.keys(STATUS).forEach(k=>c[k]=0);list.forEach(x=>{if(c[x.status]!==undefined)c[x.status]++;});
   const cards=[['전체',list.length]].concat(Object.keys(STATUS).map(k=>[STATUS[k].label,c[k]]));
@@ -1075,7 +1094,7 @@ function l2Save(){
     else { result.push(a); seen.add(a.id); }
   });
   draft.forEach(a=>{ if(l2Touched.has(a.id) && !seen.has(a.id)){result.push(a);seen.add(a.id);} });   // 새로 추가된 항목
-  save(result); l2Dirty=false; l2Data=null; l2Sel=new Set(); l2Touched=new Set();
+  save(result); l2Dirty=false; l2Data=null; l2Sel=new Set(); l2Touched=new Set(); saveDone();
   renderList2(); renderOverview();
   const dh=document.getElementById('l2DirtyHint'); if(dh){dh.textContent='저장됨 ✓';dh.classList.remove('on');setTimeout(()=>{if(!l2Dirty&&dh.textContent==='저장됨 ✓')dh.textContent='';},1600);}
 }
@@ -1647,6 +1666,7 @@ async function renderAccounts(){
       const msg=row.querySelector('.acc-msg');
       if(error){ alert('저장 실패: '+error); return; }
       if(msg){ msg.textContent='저장됨 ✓'; msg.classList.add('show'); setTimeout(function(){msg.classList.remove('show');},1600); }
+      saveToast('ok','저장이 완료되었습니다.',2200);
     });
   });
   list.querySelectorAll('.acc-del').forEach(function(b){
@@ -1712,7 +1732,7 @@ document.getElementById('d_date').addEventListener('change',()=>{document.getEle
 function dApplyTo(a){a.name=dval('d_name');a.phone=dval('d_phone');a.email=dval('d_email');a.nationality=dval('d_nat');a.facebook=dval('d_fb');a.instagram=dval('d_ig');a.branch=dval('d_branch');a.class=dval('d_class');a.size=dval('d_size');a.date=dval('d_date');a.time=dval('d_time');a.people=dval('d_people')||'1';a.msg=dval('d_msg');a.amount=dval('d_amount');a.status=dval('d_status');a.source=dval('d_source')||'home';}
 document.getElementById('dSave').addEventListener('click',()=>{
   if(typeof l2Active==='function'&&l2Active()){const a=l2Get().find(x=>x.id===detailId);if(!a)return;dApplyTo(a);l2Touched.add(detailId);l2Dirty=true;closeDetail();renderList2();return;}
-  const l=load();const a=l.find(x=>x.id===detailId);if(!a)return;dApplyTo(a);save(l);closeDetail();renderList();renderOverview();});
+  const l=load();const a=l.find(x=>x.id===detailId);if(!a)return;dApplyTo(a);save(l);saveDone();closeDetail();renderList();renderOverview();});
 document.getElementById('dDelete').addEventListener('click',()=>{if(!detailId)return;if(!confirm('이 신청을 삭제할까요?'))return;
   if(typeof l2Active==='function'&&l2Active()){l2Touched.add(detailId);l2Data=l2Get().filter(x=>x.id!==detailId);l2Dirty=true;closeDetail();renderList2();return;}
   save(load().filter(x=>x.id!==detailId));closeDetail();renderList();renderOverview();});
