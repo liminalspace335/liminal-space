@@ -65,6 +65,9 @@
   .l2-table td.strong{color:var(--ink);font-weight:600}
   .l2-table td.nowrap{white-space:nowrap}
   .l2-table td.memo{max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .l2-table:not(.show-ext) .l2-ext{display:none}   /* 상세 내역 보기 꺼짐: 지점·클래스·신청일시 숨김 */
+  .l2-toggle{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--ink-soft);cursor:pointer;user-select:none}
+  .l2-toggle input{width:15px;height:15px;cursor:pointer}
   .l2-empty{text-align:center;color:var(--ink-soft);padding:40px 0!important}
   .l2-table .l2-ck{width:36px;text-align:center}
   .l2-table .l2-ck input{cursor:pointer;width:15px;height:15px}
@@ -353,6 +356,7 @@
           <button class="btn sm" id="l2Save">저장</button>
           <span id="l2DirtyHint" class="l2-dirty"></span>
           <div class="spacer"></div>
+          <label class="l2-toggle"><input type="checkbox" id="l2ShowExt"> 상세 내역 보기</label>
           <span id="l2Count" class="l2-count"></span>
           <button class="btn ghost" id="l2Export">CSV 내보내기</button>
         </div>
@@ -1058,6 +1062,10 @@ function renderList2(){
     document.getElementById('l2Add').addEventListener('click',l2AddRow);
     document.getElementById('l2Del').addEventListener('click',l2DelRows);
     document.getElementById('l2Save').addEventListener('click',l2Save);
+    (function(){const cb=document.getElementById('l2ShowExt'),tb=document.querySelector('#panel-list2 .l2-table');
+      let on=false;try{on=localStorage.getItem('l2ShowExt')==='1';}catch(e){}
+      cb.checked=on;tb.classList.toggle('show-ext',on);
+      cb.addEventListener('change',()=>{tb.classList.toggle('show-ext',cb.checked);try{localStorage.setItem('l2ShowExt',cb.checked?'1':'0');}catch(e){}});})();
     document.getElementById('l2mClose').addEventListener('click',l2CloseStatusModal);
     document.getElementById('l2mCancel').addEventListener('click',l2CloseStatusModal);
     document.getElementById('l2mApply').addEventListener('click',l2ApplyStatusModal);
@@ -1080,7 +1088,8 @@ function renderList2(){
   const rows=l2Filtered();
   document.getElementById('l2Count').textContent='총 '+rows.length+'명';
   const cols=['출처','희망일','시간','이름','연락처','이메일','지점','클래스','용량','인원','국적','메모','신청일시','결제금액','상태','메일','잘로','작업'];
-  document.getElementById('l2Head').innerHTML='<tr><th class="l2-ck"><input type="checkbox" id="l2All"></th>'+cols.map(c=>`<th>${c}</th>`).join('')+'</tr>';
+    const EXT_COLS=['지점','클래스','신청일시'];   // '상세 내역 보기'를 켰을 때만 보이는 칸
+  document.getElementById('l2Head').innerHTML='<tr><th class="l2-ck"><input type="checkbox" id="l2All"></th>'+cols.map(c=>`<th${EXT_COLS.includes(c)?' class="l2-ext"':''}>${c}</th>`).join('')+'</tr>';
   document.getElementById('l2Body').innerHTML = rows.length ? rows.map(a=>{
     const st=STATUS[a.status]||STATUS.new;const msg=a.msg||'';const src=srcOf(a);const plat=isPlatformSrc(src);
     return `<tr data-id="${a.id}">
@@ -1091,13 +1100,13 @@ function renderList2(){
       <td class="strong">${esc(a.name)||'-'}</td>
       <td class="mono nowrap">${esc(a.phone)||'-'}</td>
       <td class="nowrap">${esc(a.email)||'-'}</td>
-      <td class="nowrap">${esc(brLabelAdm(a.branch))||'-'}</td>
-      <td>${esc(a.class?clsLabelAdm(a.branch,a.class):'-')}</td>
+      <td class="nowrap l2-ext">${esc(brLabelAdm(a.branch))||'-'}</td>
+      <td class="l2-ext">${esc(a.class?clsLabelAdm(a.branch,a.class):'-')}</td>
       <td class="nowrap">${esc(a.size)||'-'}</td>
       <td class="mono">${esc(a.people)||'1'}</td>
       <td class="nowrap">${esc(natName(a.nationality))||'-'}</td>
       <td class="memo" title="${esc(msg)}">${esc(msg.slice(0,24))}${msg.length>24?'…':''}</td>
-      <td class="mono nowrap">${esc(fmt(a.createdAt))}</td>
+      <td class="mono nowrap l2-ext">${esc(fmt(a.createdAt))}</td>
       <td class="mono nowrap">${esc(a.amount)||'-'}</td>
       <td><span class="badge ${st.cls}">${st.label}</span></td>
       <td class="nowrap" title="${plat?esc(srcLabel(src)+' 예약 — 플랫폼에서 안내'):esc(a.confirmMailErr||'')}">${plat?srcBadge(src):cmBadge(a.confirmMail)}</td>
