@@ -930,9 +930,26 @@ function closeModal(){
   document.body.style.overflow='';
   document.getElementById('amToast').classList.remove('show');
 }
+/* 날짜·시간 단계에서 잔여석만 다시 받아 화면 갱신(새로고침 없이). 기존 데이터로 먼저 보여주고 응답이 오면 다시 그림.
+ * 고른 시간대가 그 사이 마감되면 다음 가능한 시간으로 옮기고 안내. */
+function refreshSeats(force){
+  if(!window.LS||!LS.refreshCapacity) return;
+  LS.refreshCapacity(force).then(function(changed){
+    if(!changed||!onDateStep()) return;
+    if(data.date&&data.time&&!isInquiry()){
+      const r=slotRemain();
+      if(r!=null&&r<=0){ data.time=firstOpenTime(data.date);
+        toast(tr({ko:'선택한 시간이 방금 마감됐어요',en:'That time just filled up',vi:'Khung giờ này vừa hết chỗ',ru:'Это время только что заняли'}),
+              data.time?tr({ko:'다음 가능한 시간으로 바꿨어요',en:'Moved to the next available time',vi:'Đã chuyển sang giờ trống tiếp theo',ru:'Выбрано следующее свободное время'}):''); }
+    }
+    clampPeople(); renderModal(true);
+  });
+}
+function onDateStep(){return modal.classList.contains('open')&&(editing===4||(editing==null&&cur===4));}
+document.addEventListener('visibilitychange',function(){ if(!document.hidden&&onDateStep()) refreshSeats(false); });
 function goto(n){
   cur=n; editing=null; returnTo=null; snap=null; sumOpen=false;
-  if(n===4) calMonth=(data.date||vnToday()).slice(0,7);
+  if(n===4){ calMonth=(data.date||vnToday()).slice(0,7); refreshSeats(true); }
   if(n===5 && isInquiry() && !data.msg) data.msg=inquiryTemplate();
   renderModal(false);
 }
@@ -1154,7 +1171,7 @@ function startEdit(s){
   if(cur>=6||s>=base||!stepOn(s))return;
   if(editing) Object.assign(data,snap); else { snap=Object.assign({},data); returnTo=cur; }
   editing=s; editFrom=stepVal(s); sumOpen=false;
-  if(s===4) calMonth=(data.date||vnToday()).slice(0,7);
+  if(s===4){ calMonth=(data.date||vnToday()).slice(0,7); refreshSeats(true); }
   renderModal(false);
 }
 function cancelEdit(){ const r=returnTo; Object.assign(data,snap); goto(r); }
@@ -1366,7 +1383,7 @@ modal.addEventListener('click',function(e){
   }
   if(t.closest('a')) return;                       // 지도 링크 등은 그대로 이동
   const pk=t.closest('[data-pick]'); if(pk){ if(!pk.classList.contains('disabled')) pick(pk.dataset.pick,pk.dataset.val); return; }
-  const dy=t.closest('[data-day]'); if(dy){ data.date=dy.dataset.day; data.time=isInquiry()?'':firstOpenTime(data.date); clampPeople(); renderModal(true); return; }
+  const dy=t.closest('[data-day]'); if(dy){ data.date=dy.dataset.day; data.time=isInquiry()?'':firstOpenTime(data.date); clampPeople(); renderModal(true); refreshSeats(false); return; }
   const tm=t.closest('[data-time]'); if(tm){ data.time=tm.dataset.time; clampPeople(); renderModal(true); }
 });
 /* 키보드: role=button 카드도 Enter/Space로 선택 + 다시 그린 뒤 같은 카드에 포커스 유지 */
