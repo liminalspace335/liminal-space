@@ -56,7 +56,7 @@
   /* max-height+overflow-y:auto로 표 자체가 뷰포트 안에서 스크롤되게 해서, 가로 스크롤바가 페이지 맨 아래까지 안 내려가도 항상 손닿는 위치에 있게 함 */
   .l2-wrap{border:1px solid var(--line);background:var(--paper);overflow:auto;max-height:calc(100vh - 330px);min-height:260px}
   .l2-table{width:100%;border-collapse:collapse;font-size:13px;white-space:nowrap}
-  .l2-table thead th{position:sticky;top:0;background:#f4f4f5;text-align:left;font-size:11px;letter-spacing:.06em;color:var(--coord);font-weight:600;padding:11px 12px;border-bottom:1px solid var(--line);z-index:1}
+  .l2-table thead th{position:sticky;top:0;background:#f4f4f5;text-align:center;font-size:11px;letter-spacing:.06em;color:var(--coord);font-weight:600;padding:11px 12px;border-bottom:1px solid var(--line);z-index:1}
   .l2-table tbody td{padding:11px 12px;border-bottom:1px solid var(--line);color:var(--ink-soft);vertical-align:middle}
   .l2-table tbody tr:hover{background:#eeeef0}
   .l2-table tbody tr.current-row{background:#e4e7ec}
@@ -358,6 +358,7 @@
           <div class="spacer"></div>
           <label class="l2-toggle"><input type="checkbox" id="l2ShowExt"> 상세 내역 보기</label>
           <span id="l2Count" class="l2-count"></span>
+          <select id="l2Site" title="관리자 화면 바로가기"></select><button class="btn ghost" id="l2SiteOpen">열기</button>
           <button class="btn ghost" id="l2Export">CSV 내보내기</button>
         </div>
         <div class="l2-wrap"><table class="l2-table"><thead id="l2Head"></thead><tbody id="l2Body"></tbody></table></div>
@@ -638,11 +639,21 @@ function natOptions(sel){return '<option value="">-</option>'+Object.keys(NAT_LA
 function cmBadge(v){if(v==='sent')return '<span class="badge b-confirmed">성공</span>';if(v==='failed')return '<span class="badge b-cancel">실패</span>';if(v==='pending')return '<span class="badge b-new">발송중</span>';return '<span class="badge b-done">미발송</span>';}
 function zBadge(v){return cmBadge(v);}
 // 신청 출처 — home/direct 외에는 플랫폼 예약(메일·잘로는 플랫폼이 직접 안내하므로 발송 대신 플랫폼 뱃지 표시)
-const SOURCE={home:{label:'홈페이지'},direct:{label:'직접'},gyg:{label:'GetYourGuide',short:'GYG'},kkday:{label:'KKday'},viator:{label:'Viator'},klook:{label:'Klook'},airbnb:{label:'Airbnb'},tripadvisor:{label:'Tripadvisor'}};
+// short: 리스트 출처 칸·뱃지에 쓰는 약어 / admin: 상단 '관리자 화면 열기' 드롭다운의 바로가기
+const SOURCE={
+  home:{label:'홈페이지',short:'HP',admin:'../'},
+  direct:{label:'직접',short:'직접'},
+  gyg:{label:'GetYourGuide',short:'GYG',admin:'https://supplier.getyourguide.com/'},
+  kkday:{label:'KKday',short:'KKD',admin:'https://scm.kkday.com/'},
+  viator:{label:'Viator',short:'VIA',admin:'https://supplier.viator.com/'},
+  klook:{label:'Klook',short:'KLK',admin:'https://merchant.klook.com/'},
+  airbnb:{label:'Airbnb',short:'ABNB',admin:'https://www.airbnb.com/hosting'},
+  tripadvisor:{label:'Tripadvisor',short:'TA',admin:'https://www.tripadvisor.com/Owners'}};
 const srcOf=a=>a.source||'home';
 const srcLabel=v=>(SOURCE[v]||{label:v}).label;
 const isPlatformSrc=v=>!!v&&v!=='home'&&v!=='direct';
-const srcBadge=v=>`<span class="badge b-src">${esc((SOURCE[v]||{}).short||srcLabel(v))}</span>`;
+const srcShort=v=>(SOURCE[v]||{}).short||srcLabel(v);
+const srcBadge=v=>`<span class="badge b-src">${esc(srcShort(v))}</span>`;
 const DOW=['일','월','화','수','목','금','토'];
 const DAYKEYS=['sun','mon','tue','wed','thu','fri','sat'];
 function defaultDaySlots(){return [{cls:'',time:'11:00',cap:6},{cls:'',time:'14:00',cap:6},{cls:'',time:'17:00',cap:6}];}
@@ -1058,6 +1069,10 @@ function renderList2(){
     document.getElementById('l2Status').addEventListener('change',renderList2);
     document.getElementById('l2Branch').addEventListener('change',renderList2);
     document.getElementById('l2Export').addEventListener('click',()=>exportCSV(l2Filtered()));
+    (function(){const sel=document.getElementById('l2Site');
+      sel.innerHTML='<option value="">관리자 화면 선택</option>'+Object.entries(SOURCE).filter(([,o])=>o.admin).map(([k,o])=>`<option value="${k}">${esc(o.label)}</option>`).join('');
+      document.getElementById('l2SiteOpen').addEventListener('click',()=>{const o=SOURCE[sel.value];if(!o){alert('열 사이트를 먼저 선택하세요.');return;}
+        window.open(new URL(o.admin,location.href).href,'_blank','noopener');});})();
     document.getElementById('l2StatusBtn').addEventListener('click',l2OpenStatusModal);
     document.getElementById('l2Add').addEventListener('click',l2AddRow);
     document.getElementById('l2Del').addEventListener('click',l2DelRows);
@@ -1094,7 +1109,7 @@ function renderList2(){
     const st=STATUS[a.status]||STATUS.new;const msg=a.msg||'';const src=srcOf(a);const plat=isPlatformSrc(src);
     return `<tr data-id="${a.id}">
       <td class="l2-ck"><input type="checkbox" class="l2-row" value="${a.id}" ${l2Sel.has(a.id)?'checked':''}></td>
-      <td class="nowrap">${esc(srcLabel(src))}</td>
+      <td class="nowrap" style="text-align:center" title="${esc(srcLabel(src))}">${esc(srcShort(src))}</td>
       <td class="mono nowrap">${esc(a.date)||'-'}</td>
       <td class="mono nowrap">${esc(a.time)||'-'}</td>
       <td class="strong">${esc(a.name)||'-'}</td>
