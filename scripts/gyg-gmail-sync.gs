@@ -1,5 +1,5 @@
 /**
- * LIMINAL SPACE — GetYourGuide 예약/취소 메일 → 홈페이지 신청 자동 반영 (Google Apps Script)
+ * LIMINAL SPACE — GetYourGuide·KKday 예약/취소 메일 → 홈페이지 신청 자동 반영 (Google Apps Script)
  * ------------------------------------------------------------
  * 설치 위치: GYG 공급사 메일을 받는 사업용 Gmail 계정의 script.google.com 프로젝트.
  * 스크립트 속성(프로젝트 설정 → 스크립트 속성):
@@ -55,6 +55,33 @@ function parseGygMail(text) {
 
 function pad2(n) { return (n < 10 ? '0' : '') + Number(n); }
 
+/** KKday 공급사 메일(제목·본문) → 예약 정보. KKday 예약번호가 없으면 null
+ *  - 주문 접수: 제목 "[KKday] 예약번호: 26KK… 주문이 접수되었습니다" → book
+ *  - 취소 신청: 제목 "… 예약 취소 신청, 48시간 이내에 처리해 주세요." → cancel_request
+ *    (판매자가 SCM에서 처리해야 하는 '신청' 단계라 홈페이지 자리는 풀지 않고 알림만)
+ *  - 그 밖의 취소 관련 메일 → cancel_unknown (형식 확인 전이라 알림만) */
+function parseKkdayMail(subject, text) {
+  var s = String(subject || ''), t = String(text || '').replace(/\r/g, '').replace(/[ \t\u00a0]+/g, ' ');
+  var refM = (s + '\n' + t).match(/\b\d{2}KK\d{6,}\b/);
+  if (!refM) return null;
+  var out = { source: 'kkday', ref: refM[0] };
+  if (/취소\s*신청|cancel\w*\s*request/i.test(s)) { out.action = 'cancel_request'; return out; }
+  if (/주문이\s*접수|new\s*order/i.test(s)) out.action = 'book';
+  else if (/취소|cancel/i.test(s)) { out.action = 'cancel_unknown'; return out; }
+  else return null;
+  var dm = t.match(/사용\s*날짜\s*:\s*(\d{4})[\/.-](\d{1,2})[\/.-](\d{1,2})/);
+  if (dm) out.date = dm[1] + '-' + pad2(dm[2]) + '-' + pad2(dm[3]);
+  var tm = t.match(/이용\s*가능한\s*시간\s*:\s*(\d{1,2}):(\d{2})/);
+  if (tm) out.time = pad2(tm[1]) + ':' + tm[2];
+  var qm = t.match(/수량\s*:\s*(\d+)/);
+  out.people = qm ? Number(qm[1]) : 1;
+  var sm = t.match(/패키지\s*:[^\n]*?(\d{2,3})\s*ml/i);
+  out.size = sm ? sm[1] + 'ml' : '';
+  var nm = t.match(/대표\s*여행자\s*:\s*([^\n]+)/);
+  out.name = nm ? nm[1].trim() : '';
+  return out;
+}
+
 function syncGygMails() {
   var props = PropertiesService.getScriptProperties();
   var url = props.getProperty('SYNC_URL'), secret = props.getProperty('SYNC_SECRET');
@@ -62,7 +89,7 @@ function syncGygMails() {
   if (!url || !secret) throw new Error('스크립트 속성 SYNC_URL / SYNC_SECRET 을 먼저 설정하세요.');
 
   var done = JSON.parse(props.getProperty('DONE_IDS') || '[]');
-  var threads = GmailApp.search('from:getyourguide.com newer_than:3d', 0, 50);
+  var threads = GmailApp.search('from:(getyourguide.com OR kkday.com) newer_than:3d', 0, 50);
   // 오래된 메일부터 처리 — 예약 메일보다 취소 메일을 먼저 처리하면 취소된 예약이 '확정'으로 들어가 버림
   var msgs = [];
   threads.forEach(function (th) { th.getMessages().forEach(function (m) { msgs.push(m); }); });
@@ -71,10 +98,20 @@ function syncGygMails() {
       var id = m.getId();
       if (done.indexOf(id) >= 0) return;
       var body = m.getPlainBody();
-      var info = parseGygMail(body);
+      var info = parseGygMail(body) || parseKkdayMail(m.getSubject(), body);
       if (!info) {
-        // GYG 예약번호는 있는데 예약/취소 형식이 아니면(다른 안내 메일) 그냥 기록만 하고 넘어감
+        // 예약번호가 없거나 예약/취소 형식이 아닌 안내 메일은 기록만 하고 넘어감
         done.push(id);
+        return;
+      }
+      if (info.action === 'cancel_request') {
+        if (!dryRun) { alertOnce(info.ref, 'KKday 취소 신청이 들어왔어요. KKday SCM에서 48시간 안에 처리해 주세요. 홈페이지 자리는 아직 유지돼 있으니, 취소를 승인하면 어드민에서 이 예약을 "취소"로 바꿔 주세요.', m); done.push(id); }
+        Logger.log((dryRun ? '[DRY] ' : '') + 'cancel_request ' + info.ref + ' → 알림만');
+        return;
+      }
+      if (info.action === 'cancel_unknown') {
+        if (!dryRun) { alertOnce(info.ref, '취소 관련 KKday 메일을 자동으로 처리하지 못했어요. 어드민에서 직접 확인해 주세요.', m); done.push(id); }
+        Logger.log((dryRun ? '[DRY] ' : '') + 'cancel_unknown ' + info.ref);
         return;
       }
       if (info.action === 'book' && (!info.date || !info.time)) {
@@ -99,9 +136,10 @@ function syncGygMails() {
 
 function alertOnce(ref, why, msg) {
   var me = Session.getEffectiveUser().getEmail();
-  MailApp.sendEmail(me, '[홈페이지 연동] GYG 예약 수동 확인 필요 - ' + ref,
-    'GYG 메일을 홈페이지 신청으로 자동 반영하지 못했어요. 어드민에서 직접 확인해 주세요.\n\n' +
-    '예약번호: ' + ref + '\n사유: ' + why + '\n메일 제목: ' + msg.getSubject());
+  var pf = /^GYG/.test(ref) ? 'GYG' : 'KKday';
+  MailApp.sendEmail(me, '[홈페이지 연동] ' + pf + ' 예약 확인 필요 - ' + ref,
+    pf + ' 메일을 홈페이지 신청에 자동으로 반영하지 못했거나 직접 처리가 필요해요.\n\n' +
+    '예약번호: ' + ref + '\n내용: ' + why + '\n메일 제목: ' + msg.getSubject());
 }
 
 /* 설치 직후 1회 실행: 5분마다 syncGygMails 를 돌리는 트리거 생성 */
@@ -112,4 +150,4 @@ function installTrigger() {
   ScriptApp.newTrigger('syncGygMails').timeBased().everyMinutes(5).create();
 }
 
-if (typeof module !== 'undefined') module.exports = { parseGygMail: parseGygMail };
+if (typeof module !== 'undefined') module.exports = { parseGygMail: parseGygMail, parseKkdayMail: parseKkdayMail };
