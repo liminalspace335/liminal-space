@@ -1,8 +1,9 @@
 // ============================================================
-// LIMINAL SPACE — GetYourGuide 예약 → 홈페이지 신청 자동 반영 (Supabase Edge Function)
+// LIMINAL SPACE — 플랫폼(GetYourGuide·KKday) 예약 → 홈페이지 신청 자동 반영 (Supabase Edge Function)
+// (이름은 처음 만든 GYG 기준 gyg-sync 그대로 — Apps Script가 이 주소를 쓰고 있음)
 // ------------------------------------------------------------
 // 호출: 사업용 Gmail의 Apps Script(scripts/gyg-gmail-sync.gs)가 GYG 예약/취소 메일을 읽어 POST.
-// body: { action:'book'|'cancel', ref, date:'YYYY-MM-DD', time:'HH:MM', people, size:'30ml',
+// body: { source:'gyg'|'kkday'(기본 gyg), action:'book'|'cancel', ref, date:'YYYY-MM-DD', time:'HH:MM', people, size:'30ml',
 //         name, phone, language, price, dryRun }
 //   book   → applications 에 source='gyg', ext_ref=ref 로 확정 신청 추가 (같은 ref는 한 번만)
 //   cancel → 같은 ref 신청의 상태를 'cancel' 로 변경 (행은 지우지 않음)
@@ -26,7 +27,11 @@ const db = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SE
 // GYG 상품은 호치민 지점의 Signature Scent Workshop 하나로 판매 중
 const BRANCH_ID = "br_mqt85rqtqlmbfk";
 const CLASS_ID = "cl_mqj89f9wfi7bet";
-const SOURCE = "gyg";
+// 플랫폼별 예약번호 형식 + 메모 표시명. source 값은 어드민 출처 칸(SOURCE)과 같아야 함
+const PLATFORMS: Record<string, { re: RegExp; label: string }> = {
+  gyg: { re: /^GYG[A-Z0-9]{6,}$/, label: "GYG" },
+  kkday: { re: /^\d{2}KK\d{6,}$/, label: "KKday" },   // 예: 26KK221534633
+};
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
@@ -54,8 +59,11 @@ Deno.serve(async (req) => {
   let b: any;
   try { b = await req.json(); } catch { return json({ error: "bad json" }, 400); }
 
+  const SOURCE = String(b.source || "gyg");
+  const pf = PLATFORMS[SOURCE];
+  if (!pf) return json({ error: "bad source", source: SOURCE }, 400);
   const ref = String(b.ref || "").trim();
-  if (!/^GYG[A-Z0-9]{6,}$/.test(ref)) return json({ error: "bad ref", ref }, 400);
+  if (!pf.re.test(ref)) return json({ error: "bad ref", ref }, 400);
 
   const { data: existing } = await db.from("applications").select("id,status")
     .eq("source", SOURCE).eq("ext_ref", ref).limit(1);
@@ -82,7 +90,7 @@ Deno.serve(async (req) => {
   const memo = [
     over ? `⚠️ 정원 초과(기존 ${booked}명 + ${people}명 / 정원 ${cap}명)` : "",
     cap == null ? "⚠️ 홈페이지에 없는 시간대" : "",
-    `[GYG] 예약번호 ${ref}`,
+    `[${pf.label}] 예약번호 ${ref}`,
     b.phone ? `연락처 ${b.phone}` : "",
     b.language ? `언어 ${b.language}` : "",
   ].filter(Boolean).join(" · ");
