@@ -377,7 +377,7 @@
 
       <!-- BOOKING -->
       <div class="panel" id="panel-booking">
-        <div class="branch-picker"><label class="head-row">지점</label><select id="bkBranchSel"></select><span class="spacer" style="flex:1"></span><button type="button" class="btn sm" id="bkBulk">일괄 생성</button></div>
+        <div class="branch-picker"><label class="head-row">지점</label><select id="bkBranchSel"></select><span class="spacer" style="flex:1"></span><button type="button" class="btn sm" id="bkBulk">일괄 생성</button><button type="button" class="btn danger sm" id="bkBulkDel">일괄 삭제</button></div>
         <div id="bkCopySlot" class="bk-copyslot"></div>
         <div class="bk-grid">
           <div class="cal sel" id="bkCal"></div>
@@ -610,14 +610,14 @@
 
 <!-- 클래스 스케줄 일괄 생성 팝업 -->
 <div class="dmodal" id="bkbModal"><div class="dbox" style="width:640px">
-  <div class="dhead"><div><h3>스케줄 일괄 생성</h3><div class="dwhen">기간·요일·시간대를 정하면 해당 날짜들에 한 번에 클래스를 엽니다.</div></div><button class="dclose" id="bkbClose" aria-label="close">×</button></div>
+  <div class="dhead"><div><h3 id="bkbTitle">스케줄 일괄 생성</h3><div class="dwhen" id="bkbDesc">기간·요일·시간대를 정하면 해당 날짜들에 한 번에 클래스를 엽니다.</div></div><button class="dclose" id="bkbClose" aria-label="close">×</button></div>
   <div class="dbody">
     <div class="dgrid">
       <div class="df full"><label>지점</label><select id="bkbBranch"></select></div>
       <div class="df"><label>시작일</label><input type="date" id="bkbFrom" /></div>
       <div class="df"><label>종료일</label><input type="date" id="bkbTo" /></div>
       <div class="df full"><label>요일</label><div class="bkb-dows" id="bkbDows"></div></div>
-      <div class="df full"><label>시간대 (클래스 · 시간 · 정원)</label><div id="bkbSlots"></div>
+      <div class="df full" id="bkbSlotsBox"><label>시간대 (클래스 · 시간 · 정원)</label><div id="bkbSlots"></div>
         <div class="save-row" style="margin-top:4px"><button type="button" class="btn ghost sm" id="bkbAdd">+ 시간대 추가</button><button type="button" class="btn ghost sm" id="bkbDefault">기본값 불러오기</button></div></div>
     </div>
     <div id="bkbSummary"></div>
@@ -809,7 +809,7 @@ function applyMenuVisibility(){
 /* 정적 버튼 id → (권한영역, 동작) — 신청관리·클래스설정·환경설정의 추가/저장 버튼 전부 */
 const ACTION_MAP={
   l2Add:['list2','create'], l2Del:['list2','delete'], l2Save:['list2','update'], l2StatusBtn:['list2','update'], l2mApply:['list2','update'], resendApply:['list2','update'],
-  bkBulk:['booking','update'], bkbGo:['booking','update'],
+  bkBulk:['booking','update'], bkBulkDel:['booking','delete'],
   edAdd:['booking','create'], edSave:['booking','update'], edDefault:['booking','update'], edClosed:['booking','update'], edCopy:['booking','update'], edPaste:['booking','update'], edReset:['booking','delete'],
   brAdd:['settings','create'], brSave:['settings','update'],
   bcAdd:['settings','create'], bcSave:['settings','update'],
@@ -1273,11 +1273,17 @@ function fillEditor(slots){document.getElementById('edSlots').innerHTML=slots.ma
  * - 이미 설정된 날짜(휴무 포함)는 덮어쓸지 그대로 둘지 관리자가 고르게 함
  * - 오늘을 포함한 이전 날짜는 만들지 않음(내일부터) */
 let bkbPlanned=null;   // 마지막 미리보기 결과(입력이 바뀌면 null → 다시 확인)
+let bkbMode='create';  // 'create' 일괄 생성 / 'delete' 일괄 삭제(설정된 날짜를 미설정으로 되돌림)
 function bkbSlotRow(sl,br){return `<div class="bkb-row"><select class="b-cls">${clsOptsFor(br,sl.cls)}</select><input type="time" class="b-time" value="${esc(sl.time||'')}" /><input type="number" min="0" class="b-cap" value="${sl.cap??0}" /><button type="button" class="icon-btn b-del">삭제</button></div>`;}
 function bkbFillSlots(slots){const br=dval('bkbBranch');document.getElementById('bkbSlots').innerHTML=slots.map(sl=>bkbSlotRow(sl,br)).join('')||'<div class="hint">시간대를 추가하세요.</div>';bkbDirty();}
 function bkbReadSlots(){const seen={};return [...document.querySelectorAll('#bkbSlots .bkb-row')].map(r=>({cls:r.querySelector('.b-cls').value,time:r.querySelector('.b-time').value,cap:Math.max(0,+r.querySelector('.b-cap').value||0)})).filter(x=>{if(!x.time)return false;const k=x.time+'|'+x.cls;if(seen[k])return false;seen[k]=1;return true;});}
 function bkbDirty(){bkbPlanned=null;document.getElementById('bkbSummary').innerHTML='';document.getElementById('bkbGo').textContent='확인';}
-function bkbOpen(){
+function bkbOpen(mode){
+  bkbMode=mode==='delete'?'delete':'create';
+  const del=bkbMode==='delete';
+  document.getElementById('bkbTitle').textContent=del?'스케줄 일괄 삭제':'스케줄 일괄 생성';
+  document.getElementById('bkbDesc').textContent=del?'기간·요일을 정하면 해당 날짜들의 클래스 설정(휴무 지정 포함)을 지웁니다. 신청이 있는 날짜는 지우지 않습니다.':'기간·요일·시간대를 정하면 해당 날짜들에 한 번에 클래스를 엽니다.';
+  document.getElementById('bkbSlotsBox').style.display=del?'none':'';
   const names=branchNames();const br=bkBranch||names[0]||'';
   document.getElementById('bkbBranch').innerHTML=names.map(n=>`<option value="${esc(n)}" ${n===br?'selected':''}>${esc(brLabelAdm(n))}</option>`).join('');
   const t=new Date();t.setDate(t.getDate()+1);const first=ymd(t);const e=new Date(t);e.setDate(e.getDate()+30);   // 내일부터
@@ -1292,13 +1298,13 @@ function bkbPlan(){
   if(!br){alert('지점을 선택하세요.');return null;}
   if(!from||!to){alert('시작일과 종료일을 입력하세요.');return null;}
   if(to<from){alert('종료일이 시작일보다 빠릅니다.');return null;}
-  if(to<first){alert('오늘과 지난 날짜는 일괄 생성할 수 없습니다. 내일('+first+') 이후로 선택하세요.');return null;}
+  if(to<first){alert('오늘과 지난 날짜는 일괄 '+(bkbMode==='delete'?'삭제':'생성')+'할 수 없습니다. 내일('+first+') 이후로 선택하세요.');return null;}
   const dows=[...document.querySelectorAll('#bkbDows .b-dow:checked')].map(c=>+c.value);
   if(!dows.length){alert('요일을 하나 이상 선택하세요.');return null;}
-  const slots=bkbReadSlots();
-  if(!slots.length){alert('시간대를 하나 이상 입력하세요.');return null;}
+  const slots=bkbMode==='delete'?[]:bkbReadSlots();
+  if(bkbMode!=='delete'&&!slots.length){alert('시간대를 하나 이상 입력하세요.');return null;}
   const days=dateRange(from<first?first:from,to);
-  if(days.length>366){alert('한 번에 최대 366일까지 생성할 수 있습니다.');return null;}
+  if(days.length>366){alert('한 번에 최대 366일까지 '+(bkbMode==='delete'?'삭제':'생성')+'할 수 있습니다.');return null;}
   const sc=(loadSettings().schedule||{})[br]||{};
   const bookedDays=new Set(load().filter(a=>a.branch===br&&a.date&&a.status!=='cancel').map(a=>a.date));
   const plan={br,slots,fresh:[],existing:[],closed:0,booked:[]};
@@ -1311,6 +1317,7 @@ function bkbPlan(){
 }
 function bkbDatesStr(arr){const show=arr.slice(0,40).map(d=>{const x=new Date(d+'T00:00:00');return d.slice(5)+'('+DOW[x.getDay()]+')';}).join(', ');return show+(arr.length>40?` 외 ${arr.length-40}일`:'');}
 function bkbGo(){
+  if(bkbMode==='delete') return bkbGoDelete();
   if(!bkbPlanned){   // 1단계: 확인(미리보기)
     const p=bkbPlan();if(!p)return;bkbPlanned=p;
     if(p.booked.length) alert('신청(예약)이 있는 날짜 '+p.booked.length+'일은 생성할 수 없어 건너뜁니다.\n\n'+bkbDatesStr(p.booked)+'\n\n나머지 날짜는 계속 생성할 수 있습니다.');
@@ -1336,8 +1343,31 @@ function bkbGo(){
   targets.forEach(d=>{st.schedule[p.br][d]=sortSlots(p.br,p.slots.map(x=>Object.assign({},x)));});
   saveSettings(st);saveDone();bkbClose();bkBranch=p.br;renderBooking();
 }
+function bkbGoDelete(){
+  if(!bkbPlanned){   // 1단계: 확인(미리보기)
+    const p=bkbPlan();if(!p)return;bkbPlanned=p;
+    if(p.booked.length) alert('신청(예약)이 있는 날짜 '+p.booked.length+'일은 삭제할 수 없어 건너뜁니다.\n\n'+bkbDatesStr(p.booked)+'\n\n나머지 날짜는 계속 삭제할 수 있습니다.');
+    const sum=document.getElementById('bkbSummary');
+    sum.innerHTML=`<div class="bkb-sum">
+      <div>삭제할 날짜: <b>${p.existing.length}일</b>${p.closed?` (휴무 지정 ${p.closed}일 포함)`:''}</div>
+      ${p.existing.length?`<div class="dates">${esc(bkbDatesStr(p.existing))}</div>`:'<div class="dates">이 기간에 설정된 날짜가 없습니다.</div>'}
+      ${p.booked.length?`<div class="bad" style="margin-top:8px">신청이 있어 지우지 않는 날짜: <b>${p.booked.length}일</b></div><div class="dates">${esc(bkbDatesStr(p.booked))}</div>`:''}
+    </div>`;
+    document.getElementById('bkbGo').textContent=p.existing.length?p.existing.length+'일 삭제':'확인';
+    sum.scrollIntoView({block:'nearest'});return;
+  }
+  // 2단계: 삭제
+  const p=bkbPlanned;
+  if(!p.existing.length){alert('삭제할 날짜가 없습니다.');return;}
+  if(!confirm(p.br+' 지점 '+p.existing.length+'일의 클래스 설정을 삭제합니다.\n삭제한 날짜는 홈페이지에서 신청을 받을 수 없게 됩니다. 진행할까요?'))return;
+  const st=loadSettings();const sc=(st.schedule||{})[p.br];
+  if(sc){ const bookedNow=new Set(load().filter(a=>a.branch===p.br&&a.date&&a.status!=='cancel').map(a=>a.date));
+    p.existing.forEach(d=>{ if(!bookedNow.has(d)) delete sc[d]; }); }   // 미리보기 뒤 새 신청이 들어온 날짜도 한 번 더 걸러냄
+  saveSettings(st);saveDone();bkbClose();bkBranch=p.br;bkSelected=null;renderBooking();
+}
 function bkbLabel(){const p=bkbPlanned;if(!p)return;const m=(document.querySelector('input[name=bkbMode]:checked')||{}).value;const n=p.fresh.length+(m==='over'?p.existing.length:0);document.getElementById('bkbGo').textContent=(p.existing.length&&!m)?'선택 후 생성':n+'일 생성';}
-document.getElementById('bkBulk').addEventListener('click',bkbOpen);
+document.getElementById('bkBulk').addEventListener('click',()=>bkbOpen('create'));
+document.getElementById('bkBulkDel').addEventListener('click',()=>bkbOpen('delete'));
 document.getElementById('bkbClose').addEventListener('click',bkbClose);
 document.getElementById('bkbCancel').addEventListener('click',bkbClose);
 document.getElementById('bkbModal').addEventListener('click',e=>{if(e.target.id==='bkbModal')bkbClose();});
