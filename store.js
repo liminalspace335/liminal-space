@@ -236,6 +236,13 @@
     results.forEach(function(e){ if(e) errs.push(e); });
     return errs.length?errs.join('; '):null;
   }
+  // 스케줄 대량 삽입(일괄 생성 등)을 500행씩 나눠 순서대로 보냄 — 한 요청이 너무 커져 실패하는 것 방지
+  async function insertChunked(table,rows){
+    var errs=[];
+    var batches=chunk(rows,500);
+    for(var i=0;i<batches.length;i++){ var b=batches[i]; var e=await _ckRetry(function(){return client.from(table).insert(b);}, table); if(e) errs.push(e); }
+    return errs.length?errs.join('; '):null;
+  }
   // FK 순서를 지키되 독립 작업은 병렬로 — 저장 체감속도 개선
   // 스케줄/기본값은 이제 "바뀐 지점·바뀐 날짜"만 지웠다가 다시 쓴다(전체삭제 X) — 안 건드린 데이터는 절대 손대지 않는다
   async function pushPlan(p){
@@ -262,8 +269,8 @@
     add(await Promise.all([
       p.detailRows.length ? _ckRetry(function(){return client.from('class_details').upsert(p.detailRows);},'class_details') : null,
       p.defRows.length ? _ckRetry(function(){return client.from('default_slots').insert(p.defRows);},'default_slots') : null,
-      (p.schRows.length&&!schedDeleteFailed) ? _ckRetry(function(){return client.from('schedule_slots').insert(p.schRows);},'schedule_slots') : null,
-      (p.dayRows.length&&!schedDeleteFailed) ? _ckRetry(function(){return client.from('schedule_days').insert(p.dayRows);},'schedule_days') : null,
+      (p.schRows.length&&!schedDeleteFailed) ? insertChunked('schedule_slots',p.schRows) : null,
+      (p.dayRows.length&&!schedDeleteFailed) ? insertChunked('schedule_days',p.dayRows) : null,
       p.delDetailIds.length ? _ckRetry(function(){return client.from('class_details').delete().in('id',p.delDetailIds);},'class_details(del)') : null
     ]));
     if(schedDeleteFailed&&(p.schRows.length||p.dayRows.length)) errs.push('schedule_slots/schedule_days: 이전 데이터 삭제 실패로 이번 스케줄 저장을 건너뛰었습니다. 다시 저장해 주세요.');
