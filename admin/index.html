@@ -1271,7 +1271,7 @@ function fillEditor(slots){document.getElementById('edSlots').innerHTML=slots.ma
  * 기간·요일·시간대를 받아 schedule[지점][날짜]를 한 번에 채운다(저장 1회).
  * - 신청(취소 제외)이 있는 날짜는 절대 건드리지 않고 건너뜀(알림)
  * - 이미 설정된 날짜(휴무 포함)는 덮어쓸지 그대로 둘지 관리자가 고르게 함
- * - 오늘 이전 날짜는 만들지 않음 */
+ * - 오늘을 포함한 이전 날짜는 만들지 않음(내일부터) */
 let bkbPlanned=null;   // 마지막 미리보기 결과(입력이 바뀌면 null → 다시 확인)
 function bkbSlotRow(sl,br){return `<div class="bkb-row"><select class="b-cls">${clsOptsFor(br,sl.cls)}</select><input type="time" class="b-time" value="${esc(sl.time||'')}" /><input type="number" min="0" class="b-cap" value="${sl.cap??0}" /><button type="button" class="icon-btn b-del">삭제</button></div>`;}
 function bkbFillSlots(slots){const br=dval('bkbBranch');document.getElementById('bkbSlots').innerHTML=slots.map(sl=>bkbSlotRow(sl,br)).join('')||'<div class="hint">시간대를 추가하세요.</div>';bkbDirty();}
@@ -1280,23 +1280,24 @@ function bkbDirty(){bkbPlanned=null;document.getElementById('bkbSummary').innerH
 function bkbOpen(){
   const names=branchNames();const br=bkBranch||names[0]||'';
   document.getElementById('bkbBranch').innerHTML=names.map(n=>`<option value="${esc(n)}" ${n===br?'selected':''}>${esc(brLabelAdm(n))}</option>`).join('');
-  const t=new Date();const today=ymd(t);const e=new Date(t);e.setDate(e.getDate()+30);
-  const f=document.getElementById('bkbFrom'),to=document.getElementById('bkbTo');f.min=today;to.min=today;f.value=today;to.value=ymd(e);
+  const t=new Date();t.setDate(t.getDate()+1);const first=ymd(t);const e=new Date(t);e.setDate(e.getDate()+30);   // 내일부터
+  const f=document.getElementById('bkbFrom'),to=document.getElementById('bkbTo');f.min=first;to.min=first;f.value=first;to.value=ymd(e);
   document.getElementById('bkbDows').innerHTML=DOW.map((d,i)=>`<label><input type="checkbox" class="b-dow" value="${i}" checked /> ${d}</label>`).join('');
   bkbFillSlots(defaultSlots(br));
   document.getElementById('bkbModal').classList.add('open');
 }
 function bkbClose(){document.getElementById('bkbModal').classList.remove('open');bkbPlanned=null;}
 function bkbPlan(){
-  const br=dval('bkbBranch'),from=dval('bkbFrom'),to=dval('bkbTo'),today=ymd(new Date());
+  const br=dval('bkbBranch'),from=dval('bkbFrom'),to=dval('bkbTo');const _t=new Date();_t.setDate(_t.getDate()+1);const first=ymd(_t);   // 오늘 포함 이전 날짜는 생성 불가
   if(!br){alert('지점을 선택하세요.');return null;}
   if(!from||!to){alert('시작일과 종료일을 입력하세요.');return null;}
   if(to<from){alert('종료일이 시작일보다 빠릅니다.');return null;}
+  if(to<first){alert('오늘과 지난 날짜는 일괄 생성할 수 없습니다. 내일('+first+') 이후로 선택하세요.');return null;}
   const dows=[...document.querySelectorAll('#bkbDows .b-dow:checked')].map(c=>+c.value);
   if(!dows.length){alert('요일을 하나 이상 선택하세요.');return null;}
   const slots=bkbReadSlots();
   if(!slots.length){alert('시간대를 하나 이상 입력하세요.');return null;}
-  const days=dateRange(from<today?today:from,to);
+  const days=dateRange(from<first?first:from,to);
   if(days.length>366){alert('한 번에 최대 366일까지 생성할 수 있습니다.');return null;}
   const sc=(loadSettings().schedule||{})[br]||{};
   const bookedDays=new Set(load().filter(a=>a.branch===br&&a.date&&a.status!=='cancel').map(a=>a.date));
