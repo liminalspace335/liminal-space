@@ -1,9 +1,9 @@
 // ============================================================
-// LIMINAL SPACE — 플랫폼(GetYourGuide·KKday) 예약 → 홈페이지 신청 자동 반영 (Supabase Edge Function)
+// LIMINAL SPACE — 플랫폼(GetYourGuide·KKday·Viator) 예약 → 홈페이지 신청 자동 반영 (Supabase Edge Function)
 // (이름은 처음 만든 GYG 기준 gyg-sync 그대로 — Apps Script가 이 주소를 쓰고 있음)
 // ------------------------------------------------------------
 // 호출: 사업용 Gmail의 Apps Script(scripts/gyg-gmail-sync.gs)가 GYG 예약/취소 메일을 읽어 POST.
-// body: { source:'gyg'|'kkday'(기본 gyg), action:'book'|'cancel', ref, date:'YYYY-MM-DD', time:'HH:MM', people, size:'30ml',
+// body: { source:'gyg'|'kkday'|'viator'(기본 gyg), action:'book'|'cancel', ref, date:'YYYY-MM-DD', time:'HH:MM', people, size:'30ml',
 //         name, phone, language, price, dryRun }
 //   book   → applications 에 source='gyg', ext_ref=ref 로 확정 신청 추가 (같은 ref는 한 번만)
 //   cancel → 같은 ref 신청의 상태를 'cancel' 로 변경 (행은 지우지 않음)
@@ -31,6 +31,7 @@ const CLASS_ID = "cl_mqj89f9wfi7bet";
 const PLATFORMS: Record<string, { re: RegExp; label: string }> = {
   gyg: { re: /^GYG[A-Z0-9]{6,}$/, label: "GYG" },
   kkday: { re: /^\d{2}KK\d{6,}$/, label: "KKday" },   // 예: 26KK221534633
+  viator: { re: /^BR-\d{6,}$/, label: "Viator" },     // 예: BR-1467602419
 };
 
 const json = (body: unknown, status = 200) =>

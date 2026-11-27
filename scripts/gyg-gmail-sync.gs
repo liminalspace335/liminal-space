@@ -1,5 +1,5 @@
 /**
- * LIMINAL SPACE — GetYourGuide·KKday 예약/취소 메일 → 홈페이지 신청 자동 반영 (Google Apps Script)
+ * LIMINAL SPACE — GetYourGuide·KKday·Viator 예약/취소 메일 → 홈페이지 신청 자동 반영 (Google Apps Script)
  * ------------------------------------------------------------
  * 설치 위치: GYG 공급사 메일을 받는 사업용 Gmail 계정의 script.google.com 프로젝트.
  * 스크립트 속성(프로젝트 설정 → 스크립트 속성):
@@ -82,6 +82,52 @@ function parseKkdayMail(subject, text) {
   return out;
 }
 
+/** HTML 메일 → 줄 단위 텍스트 (Viator 메일은 HTML만 있어 표 칸마다 줄을 나눠 읽음) */
+function htmlToText(html) {
+  return String(html || '').replace(/<(style|script)[\s\S]*?<\/\1>/gi, '')
+    .replace(/<br\s*\/?>|<\/(td|tr|p|div|h\d|li|table)>/gi, '\n')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&#(\d+);/g, function (_, n) { return String.fromCharCode(n); })
+    .replace(/[ \t ‌]+/g, ' ').replace(/\n\s*/g, '\n');
+}
+
+/** Viator 공급사 메일(booking@t1.viator.com, 제목·본문 텍스트) → 예약 정보. 예약번호(BR-…)가 없으면 null
+ *  - 새 예약: 제목 "Fri, Jan 01, 2027(#BR-1467602419)에 대한 새로운 예약" → book (즉시 확정 상품)
+ *  - 취소: 제목 "취소된 예약: Fri, Jan 01, 2027", 예약번호는 본문 → cancel (Viator 취소는 승인 없이 바로 확정)
+ *  - 변경 메일 → notify (형식 확인 전이라 알림만) */
+function parseViatorMail(subject, text) {
+  var s = String(subject || ''), t = String(text || '').replace(/\r/g, '').replace(/[ \t ‌]+/g, ' ');
+  var refM = (s + '\n' + t).match(/\bBR-\d{6,}\b/);
+  if (!refM) return null;
+  var out = { source: 'viator', ref: refM[0] };
+  if (/취소|cancel/i.test(s)) { out.action = 'cancel'; return out; }
+  if (/변경|수정|amend|chang/i.test(s)) { out.action = 'notify'; return out; }
+  if (!/새로운\s*예약|new\s*booking/i.test(s)) return null;
+  out.action = 'book';
+  var dm = t.match(/(?:여행\s*날짜|Travel\s*Date)\s*:\s*(?:[A-Za-z]+,\s*)?([A-Za-z]{3})[a-z]*\.?\s+(\d{1,2}),\s*(\d{4})/i);
+  var mo = dm && MONTHS[Object.keys(MONTHS).filter(function (k) { return k.slice(0, 3) === dm[1].toLowerCase(); })[0]];
+  if (mo) out.date = dm[3] + '-' + pad2(mo) + '-' + pad2(dm[2]);
+  // 투어 등급 "50ml Bottle 11:00" 에 용량·시간이 같이 있음 (취소 메일은 "투어 옵션")
+  var grade = (t.match(/(?:투어\s*등급|투어\s*옵션|Tour\s*Grade|Tour\s*Option)\s*:\s*([^\n]+)/i) || [])[1] || '';
+  var tm = grade.match(/(\d{1,2}):(\d{2})\s*(AM|PM)?/i) || t.match(/(?:투어\s*등급\s*코드|Tour\s*Grade\s*Code)\s*:\s*\S*?~(\d{1,2}):(\d{2})/i);
+  if (tm) out.time = pad2(tm[3] ? Number(tm[1]) % 12 + (/pm/i.test(tm[3]) ? 12 : 0) : tm[1]) + ':' + tm[2];
+  var sm = grade.match(/(\d{2,3})\s*ml/i);
+  out.size = sm ? sm[1] + 'ml' : '';
+  var tr = (t.match(/(?:^|\n)\s*(?:여행자|Travelers?)\s*:\s*([^\n]+)/i) || [])[1] || '';
+  var people = 0, pm, re = /(\d+)\s*[A-Za-z가-힣]/g;
+  while ((pm = re.exec(tr))) people += Number(pm[1]);
+  out.people = people || 1;
+  var nm = t.match(/(?:여행\s*인솔자\s*이름|대표\s*예약자\s*이름|Lead\s*Traveler(?:\s*Name)?)\s*:\s*([^\n]+)/i);
+  out.name = nm ? nm[1].trim() : '';
+  var ph = t.match(/(?:^|\n)\s*(?:전화|Phone)\s*:[^\n]*?(\+?\d[\d\s()-]{6,}\d)/i);
+  out.phone = ph ? ph[1].replace(/\s+/g, '') : '';
+  var lg = t.match(/(?:투어\s*언어|Tour\s*Language)\s*:\s*([A-Za-z]+)/i);
+  out.language = lg ? lg[1] : '';
+  var pr = t.match(/(?:기본\s*요금|Net\s*Rate|Price)\s*:\s*(?:VND|₫)\s*([\d,]+)/i);
+  out.price = pr ? pr[1] : '';
+  return out;
+}
+
 function syncGygMails() {
   var props = PropertiesService.getScriptProperties();
   var url = props.getProperty('SYNC_URL'), secret = props.getProperty('SYNC_SECRET');
@@ -89,7 +135,7 @@ function syncGygMails() {
   if (!url || !secret) throw new Error('스크립트 속성 SYNC_URL / SYNC_SECRET 을 먼저 설정하세요.');
 
   var done = JSON.parse(props.getProperty('DONE_IDS') || '[]');
-  var threads = GmailApp.search('from:(getyourguide.com OR kkday.com) newer_than:3d', 0, 50);
+  var threads = GmailApp.search('from:(getyourguide.com OR kkday.com OR viator.com) newer_than:3d', 0, 50);
   // 오래된 메일부터 처리 — 예약 메일보다 취소 메일을 먼저 처리하면 취소된 예약이 '확정'으로 들어가 버림
   var msgs = [];
   threads.forEach(function (th) { th.getMessages().forEach(function (m) { msgs.push(m); }); });
@@ -98,7 +144,8 @@ function syncGygMails() {
       var id = m.getId();
       if (done.indexOf(id) >= 0) return;
       var body = m.getPlainBody();
-      var info = parseGygMail(body) || parseKkdayMail(m.getSubject(), body);
+      var info = parseGygMail(body) || parseKkdayMail(m.getSubject(), body) ||
+        (/viator\.com/i.test(m.getFrom()) ? parseViatorMail(m.getSubject(), htmlToText(m.getBody())) : null);
       if (!info) {
         // 예약번호가 없거나 예약/취소 형식이 아닌 안내 메일은 기록만 하고 넘어감
         done.push(id);
@@ -112,6 +159,11 @@ function syncGygMails() {
       if (info.action === 'cancel_unknown') {
         if (!dryRun) { alertOnce(info.ref, '취소 관련 KKday 메일을 자동으로 처리하지 못했어요. 어드민에서 직접 확인해 주세요.', m); done.push(id); }
         Logger.log((dryRun ? '[DRY] ' : '') + 'cancel_unknown ' + info.ref);
+        return;
+      }
+      if (info.action === 'notify') {
+        if (!dryRun) { alertOnce(info.ref, '예약 변경 메일이 왔어요. 자동으로 반영하지 않으니 어드민에서 날짜·시간·인원을 직접 확인해 주세요.', m); done.push(id); }
+        Logger.log((dryRun ? '[DRY] ' : '') + 'notify ' + info.ref);
         return;
       }
       if (info.action === 'book' && (!info.date || !info.time)) {
@@ -136,7 +188,7 @@ function syncGygMails() {
 
 function alertOnce(ref, why, msg) {
   var me = Session.getEffectiveUser().getEmail();
-  var pf = /^GYG/.test(ref) ? 'GYG' : 'KKday';
+  var pf = /^GYG/.test(ref) ? 'GYG' : /^BR-/.test(ref) ? 'Viator' : 'KKday';
   MailApp.sendEmail(me, '[홈페이지 연동] ' + pf + ' 예약 확인 필요 - ' + ref,
     pf + ' 메일을 홈페이지 신청에 자동으로 반영하지 못했거나 직접 처리가 필요해요.\n\n' +
     '예약번호: ' + ref + '\n내용: ' + why + '\n메일 제목: ' + msg.getSubject());
@@ -150,4 +202,4 @@ function installTrigger() {
   ScriptApp.newTrigger('syncGygMails').timeBased().everyMinutes(5).create();
 }
 
-if (typeof module !== 'undefined') module.exports = { parseGygMail: parseGygMail, parseKkdayMail: parseKkdayMail };
+if (typeof module !== 'undefined') module.exports = { parseGygMail: parseGygMail, parseKkdayMail: parseKkdayMail, parseViatorMail: parseViatorMail, htmlToText: htmlToText };
