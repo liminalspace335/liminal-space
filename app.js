@@ -1209,7 +1209,7 @@ function showCapErr(remain){
 
 function collectInputs(){
   modal.querySelectorAll('[data-field]').forEach(inp=>{
-    if(inp.tagName==='INPUT'||inp.tagName==='TEXTAREA'||inp.tagName==='SELECT') data[inp.dataset.field]=inp.value.trim();
+    if(inp.tagName==='INPUT'||inp.tagName==='TEXTAREA'||inp.tagName==='SELECT') data[inp.dataset.field]=inp.dataset.field==='phone'?cleanPhone(inp.value):inp.value.trim();
   });
 }
 function validate(n){
@@ -1395,7 +1395,11 @@ modal.addEventListener('keydown',function(e){
   el.click();
   const n=sel&&amBody.querySelector(sel); if(n)n.focus();
 });
-modal.addEventListener('input',function(e){ const f=e.target.dataset&&e.target.dataset.field; if(f){ data[f]=e.target.value; hideErrors(); } });
+// 전화번호는 공백·하이픈·점·괄호를 입력 즉시 제거(붙여넣기 포함) — 길어지면 잘로 알림이 -1121(길이 초과)로 실패함
+const cleanPhone=s=>String(s||'').replace(/[\s\-.()]/g,'');
+modal.addEventListener('input',function(e){ const f=e.target.dataset&&e.target.dataset.field; if(f){
+  if(f==='phone'){ const c=cleanPhone(e.target.value); if(c!==e.target.value) e.target.value=c; }
+  data[f]=e.target.value; hideErrors(); } });
 modal.addEventListener('change',function(e){
   const t=e.target;
   if(t.dataset.field==='nationality'){   // 국적 선택 → 국가번호 자동 입력(수정 불가)
