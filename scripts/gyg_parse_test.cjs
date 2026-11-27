@@ -3,7 +3,7 @@ const assert = require('assert');
 const fs = require('fs'), path = require('path'), vm = require('vm');
 const ctx = { module: { exports: {} } };
 vm.runInNewContext(fs.readFileSync(path.join(__dirname, 'gyg-gmail-sync.gs'), 'utf8'), ctx);
-const { parseGygMail, parseKkdayMail } = ctx.module.exports;
+const { parseGygMail, parseKkdayMail, parseViatorMail, htmlToText } = ctx.module.exports;
 
 // 공급사 예약 메일(2026-11-21 실제 메일 내용 기준) — 줄바꿈형
 const bookLines = `Ho Chi Minh City: Perfume Workshop with Scent Designer
@@ -79,4 +79,39 @@ assert.strictEqual(parseKkdayMail('[KKday] 정산 안내', '이번 달 정산 �
 assert.strictEqual(parseKkdayMail('Booking', bookLines), null);
 // KKday 메일은 GYG 파서가 안 읽음
 assert.strictEqual(parseGygMail(kkBook), null);
-console.log('gyg + kkday parser: all checks passed');
+
+// ---- Viator (2026-11-27 실제 공급사 메일 HTML 구조 기준, 이름·전화는 가짜) ----
+const td = (l, v) => `<tr>\n<td align="left" style="padding: 0px 0px 8px;">\n${l}: <span style="color:#666666;">${v}</span>\n</td>\n</tr>`;
+const vBookHtml = `<style>a{color:#186b69}</style><table><tr><td>예약 확인</td></tr>
+<tr><td align="center">예약 참조: <span style="font-weight:bold;">BR-1467602419 </span></td></tr>
+${td('투어 이름', 'Ho Chi Minh City Make Your Own Perfume Workshop in District 1')}
+${td('여행 날짜', 'Fri, Jan 01, 2027')}
+${td('여행 인솔자 이름', 'Test Traveler')}
+${td('여행자 이름', 'Test Traveler')}
+${td('여행자', '1 Adult')}
+${td('상품 코드', '5714429P3 ')}
+${td('투어 등급', '50ml Bottle 11:00')}
+${td('투어 등급 코드', 'TG2~11:00 ')}
+${td('투어 언어', 'English - Guide ')}
+${td('기본 요금', 'VND 491,400.')}
+${td('전화', ' (Alternate Phone)KR+82 01000000000 ')} <a href="x">고객에게 메시지를 전송합니다.</a>
+${td('특별 요구 사항', 'No')}</table>`;
+const vSubj = 'Fri, Jan 01, 2027(#BR-1467602419)에 대한 새로운 예약';
+const v = parseViatorMail(vSubj, htmlToText(vBookHtml));
+assert.deepStrictEqual(
+  { s: v.source, a: v.action, r: v.ref, d: v.date, t: v.time, z: v.size, p: v.people, n: v.name, ph: v.phone, l: v.language, pr: v.price },
+  { s: 'viator', a: 'book', r: 'BR-1467602419', d: '2027-01-01', t: '11:00', z: '50ml', p: 1, n: 'Test Traveler', ph: '+8201000000000', l: 'English', pr: '491,400' });
+// 여러 명·30ml·오후·다른 달
+const v2 = parseViatorMail(vSubj, htmlToText(vBookHtml.replace('1 Adult', '2 Adults, 1 Child').replace('50ml Bottle 11:00', '30ml Bottle 15:00').replace('Fri, Jan 01, 2027', 'Sat, Dec 05, 2026')));
+assert.deepStrictEqual({ p: v2.people, z: v2.size, t: v2.time, d: v2.date }, { p: 3, z: '30ml', t: '15:00', d: '2026-12-05' });
+// 취소: 제목엔 예약번호 없음, 본문에 #BR-…
+const vc = parseViatorMail('취소된 예약: Fri, Jan 01, 2027', htmlToText(`<table><tr><td>예약 취소됨</td></tr>
+<tr><td>예약 참조: #BR-1467602419</td></tr><tr><td>취소됨</td></tr>${td('투어 옵션', '50ml Bottle 11:00')}${td('여행 날짜', 'Fri, Jan 01, 2027')}</table>`));
+assert.deepStrictEqual({ a: vc.action, r: vc.ref }, { a: 'cancel', r: 'BR-1467602419' });
+// 변경 메일은 알림만, 예약번호 없는 Viator 메일(2단계 인증·설문)은 무시
+assert.strictEqual(parseViatorMail('Amended booking: Fri, Jan 01, 2027', '예약 참조: BR-1467602419').action, 'notify');
+assert.strictEqual(parseViatorMail('Your two-factor authentication code request', 'Your code expires in 20 minutes'), null);
+// Viator 메일은 GYG·KKday 파서가 안 읽음
+assert.strictEqual(parseGygMail(htmlToText(vBookHtml)), null);
+assert.strictEqual(parseKkdayMail(vSubj, htmlToText(vBookHtml)), null);
+console.log('gyg + kkday + viator parser: all checks passed');
